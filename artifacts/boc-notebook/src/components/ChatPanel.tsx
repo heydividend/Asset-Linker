@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { MarkdownMessage } from "./MarkdownMessage";
+import { CopyMessageButton } from "./CopyMessageButton";
 
 function FollowupChips({ items, onPick }: { items: string[]; onPick: (q: string) => void }) {
   return (
@@ -273,7 +274,7 @@ export function ChatPanel() {
                 m.role === "assistant" && idx === messages.length - 1 && !streamingMessage && !streaming;
               const showFollowups = isLastAssistant && Array.isArray(m.followups) && m.followups.length > 0;
               return (
-                <div key={m.id} className={`flex flex-col gap-2 ${m.role === "user" ? "items-end" : "items-start"}`}>
+                <div key={m.id} className={`flex flex-col gap-1 ${m.role === "user" ? "items-end" : "items-start"}`}>
                   <div
                     className={`max-w-[88%] min-w-0 rounded-lg px-3 py-2 ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                     data-testid={`chat-msg-${m.role}`}
@@ -284,6 +285,12 @@ export function ChatPanel() {
                       <MarkdownMessage content={m.content} className="text-sm" />
                     )}
                   </div>
+                  {m.role === "assistant" && m.content && (
+                    <CopyMessageButton
+                      content={m.content}
+                      testId={`button-copy-message-${m.id}`}
+                    />
+                  )}
                   {showFollowups && activeConvId && (
                     <FollowupChips
                       items={m.followups as string[]}

@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Plus, Send, Trash2, Loader2, Paperclip, Eraser } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
+import { CopyMessageButton } from "@/components/CopyMessageButton";
 
 export default function TutorPage() {
   const qc = useQueryClient();
@@ -301,7 +302,7 @@ export default function TutorPage() {
           <div className="max-w-3xl mx-auto space-y-4">
             {!activeId && <p className="text-muted-foreground text-center py-8">Pick or start a conversation.</p>}
             {messages.map((m) => (
-              <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div key={m.id} className={`flex flex-col gap-1 ${m.role === "user" ? "items-end" : "items-start"}`}>
                 <div className={`max-w-[80%] min-w-0 rounded-lg px-4 py-2 ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                   {m.role === "user" ? (
                     <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
@@ -309,6 +310,12 @@ export default function TutorPage() {
                     <MarkdownMessage content={m.content} className="text-sm" />
                   )}
                 </div>
+                {m.role === "assistant" && m.content && (
+                  <CopyMessageButton
+                    content={m.content}
+                    testId={`button-copy-message-${m.id}`}
+                  />
+                )}
               </div>
             ))}
             {streaming && (
