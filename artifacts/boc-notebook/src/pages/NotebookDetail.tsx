@@ -29,7 +29,6 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AskAiButton } from "@/components/AskAiButton";
 import { ListenAsPodcastButton, PodcastList } from "@/components/PodcastPlayer";
-import { useChatStore } from "@/hooks/use-chat";
 import { useToast } from "@/hooks/use-toast";
 import { Bot, FileText, Headphones, Plus, Trash2, BookOpen, Sparkles, Brain, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -40,7 +39,6 @@ export default function NotebookDetail() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const openChat = useChatStore((s) => s.openChat);
   const { data: notebook, isLoading } = useGetNotebook(id, { query: { enabled: !!id, queryKey: getGetNotebookQueryKey(id) } });
   const createNote = useCreateNote();
   const deleteNote = useDeleteNote();
@@ -167,7 +165,6 @@ export default function NotebookDetail() {
     });
   };
 
-  const openTutor = () => openChat({ notebookId: id });
 
   return (
     <div className="flex h-full">
@@ -477,20 +474,6 @@ export default function NotebookDetail() {
           </TabsContent>
         </Tabs>
       </main>
-
-      {/* RIGHT: Tutor */}
-      <aside className="w-80 border-l bg-sidebar flex flex-col">
-        <div className="h-14 border-b flex items-center px-4">
-          <span className="font-semibold text-sm flex items-center gap-2"><Bot className="h-4 w-4" /> Notebook tutor</span>
-        </div>
-        <div className="flex-1 p-4 space-y-3 text-sm text-muted-foreground">
-          <p>Open a focused chat that already knows you're working in <strong className="text-foreground">{notebook.title}</strong>.</p>
-          <p>The tutor can help you summarize a source, drill flashcards, or explain a concept.</p>
-          <Button onClick={openTutor} className="w-full" data-testid="button-open-notebook-tutor">
-            <Bot className="h-4 w-4 mr-2" /> Open notebook tutor
-          </Button>
-        </div>
-      </aside>
     </div>
   );
 }
