@@ -1,0 +1,365 @@
+Build me a simple full-stack Replit application called “BOC Study Notebook” specifically designed to help Athletic Training students study for and pass the BOC (Board of Certification) Athletic Training Exam.
+
+The app should combine:
+- NotebookLM-style learning
+- Adaptive study recommendations
+- Practice quizzes
+- AI tutoring
+- Personalized weak-area tracking
+- Curated learning resources (YouTube, NATA, PubMed, articles)
+
+The app must remain SIMPLE, clean, and easy to use.
+
+IMPORTANT:
+Do NOT use copyrighted BOC exam questions.
+Use:
+- Original practice questions
+- User-uploaded notes
+- Public educational resources
+- AI-generated educational material
+
+GOAL:
+Create an intelligent study notebook that learns from my quiz attempts and helps me focus on weak BOC domains and topics until I am ready to pass the exam.
+
+====================================================
+CORE INTERFACE (NotebookLM Style)
+====================================================
+
+Create a 3-panel layout:
+
+LEFT SIDEBAR:
+- BOC Domains
+- Study notebooks
+- Weak areas
+- Practice quizzes
+- Saved resources
+- Study plan
+
+CENTER WORKSPACE:
+- Notes viewer
+- Uploaded documents
+- Practice questions
+- Quiz review
+- AI-generated summaries
+- Flashcards
+
+RIGHT SIDEBAR:
+- AI Tutor chat
+- Recommended YouTube videos
+- Recommended articles
+- Weak-topic recommendations
+- Daily study focus
+
+====================================================
+BOC DOMAIN STRUCTURE
+====================================================
+
+Organize all learning around these BOC domains:
+
+1. Risk Reduction, Wellness and Health Literacy
+2. Assessment, Evaluation and Diagnosis
+3. Critical Incident Management
+4. Therapeutic Intervention
+5. Healthcare Administration and Professional Responsibility
+
+Every question, note, video, article, and recommendation must map to:
+- BOC domain
+- Topic tag
+- Difficulty
+
+====================================================
+CORE FEATURES
+====================================================
+
+1. STUDY NOTEBOOKS
+
+Allow users to create notebooks by topic such as:
+- Concussion management
+- Heat illness
+- Modalities
+- Rehab progression
+- Emergency care
+- Pharmacology
+- Lower extremity evaluation
+- Shoulder assessment
+- Documentation
+- Therapeutic exercise
+
+Each notebook stores:
+- Notes
+- Uploaded documents
+- AI summaries
+- Flashcards
+- Practice questions
+- Weak concepts
+- Saved resources
+
+====================================================
+2. UPLOAD STUDY MATERIALS
+====================================================
+
+Allow uploads of:
+- PDF
+- TXT
+- DOCX
+- CSV practice questions
+
+The app should:
+- Extract text
+- Summarize content
+- Identify BOC domain
+- Generate tags/topics
+- Generate study notes
+- Generate flashcards
+- Generate practice questions
+
+====================================================
+3. AI TUTOR
+====================================================
+
+Create an AI tutor chat system.
+
+The tutor should:
+- Explain BOC concepts simply
+- Answer questions using uploaded notes first
+- Explain missed questions
+- Create mnemonics
+- Generate flashcards
+- Create mini quizzes
+- Compare similar concepts
+- Create quick review sheets
+- Explain concepts “like I’m a first-year AT student”
+
+Use OpenAI API if available through environment variables.
+If unavailable, create mock responses.
+
+====================================================
+4. PRACTICE QUIZ SYSTEM
+====================================================
+
+Allow quizzes by:
+- BOC domain
+- Weak areas
+- Notebook
+- Random review
+- Missed questions
+
+Each question should include:
+- Question
+- 4 answer choices
+- Correct answer
+- Explanation
+- BOC domain
+- Topic tag
+- Difficulty
+
+After each quiz:
+- Show score
+- Show explanations
+- Show weak concepts
+- Recommend what to study next
+
+====================================================
+5. ADAPTIVE LEARNING ENGINE
+====================================================
+
+Track all quiz attempts.
+
+Track:
+- Correct/incorrect answers
+- Time spent
+- BOC domain
+- Topic tag
+- Difficulty
+- Confidence rating
+- Date attempted
+
+Use this to calculate:
+- Mastery score by topic
+- Weakest concepts
+- Readiness score
+- Recommended study priorities
+
+Use lightweight explainable ML-style logic:
+Recent incorrect answers + low confidence + repeated misses = higher priority.
+
+The system should:
+- Increase review frequency for weak topics
+- Reduce repetition for mastered topics
+- Recommend what to study next
+- Predict BOC readiness
+
+====================================================
+6. RESOURCE MATCHING ENGINE
+====================================================
+
+VERY IMPORTANT:
+Any YouTube videos, articles, PubMed links, NATA resources, Google Scholar links, or web resources MUST match the user’s weak learning area and BOC domain.
+
+DO NOT show generic resources.
+
+Every resource recommendation must include:
+- Title
+- Resource type
+- Matched BOC domain
+- Topic tag
+- Reason it was recommended
+- Relevance confidence score
+- Search query used
+
+Resource recommendation logic:
+1. Identify weakest BOC topic.
+2. Generate targeted search queries using:
+   - “BOC athletic training”
+   - Topic keyword
+   - Certification review
+   - Evidence-based practice terminology
+
+Example:
+Weak topic:
+Exertional Heat Stroke
+
+Generate:
+YouTube:
+“BOC athletic training exertional heat stroke management”
+
+PubMed:
+“exertional heat stroke athletic training emergency management”
+
+NATA:
+“NATA exertional heat illness position statement”
+
+Only recommend resources clearly aligned with the weak topic.
+
+====================================================
+7. RESOURCE FEEDBACK SYSTEM
+====================================================
+
+Allow users to mark resources as:
+- Helpful
+- Not helpful
+- Save for later
+- Reviewed
+
+Use this feedback to improve future recommendations.
+
+====================================================
+8. DAILY STUDY PLAN
+====================================================
+
+Generate a daily study plan including:
+- Topics to review
+- Number of practice questions
+- Flashcards
+- 1 YouTube recommendation
+- 1 article recommendation
+- Estimated study time
+- Explanation for why topics were chosen
+
+====================================================
+9. DASHBOARD
+====================================================
+
+Dashboard should show:
+- BOC readiness score
+- Mastery by BOC domain
+- Weakest topics
+- Recent quiz scores
+- Questions completed
+- Daily study streak
+- Recommended study focus today
+
+====================================================
+10. TECH STACK
+====================================================
+
+Use:
+- Python FastAPI backend
+- React frontend
+- Tailwind CSS
+- SQLite database
+- Replit-compatible structure
+
+====================================================
+11. DATABASE TABLES
+====================================================
+
+Create:
+- users
+- notebooks
+- uploaded_resources
+- notes
+- questions
+- quiz_attempts
+- quiz_answers
+- topic_mastery
+- saved_resources
+- study_plans
+
+====================================================
+12. PAGES
+====================================================
+
+Create these pages:
+- Dashboard
+- Notebook
+- Practice Quiz
+- Weak Areas
+- AI Tutor
+- Study Plan
+- Resource Library
+
+====================================================
+13. UI REQUIREMENTS
+====================================================
+
+Keep the app:
+- Minimal
+- Clean
+- Fast
+- Modern
+- Easy to navigate
+
+Use:
+- Cards
+- Progress bars
+- Domain mastery charts
+- Weak-topic indicators
+
+Style inspiration:
+NotebookLM + clean study app aesthetic.
+
+====================================================
+14. OUTPUT REQUIREMENTS
+====================================================
+
+Before coding:
+Provide:
+- App architecture
+- Database schema
+- API route structure
+- Frontend component structure
+- Adaptive learning logic
+- Resource recommendation logic
+- Folder structure
+- Implementation roadmap
+
+Then generate:
+- Complete working MVP
+- Backend code
+- Frontend code
+- Database setup
+- Sample BOC practice questions
+- README setup instructions
+- Replit deployment instructions
+
+====================================================
+15. IMPORTANT FINAL RULES
+====================================================
+
+- Keep the app simple and maintainable.
+- Prioritize useful learning workflows over complexity.
+- Every resource recommendation must connect directly to a BOC domain and weak topic.
+- Do not show random generic study resources.
+- The app should always answer:
+  “What do I specifically need to study next to pass the BOC exam?”
