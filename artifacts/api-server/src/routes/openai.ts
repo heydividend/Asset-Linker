@@ -6,6 +6,7 @@ import { parseId } from "../lib/parseId";
 import multer from "multer";
 import { PDFParse } from "pdf-parse";
 import { COACHING_STRATEGIES } from "../lib/coachingStrategies";
+import { BOC_GLOSSARY } from "../lib/bocGlossary";
 
 export async function extractPdfText(buf: Buffer): Promise<string> {
   const parser = new PDFParse({ data: new Uint8Array(buf) });
@@ -96,7 +97,18 @@ Be warm, precise, and clinically accurate. Use the BOC's 5 domains as your frame
 5) Healthcare Administration & Professional Responsibility
 When the user asks about a flashcard, quiz question, note, or weak topic, anchor your answer in the supplied context. Use Markdown. Be concise but thorough; favor mechanism, indication, contraindication, and red-flag callouts.
 
-${COACHING_STRATEGIES}`;
+${COACHING_STRATEGIES}
+
+REFERENCE GLOSSARY — Use these definitions as the authoritative vocabulary
+for every answer. Prefer the wording below when defining or correcting terms.
+If a student uses a term, silently align your reply with this glossary's
+definition (do not quote the whole glossary; just use the right meaning).
+Do not invent definitions that conflict with these.
+
+<<<BOC_GLOSSARY_START>>>
+${BOC_GLOSSARY}
+<<<BOC_GLOSSARY_END>>>
+`;
 
 router.get("/openai/conversations", async (_req, res): Promise<void> => {
   const rows = await db.select().from(conversations).orderBy(desc(conversations.createdAt));
