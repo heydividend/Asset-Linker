@@ -1,8 +1,34 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import catalogRouter from "./catalog";
+import notebooksRouter from "./notebooks";
+import notesRouter from "./notes";
+import flashcardsRouter from "./flashcards";
+import studyGuidesRouter from "./studyGuides";
+import audioOverviewsRouter from "./audioOverviews";
+import quizzesRouter from "./quizzes";
+import mockExamsRouter from "./mockExams";
+import openaiRouter from "./openai";
+import resourcesRouter from "./resources";
+import scraperRouter from "./scraper";
+import dashboardRouter from "./dashboard";
+import planRouter from "./plan";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(catalogRouter);
+router.use(notebooksRouter);
+router.use(notesRouter);
+router.use(flashcardsRouter);
+router.use(studyGuidesRouter);
+router.use(audioOverviewsRouter);
+router.use(quizzesRouter);
+router.use(mockExamsRouter);
+router.use(openaiRouter);
+router.use(resourcesRouter);
+router.use(scraperRouter);
+router.use(dashboardRouter);
+router.use(planRouter);
 
 export default router;

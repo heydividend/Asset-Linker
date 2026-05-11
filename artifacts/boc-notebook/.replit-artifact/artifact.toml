@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "BOC Study Notebook"
+version = "1.0.0"
+id = "artifacts/boc-notebook"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23792
+
+[services.development]
+run = "pnpm --filter @workspace/boc-notebook run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/boc-notebook", "run", "build" ]
+publicDir = "artifacts/boc-notebook/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23792"
+BASE_PATH = "/"

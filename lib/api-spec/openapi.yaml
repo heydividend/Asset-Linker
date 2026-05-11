@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: BOC Study Notebook API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: openai
+  - name: notebooks
+  - name: notes
+  - name: resources
+  - name: flashcards
+  - name: audio
+  - name: studyguides
+  - name: quizzes
+  - name: mock
+  - name: tutor
+  - name: dashboard
+  - name: plan
+  - name: scraper
+  - name: catalog
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +35,1240 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ---- Catalog ----
+  /domains:
+    get:
+      operationId: listDomains
+      tags: [catalog]
+      summary: List BOC domains with target weights
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Domain" }
+  /topics:
+    get:
+      operationId: listTopics
+      tags: [catalog]
+      summary: List topics
+      parameters:
+        - { name: domainId, in: query, required: false, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Topic" }
+
+  # ---- Notebooks ----
+  /notebooks:
+    get:
+      operationId: listNotebooks
+      tags: [notebooks]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Notebook" }
+    post:
+      operationId: createNotebook
+      tags: [notebooks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotebookInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notebook" }
+  /notebooks/{id}:
+    get:
+      operationId: getNotebook
+      tags: [notebooks]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotebookDetail" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateNotebook
+      tags: [notebooks]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotebookUpdate" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notebook" }
+    delete:
+      operationId: deleteNotebook
+      tags: [notebooks]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  # ---- Notes (sources) ----
+  /notebooks/{id}/notes:
+    get:
+      operationId: listNotes
+      tags: [notes]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Note" }
+    post:
+      operationId: createNote
+      tags: [notes]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NoteInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Note" }
+  /notes/{id}:
+    get:
+      operationId: getNote
+      tags: [notes]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Note" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateNote
+      tags: [notes]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NoteUpdate" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Note" }
+    delete:
+      operationId: deleteNote
+      tags: [notes]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  # ---- Flashcards ----
+  /notebooks/{id}/flashcards:
+    get:
+      operationId: listFlashcards
+      tags: [flashcards]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Flashcard" }
+    post:
+      operationId: createFlashcard
+      tags: [flashcards]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FlashcardInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Flashcard" }
+  /notebooks/{id}/flashcards/generate:
+    post:
+      operationId: generateFlashcards
+      tags: [flashcards]
+      summary: AI-generate flashcards from notebook content
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FlashcardGenInput" }
+      responses:
+        "201":
+          description: Generated
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Flashcard" }
+  /flashcards/{id}:
+    patch:
+      operationId: updateFlashcard
+      tags: [flashcards]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FlashcardUpdate" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Flashcard" }
+    delete:
+      operationId: deleteFlashcard
+      tags: [flashcards]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+  /flashcards/{id}/review:
+    post:
+      operationId: reviewFlashcard
+      tags: [flashcards]
+      summary: Submit a spaced-repetition rating (0-5) and get next due
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FlashcardReviewInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Flashcard" }
+  /flashcards/due:
+    get:
+      operationId: listDueFlashcards
+      tags: [flashcards]
+      summary: All flashcards due today across notebooks
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Flashcard" }
+
+  # ---- Study Guides / Summaries ----
+  /notebooks/{id}/study-guides:
+    get:
+      operationId: listStudyGuides
+      tags: [studyguides]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StudyGuide" }
+    post:
+      operationId: generateStudyGuide
+      tags: [studyguides]
+      summary: AI-generate a study guide from notebook material
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudyGuideInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGuide" }
+  /study-guides/{id}:
+    get:
+      operationId: getStudyGuide
+      tags: [studyguides]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGuide" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: deleteStudyGuide
+      tags: [studyguides]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+
+  # ---- Audio Overviews (TTS) ----
+  /notebooks/{id}/audio-overviews:
+    get:
+      operationId: listAudioOverviews
+      tags: [audio]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AudioOverview" }
+    post:
+      operationId: generateAudioOverview
+      tags: [audio]
+      summary: AI-generate a narrated audio overview of notebook material
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AudioOverviewInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AudioOverview" }
+  /audio-overviews/{id}:
+    get:
+      operationId: getAudioOverview
+      tags: [audio]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AudioOverview" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: deleteAudioOverview
+      tags: [audio]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+  /audio-overviews/{id}/audio:
+    get:
+      operationId: streamAudioOverview
+      tags: [audio]
+      summary: Stream audio file
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: MP3 audio
+          content:
+            audio/mpeg: {}
+
+  # ---- Quizzes (adaptive practice) ----
+  /quizzes:
+    get:
+      operationId: listQuizAttempts
+      tags: [quizzes]
+      summary: Recent practice quiz attempts
+      parameters:
+        - { name: limit, in: query, required: false, schema: { type: integer, default: 20 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/QuizSummary" }
+    post:
+      operationId: startQuiz
+      tags: [quizzes]
+      summary: Start a practice quiz session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/QuizInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Quiz" }
+  /quizzes/{id}:
+    get:
+      operationId: getQuiz
+      tags: [quizzes]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Quiz" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /quizzes/{id}/answer:
+    post:
+      operationId: answerQuizQuestion
+      tags: [quizzes]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/QuizAnswerInput" }
+      responses:
+        "200":
+          description: OK with feedback
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QuizAnswerResult" }
+  /quizzes/{id}/finish:
+    post:
+      operationId: finishQuiz
+      tags: [quizzes]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Quiz" }
+
+  # ---- Mock exam ----
+  /mock-exams:
+    get:
+      operationId: listMockExams
+      tags: [mock]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MockExamSummary" }
+    post:
+      operationId: startMockExam
+      tags: [mock]
+      summary: Start a strict timed mock exam (BOC blueprint, no back-nav, auto-submit)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MockExamInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MockExam" }
+  /mock-exams/{id}:
+    get:
+      operationId: getMockExam
+      tags: [mock]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MockExam" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /mock-exams/{id}/answer:
+    post:
+      operationId: answerMockExamQuestion
+      tags: [mock]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MockExamAnswerInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MockExam" }
+  /mock-exams/{id}/heartbeat:
+    post:
+      operationId: heartbeatMockExam
+      tags: [mock]
+      summary: Visibility/focus heartbeat for proctor-style logging
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MockExamHeartbeatInput" }
+      responses:
+        "204": { description: OK }
+  /mock-exams/{id}/submit:
+    post:
+      operationId: submitMockExam
+      tags: [mock]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MockExamResult" }
+
+  # ---- AI Tutor (text streaming) ----
+  /openai/conversations:
+    get:
+      operationId: listOpenaiConversations
+      tags: [openai]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/OpenaiConversation" }
+    post:
+      operationId: createOpenaiConversation
+      tags: [openai]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OpenaiConversationInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OpenaiConversation" }
+  /openai/conversations/{id}:
+    get:
+      operationId: getOpenaiConversation
+      tags: [openai]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OpenaiConversationWithMessages" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: deleteOpenaiConversation
+      tags: [openai]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+  /openai/conversations/{id}/messages:
+    get:
+      operationId: listOpenaiMessages
+      tags: [openai]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/OpenaiMessage" }
+    post:
+      operationId: sendOpenaiMessage
+      tags: [openai]
+      summary: Send tutor message; SSE stream of response chunks
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OpenaiMessageInput" }
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream: {}
+
+  # ---- Resources library ----
+  /resources:
+    get:
+      operationId: listResources
+      tags: [resources]
+      summary: Curated study resources (filtered by topic/domain)
+      parameters:
+        - { name: topicId, in: query, required: false, schema: { type: integer } }
+        - { name: domainId, in: query, required: false, schema: { type: integer } }
+        - { name: kind, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Resource" }
+    post:
+      operationId: createResource
+      tags: [resources]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResourceInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Resource" }
+  /resources/{id}:
+    delete:
+      operationId: deleteResource
+      tags: [resources]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+  /resources/recommended:
+    get:
+      operationId: listRecommendedResources
+      tags: [resources]
+      summary: Resources matched to weak topics
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Resource" }
+
+  # ---- Public-Q&A scraper ----
+  /scraper/jobs:
+    get:
+      operationId: listScrapeJobs
+      tags: [scraper]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ScrapeJob" }
+    post:
+      operationId: createScrapeJob
+      tags: [scraper]
+      summary: Submit a public, allow-listed URL for question import
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScrapeJobInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScrapeJob" }
+  /scraper/jobs/{id}:
+    get:
+      operationId: getScrapeJob
+      tags: [scraper]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScrapeJob" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /scraper/allowlist:
+    get:
+      operationId: getScraperAllowlist
+      tags: [scraper]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: string }
+
+  # ---- Dashboard / Plan ----
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardSummary" }
+  /plan/today:
+    get:
+      operationId: getStudyPlanToday
+      tags: [plan]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyPlan" }
+  /plan/regenerate:
+    post:
+      operationId: regenerateStudyPlan
+      tags: [plan]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyPlan" }
+
 components:
+  responses:
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
   schemas:
     HealthStatus:
       type: object
+      properties: { status: { type: string } }
+      required: [status]
+    ApiError:
+      type: object
+      properties: { error: { type: string } }
+      required: [error]
+
+    Domain:
+      type: object
+      required: [id, code, name, weight]
       properties:
+        id: { type: integer }
+        code: { type: string }
+        name: { type: string }
+        weight: { type: number, description: "BOC blueprint % (0-1)" }
+    Topic:
+      type: object
+      required: [id, domainId, name]
+      properties:
+        id: { type: integer }
+        domainId: { type: integer }
+        name: { type: string }
+        description: { type: ["string", "null"] }
+
+    Notebook:
+      type: object
+      required: [id, title, createdAt, updatedAt, noteCount, flashcardCount]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        noteCount: { type: integer }
+        flashcardCount: { type: integer }
+    NotebookDetail:
+      type: object
+      required: [id, title, createdAt, updatedAt, notes, flashcards, studyGuides, audioOverviews]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        notes:
+          type: array
+          items: { $ref: "#/components/schemas/Note" }
+        flashcards:
+          type: array
+          items: { $ref: "#/components/schemas/Flashcard" }
+        studyGuides:
+          type: array
+          items: { $ref: "#/components/schemas/StudyGuide" }
+        audioOverviews:
+          type: array
+          items: { $ref: "#/components/schemas/AudioOverview" }
+    NotebookInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+    NotebookUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+
+    Note:
+      type: object
+      required: [id, notebookId, title, content, sourceKind, createdAt]
+      properties:
+        id: { type: integer }
+        notebookId: { type: integer }
+        title: { type: string }
+        content: { type: string }
+        sourceKind:
+          type: string
+          enum: [text, paste, url, pdf]
+        sourceUrl: { type: ["string", "null"] }
+        topicId: { type: ["integer", "null"] }
+        createdAt: { type: string, format: date-time }
+    NoteInput:
+      type: object
+      required: [title, content]
+      properties:
+        title: { type: string, minLength: 1 }
+        content: { type: string }
+        sourceKind:
+          type: string
+          enum: [text, paste, url, pdf]
+        sourceUrl: { type: string }
+        topicId: { type: integer }
+    NoteUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        content: { type: string }
+        topicId: { type: integer }
+
+    Flashcard:
+      type: object
+      required: [id, notebookId, front, back, easeFactor, intervalDays, repetitions, dueAt, createdAt]
+      properties:
+        id: { type: integer }
+        notebookId: { type: integer }
+        front: { type: string }
+        back: { type: string }
+        topicId: { type: ["integer", "null"] }
+        easeFactor: { type: number }
+        intervalDays: { type: integer }
+        repetitions: { type: integer }
+        dueAt: { type: string, format: date-time }
+        lastReviewedAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+    FlashcardInput:
+      type: object
+      required: [front, back]
+      properties:
+        front: { type: string, minLength: 1 }
+        back: { type: string, minLength: 1 }
+        topicId: { type: integer }
+    FlashcardUpdate:
+      type: object
+      properties:
+        front: { type: string, minLength: 1 }
+        back: { type: string, minLength: 1 }
+        topicId: { type: integer }
+    FlashcardGenInput:
+      type: object
+      properties:
+        count: { type: integer, default: 10, minimum: 1, maximum: 30 }
+        focus: { type: string, description: "Optional topic/concept focus" }
+    FlashcardReviewInput:
+      type: object
+      required: [quality]
+      properties:
+        quality:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: "SM-2 quality rating"
+
+    StudyGuide:
+      type: object
+      required: [id, notebookId, title, format, content, createdAt]
+      properties:
+        id: { type: integer }
+        notebookId: { type: integer }
+        title: { type: string }
+        format:
+          type: string
+          enum: [outline, summary, qa, mindmap]
+        content: { type: string, description: "Markdown" }
+        createdAt: { type: string, format: date-time }
+    StudyGuideInput:
+      type: object
+      required: [format]
+      properties:
+        format:
+          type: string
+          enum: [outline, summary, qa, mindmap]
+        focus: { type: string }
+
+    AudioOverview:
+      type: object
+      required: [id, notebookId, title, status, voice, createdAt]
+      properties:
+        id: { type: integer }
+        notebookId: { type: integer }
+        title: { type: string }
         status:
           type: string
-      required:
-        - status
+          enum: [pending, ready, failed]
+        voice: { type: string }
+        durationSec: { type: ["integer", "null"] }
+        transcript: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+    AudioOverviewInput:
+      type: object
+      properties:
+        voice:
+          type: string
+          enum: [alloy, echo, fable, onyx, nova, shimmer]
+          default: nova
+        style:
+          type: string
+          enum: [lecture, podcast, quickrecap]
+          default: lecture
+        focus: { type: string }
 
+    QuizSummary:
+      type: object
+      required: [id, mode, totalQuestions, correctCount, finishedAt]
+      properties:
+        id: { type: integer }
+        mode: { type: string, enum: [adaptive, topic, domain, weakness] }
+        totalQuestions: { type: integer }
+        correctCount: { type: integer }
+        finishedAt: { type: ["string", "null"], format: date-time }
+    Quiz:
+      type: object
+      required: [id, mode, questions, currentIndex, finished]
+      properties:
+        id: { type: integer }
+        mode: { type: string, enum: [adaptive, topic, domain, weakness] }
+        notebookId: { type: ["integer", "null"] }
+        topicId: { type: ["integer", "null"] }
+        domainId: { type: ["integer", "null"] }
+        questions:
+          type: array
+          items: { $ref: "#/components/schemas/QuizQuestion" }
+        currentIndex: { type: integer }
+        finished: { type: boolean }
+        score: { type: ["number", "null"] }
+    QuizQuestion:
+      type: object
+      required: [id, questionId, stem, choices]
+      properties:
+        id: { type: integer }
+        questionId: { type: integer }
+        stem: { type: string }
+        choices:
+          type: array
+          items: { type: string }
+        topicId: { type: ["integer", "null"] }
+        domainId: { type: ["integer", "null"] }
+        selectedIndex: { type: ["integer", "null"] }
+        correctIndex: { type: ["integer", "null"] }
+        rationale: { type: ["string", "null"] }
+        sourceUrl: { type: ["string", "null"] }
+    QuizInput:
+      type: object
+      required: [mode, count]
+      properties:
+        mode: { type: string, enum: [adaptive, topic, domain, weakness] }
+        count: { type: integer, minimum: 1, maximum: 50 }
+        notebookId: { type: integer }
+        topicId: { type: integer }
+        domainId: { type: integer }
+    QuizAnswerInput:
+      type: object
+      required: [questionId, selectedIndex]
+      properties:
+        questionId: { type: integer }
+        selectedIndex: { type: integer, minimum: 0 }
+    QuizAnswerResult:
+      type: object
+      required: [correct, correctIndex, rationale]
+      properties:
+        correct: { type: boolean }
+        correctIndex: { type: integer }
+        rationale: { type: string }
+        sourceUrl: { type: ["string", "null"] }
+
+    MockExam:
+      type: object
+      required: [id, totalQuestions, currentIndex, timeLimitSec, startedAt, submitted, autoSubmitted, questions]
+      properties:
+        id: { type: integer }
+        totalQuestions: { type: integer }
+        currentIndex: { type: integer }
+        timeLimitSec: { type: integer }
+        startedAt: { type: string, format: date-time }
+        submittedAt: { type: ["string", "null"], format: date-time }
+        submitted: { type: boolean }
+        autoSubmitted: { type: boolean }
+        visibilityBreaks: { type: integer }
+        questions:
+          type: array
+          items: { $ref: "#/components/schemas/MockExamQuestion" }
+    MockExamQuestion:
+      type: object
+      required: [index, stem, choices]
+      properties:
+        index: { type: integer }
+        stem: { type: string }
+        choices:
+          type: array
+          items: { type: string }
+        selectedIndex: { type: ["integer", "null"] }
+    MockExamSummary:
+      type: object
+      required: [id, totalQuestions, startedAt, submitted]
+      properties:
+        id: { type: integer }
+        totalQuestions: { type: integer }
+        startedAt: { type: string, format: date-time }
+        submittedAt: { type: ["string", "null"], format: date-time }
+        submitted: { type: boolean }
+        scorePercent: { type: ["number", "null"] }
+    MockExamInput:
+      type: object
+      properties:
+        totalQuestions: { type: integer, default: 175, minimum: 10, maximum: 200 }
+        timeLimitSec: { type: integer, default: 14400 }
+    MockExamAnswerInput:
+      type: object
+      required: [index, selectedIndex]
+      properties:
+        index: { type: integer, minimum: 0 }
+        selectedIndex: { type: integer, minimum: 0 }
+    MockExamHeartbeatInput:
+      type: object
+      required: [event]
+      properties:
+        event: { type: string, enum: [tick, blur, focus, hidden, visible] }
+    MockExamResult:
+      type: object
+      required: [examId, scorePercent, passed, domainBreakdown, weakTopics]
+      properties:
+        examId: { type: integer }
+        scorePercent: { type: number }
+        passed: { type: boolean }
+        domainBreakdown:
+          type: array
+          items: { $ref: "#/components/schemas/DomainScore" }
+        weakTopics:
+          type: array
+          items: { $ref: "#/components/schemas/TopicScore" }
+    DomainScore:
+      type: object
+      required: [domainId, code, name, correct, total]
+      properties:
+        domainId: { type: integer }
+        code: { type: string }
+        name: { type: string }
+        correct: { type: integer }
+        total: { type: integer }
+    TopicScore:
+      type: object
+      required: [topicId, name, mastery]
+      properties:
+        topicId: { type: integer }
+        name: { type: string }
+        mastery: { type: number }
+
+    OpenaiConversation:
+      type: object
+      required: [id, title, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        notebookId: { type: ["integer", "null"] }
+        createdAt: { type: string, format: date-time }
+    OpenaiConversationInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        notebookId: { type: integer }
+    OpenaiMessage:
+      type: object
+      required: [id, conversationId, role, content, createdAt]
+      properties:
+        id: { type: integer }
+        conversationId: { type: integer }
+        role: { type: string }
+        content: { type: string }
+        createdAt: { type: string, format: date-time }
+    OpenaiMessageInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string }
+    OpenaiConversationWithMessages:
+      type: object
+      required: [id, title, createdAt, messages]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        notebookId: { type: ["integer", "null"] }
+        createdAt: { type: string, format: date-time }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/OpenaiMessage" }
+
+    Resource:
+      type: object
+      required: [id, title, url, kind, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        url: { type: string }
+        kind: { type: string, enum: [article, video, podcast, book, paper, guideline, other] }
+        provider: { type: ["string", "null"] }
+        topicId: { type: ["integer", "null"] }
+        domainId: { type: ["integer", "null"] }
+        notes: { type: ["string", "null"] }
+        saved: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    ResourceInput:
+      type: object
+      required: [title, url, kind]
+      properties:
+        title: { type: string, minLength: 1 }
+        url: { type: string, format: uri }
+        kind: { type: string, enum: [article, video, podcast, book, paper, guideline, other] }
+        provider: { type: string }
+        topicId: { type: integer }
+        domainId: { type: integer }
+        notes: { type: string }
+
+    ScrapeJob:
+      type: object
+      required: [id, url, status, createdAt]
+      properties:
+        id: { type: integer }
+        url: { type: string }
+        status: { type: string, enum: [pending, running, complete, blocked, failed] }
+        sourceHost: { type: ["string", "null"] }
+        importedCount: { type: integer, default: 0 }
+        pendingReviewCount: { type: integer, default: 0 }
+        message: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        completedAt: { type: ["string", "null"], format: date-time }
+    ScrapeJobInput:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string, format: uri }
+
+    DashboardSummary:
+      type: object
+      required: [readinessScore, lastUpdated, totalQuestionsAnswered, totalCorrect, streakDays, dueFlashcards, recentQuizzes, weakTopics, domainMastery]
+      properties:
+        readinessScore: { type: number, description: "0-100 estimate of BOC readiness" }
+        lastUpdated: { type: string, format: date-time }
+        totalQuestionsAnswered: { type: integer }
+        totalCorrect: { type: integer }
+        streakDays: { type: integer }
+        dueFlashcards: { type: integer }
+        nextMockEta: { type: ["string", "null"] }
+        recentQuizzes:
+          type: array
+          items: { $ref: "#/components/schemas/QuizSummary" }
+        weakTopics:
+          type: array
+          items: { $ref: "#/components/schemas/TopicScore" }
+        domainMastery:
+          type: array
+          items: { $ref: "#/components/schemas/DomainScore" }
+
+    StudyPlan:
+      type: object
+      required: [date, items]
+      properties:
+        date: { type: string, format: date }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/StudyPlanItem" }
+    StudyPlanItem:
+      type: object
+      required: [kind, title, estMinutes]
+      properties:
+        kind: { type: string, enum: [quiz, flashcards, review, audio, study_guide, resource] }
+        title: { type: string }
+        description: { type: ["string", "null"] }
+        estMinutes: { type: integer }
+        topicId: { type: ["integer", "null"] }
+        notebookId: { type: ["integer", "null"] }
+        link: { type: ["string", "null"] }
