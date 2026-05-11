@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, Target, X, ArrowRight } from "lucide-react";
+import { Sparkles, Target, X, ArrowRight, Shuffle } from "lucide-react";
 import { bodyRegions } from "@/data/bodyRegions";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -40,7 +40,10 @@ export function FixItPlanCard() {
 
   const dismissed = dismissedDate === today;
 
-  const liveWeakest = useMemo<WeakRegion[]>(() => {
+  // Full pool of eligible weak regions (mastery < 60%, ≥ 1 attempt), deduped
+  // and sorted weakest-first. The displayed plan is a slice; the rest serve
+  // as swap candidates.
+  const eligibleRegions = useMemo<WeakRegion[]>(() => {
     if (mastery.length === 0 || topics.length === 0) return [];
     const idByName = new Map<string, number>();
     for (const t of topics) idByName.set(t.name, t.id);
@@ -90,29 +93,41 @@ export function FixItPlanCard() {
       if (seen.has(key)) continue;
       seen.add(key);
       deduped.push(r);
-      if (deduped.length === 3) break;
     }
     return deduped;
   }, [mastery, topics]);
 
+  const liveWeakest = useMemo<WeakRegion[]>(
+    () => eligibleRegions.slice(0, 3),
+    [eligibleRegions],
+  );
+
   // Snapshot today's plan so the user works through a stable set even if
-  // mastery shifts mid-day. Naturally regenerates tomorrow.
-  const planRegions = useMemo<WeakRegion[]>(() => {
-    if (typeof window === "undefined") return liveWeakest;
+  // mastery shifts mid-day. Naturally regenerates tomorrow. Swaps mutate
+  // this snapshot in place.
+  const [planRegions, setPlanRegions] = useState<WeakRegion[] | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     const key = SNAPSHOT_KEY_PREFIX + today;
     const stored = window.localStorage.getItem(key);
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as WeakRegion[];
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPlanRegions(parsed);
+          return;
+        }
       } catch {
         // fall through and re-snapshot
       }
     }
     if (liveWeakest.length > 0) {
       window.localStorage.setItem(key, JSON.stringify(liveWeakest));
+      setPlanRegions(liveWeakest);
+    } else {
+      setPlanRegions([]);
     }
-    return liveWeakest;
   }, [liveWeakest, today]);
 
   // Clean up stale snapshots from previous days.
@@ -127,8 +142,39 @@ export function FixItPlanCard() {
     }
   }, [today]);
 
+  const currentPlan = planRegions ?? [];
+
+  const swapCandidate = (): WeakRegion | null => {
+    const inPlan = new Set(currentPlan.map((r) => r.id));
+    for (const cand of eligibleRegions) {
+      if (inPlan.has(cand.id)) continue;
+      // Defensive: also skip anything whose dedupe key matches an in-plan
+      // region (mirrored left/right share topic IDs).
+      const key = [...cand.topicIds].sort((a, b) => a - b).join(",");
+      const dupOfInPlan = currentPlan.some(
+        (r) => [...r.topicIds].sort((a, b) => a - b).join(",") === key,
+      );
+      if (dupOfInPlan) continue;
+      return cand;
+    }
+    return null;
+  };
+
+  const onSwap = (regionId: string) => {
+    const next = swapCandidate();
+    if (!next) return;
+    const updated = currentPlan.map((r) => (r.id === regionId ? next : r));
+    setPlanRegions(updated);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        SNAPSHOT_KEY_PREFIX + today,
+        JSON.stringify(updated),
+      );
+    }
+  };
+
   if (dismissed) return null;
-  if (loadingMastery || loadingTopics) {
+  if (loadingMastery || loadingTopics || planRegions === null) {
     return (
       <Card data-testid="fix-it-plan-loading">
         <CardHeader>
@@ -142,12 +188,12 @@ export function FixItPlanCard() {
       </Card>
     );
   }
-  if (planRegions.length === 0) return null;
+  if (currentPlan.length === 0) return null;
 
   const allTopicIds = Array.from(
-    new Set(planRegions.flatMap((r) => r.topicIds)),
+    new Set(currentPlan.flatMap((r) => r.topicIds)),
   );
-  const regionNames = planRegions.map((r) => r.name);
+  const regionNames = currentPlan.map((r) => r.name);
 
   const onDismiss = () => {
     if (typeof window !== "undefined") {
@@ -179,8 +225,8 @@ export function FixItPlanCard() {
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
               A focused flashcard pass + a 10-question mixed quiz across your{" "}
-              {planRegions.length} weakest region
-              {planRegions.length === 1 ? "" : "s"}.
+              {currentPlan.length} weakest region
+              {currentPlan.length === 1 ? "" : "s"}.
             </p>
           </div>
           <Button
@@ -197,30 +243,49 @@ export function FixItPlanCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         <ul className="space-y-2">
-          {planRegions.map((r) => (
-            <li
-              key={r.id}
-              className="flex items-center justify-between rounded-md border bg-background/60 px-3 py-2 text-sm"
-              data-testid={`fix-it-plan-region-${r.id}`}
-            >
-              <span className="flex items-center gap-2 truncate">
-                <Target className="h-3.5 w-3.5 text-destructive shrink-0" />
-                <span className="font-medium truncate">{r.name}</span>
-              </span>
-              <span className="flex items-center gap-2 shrink-0">
-                <Badge
-                  variant="outline"
-                  className="text-[10px] tabular-nums border-destructive/60 text-destructive"
-                  data-testid={`fix-it-plan-mastery-${r.id}`}
-                >
-                  {Math.round(r.pct)}%
-                </Badge>
-                <span className="text-[10px] text-muted-foreground tabular-nums">
-                  {r.attempts} attempt{r.attempts === 1 ? "" : "s"}
+          {currentPlan.map((r) => {
+            const canSwap = swapCandidate() !== null;
+            return (
+              <li
+                key={r.id}
+                className="flex items-center justify-between rounded-md border bg-background/60 px-3 py-2 text-sm"
+                data-testid={`fix-it-plan-region-${r.id}`}
+              >
+                <span className="flex items-center gap-2 truncate">
+                  <Target className="h-3.5 w-3.5 text-destructive shrink-0" />
+                  <span className="font-medium truncate">{r.name}</span>
                 </span>
-              </span>
-            </li>
-          ))}
+                <span className="flex items-center gap-2 shrink-0">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] tabular-nums border-destructive/60 text-destructive"
+                    data-testid={`fix-it-plan-mastery-${r.id}`}
+                  >
+                    {Math.round(r.pct)}%
+                  </Badge>
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {r.attempts} attempt{r.attempts === 1 ? "" : "s"}
+                  </span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                    onClick={() => onSwap(r.id)}
+                    disabled={!canSwap}
+                    data-testid={`fix-it-plan-swap-${r.id}`}
+                    title={
+                      canSwap
+                        ? "Swap for next-weakest region"
+                        : "No other eligible regions to swap in"
+                    }
+                    aria-label={`Swap ${r.name} for next-weakest region`}
+                  >
+                    <Shuffle className="h-3.5 w-3.5" />
+                  </Button>
+                </span>
+              </li>
+            );
+          })}
         </ul>
         <Button
           className="w-full"
