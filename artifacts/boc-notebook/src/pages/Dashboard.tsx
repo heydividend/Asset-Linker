@@ -20,6 +20,8 @@ import { MasterySparkline, formatRelativeAttempt } from "@/components/MasterySpa
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   BrainCircuit,
   BookOpen,
@@ -143,14 +145,19 @@ export default function Dashboard() {
     );
   };
 
-  const onQuizDomain = (domainId: number, domainName: string) => {
+  const [openDomainPicker, setOpenDomainPicker] = useState<number | null>(null);
+  const [domainCounts, setDomainCounts] = useState<Record<number, string>>({});
+  const COUNT_OPTIONS = ["5", "10", "15", "20"] as const;
+
+  const onQuizDomain = (domainId: number, domainName: string, count: number) => {
     startQuiz.mutate(
-      { data: { mode: "domain", count: 10, domainId } },
+      { data: { mode: "domain", count, domainId } },
       {
         onSuccess: (q) => {
           qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
           qc.invalidateQueries({ queryKey: getGetDashboardTopicMasteryQueryKey() });
           qc.invalidateQueries({ queryKey: [`/api/dashboard/topic-history`] });
+          setOpenDomainPicker(null);
           navigate(`/quiz/${q.id}`);
         },
         onError: (e) => {
@@ -667,54 +674,113 @@ export default function Dashboard() {
                         startQuiz.isPending &&
                         startQuiz.variables?.data?.mode === "domain" &&
                         startQuiz.variables?.data?.domainId === domain.domainId;
+                      const selectedCount = domainCounts[domain.domainId] ?? "10";
+                      const isOpen = openDomainPicker === domain.domainId;
                       return (
                         <div
                           key={domain.domainId}
                           className="relative group min-w-0"
                           data-testid={`domain-mastery-${domain.domainId}`}
                         >
-                          <button
-                            type="button"
-                            onClick={() => onQuizDomain(domain.domainId, domain.name)}
-                            disabled={startQuiz.isPending}
-                            title={`Start a quiz on ${domain.name}`}
-                            aria-label={`Start a quiz on ${domain.name}`}
-                            data-testid={`domain-mastery-quiz-${domain.domainId}`}
-                            className="w-full text-left space-y-1 min-w-0 rounded-md p-1.5 -m-1.5 pr-9 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
+                          <Popover
+                            open={isOpen}
+                            onOpenChange={(o) =>
+                              setOpenDomainPicker(o ? domain.domainId : null)
+                            }
                           >
-                            <div className="flex justify-between items-center gap-2 text-xs min-w-0">
-                              <span className="font-medium truncate flex-1 min-w-0" title={domain.name}>{domain.name}</span>
-                              {isStartingThis ? (
-                                <span className="text-[10px] text-muted-foreground shrink-0">Starting…</span>
-                              ) : (
-                                <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 shrink-0 transition-opacity" />
-                              )}
-                              <span
-                                className="text-muted-foreground shrink-0 tabular-nums text-[10px]"
-                                data-testid={`domain-mastery-card-count-${domain.domainId}`}
-                                title={
-                                  cardTotal === 0
-                                    ? "No flashcards linked to this domain yet"
-                                    : `${cardTotal} flashcard${cardTotal === 1 ? "" : "s"} in this domain · ${cardDue} due now`
-                                }
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                disabled={startQuiz.isPending}
+                                title={`Start a quiz on ${domain.name}`}
+                                aria-label={`Choose question count and start a quiz on ${domain.name}`}
+                                data-testid={`domain-mastery-quiz-${domain.domainId}`}
+                                className="w-full text-left space-y-1 min-w-0 rounded-md p-1.5 -m-1.5 pr-9 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
                               >
-                                {cardTotal === 0
-                                  ? "no cards"
-                                  : `${cardTotal} card${cardTotal === 1 ? "" : "s"} · ${cardDue} due`}
-                              </span>
-                              <span className="text-muted-foreground shrink-0 tabular-nums">{percent}%</span>
-                            </div>
-                            <Progress value={percent} className="h-1.5" />
-                            <div className="text-muted-foreground">
-                              <MasterySparkline
-                                trend={trend}
-                                testId={`domain-trend-${domain.domainId}`}
-                                caption={caption}
-                                captionTestId={`domain-trend-caption-${domain.domainId}`}
-                                tooltipExtra={tooltipParts.join(" · ") || undefined}
-                              />
-                            </div>
-                          </button>
+                                <div className="flex justify-between items-center gap-2 text-xs min-w-0">
+                                  <span className="font-medium truncate flex-1 min-w-0" title={domain.name}>{domain.name}</span>
+                                  {isStartingThis ? (
+                                    <span className="text-[10px] text-muted-foreground shrink-0">Starting…</span>
+                                  ) : (
+                                    <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 shrink-0 transition-opacity" />
+                                  )}
+                                  <span
+                                    className="text-muted-foreground shrink-0 tabular-nums text-[10px]"
+                                    data-testid={`domain-mastery-card-count-${domain.domainId}`}
+                                    title={
+                                      cardTotal === 0
+                                        ? "No flashcards linked to this domain yet"
+                                        : `${cardTotal} flashcard${cardTotal === 1 ? "" : "s"} in this domain · ${cardDue} due now`
+                                    }
+                                  >
+                                    {cardTotal === 0
+                                      ? "no cards"
+                                      : `${cardTotal} card${cardTotal === 1 ? "" : "s"} · ${cardDue} due`}
+                                  </span>
+                                  <span className="text-muted-foreground shrink-0 tabular-nums">{percent}%</span>
+                                </div>
+                                <Progress value={percent} className="h-1.5" />
+                                <div className="text-muted-foreground">
+                                  <MasterySparkline
+                                    trend={trend}
+                                    testId={`domain-trend-${domain.domainId}`}
+                                    caption={caption}
+                                    captionTestId={`domain-trend-caption-${domain.domainId}`}
+                                    tooltipExtra={tooltipParts.join(" · ") || undefined}
+                                  />
+                                </div>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              align="end"
+                              className="w-56 p-3 space-y-3"
+                              data-testid={`domain-quiz-picker-${domain.domainId}`}
+                            >
+                              <div className="space-y-1">
+                                <p className="text-xs font-semibold">Start {domain.name} quiz</p>
+                                <p className="text-[11px] text-muted-foreground">How many questions?</p>
+                              </div>
+                              <RadioGroup
+                                value={selectedCount}
+                                onValueChange={(v) =>
+                                  setDomainCounts((prev) => ({ ...prev, [domain.domainId]: v }))
+                                }
+                                className="grid grid-cols-4 gap-1"
+                              >
+                                {COUNT_OPTIONS.map((c) => {
+                                  const id = `domain-${domain.domainId}-count-${c}`;
+                                  return (
+                                    <div key={c} className="relative">
+                                      <RadioGroupItem
+                                        value={c}
+                                        id={id}
+                                        className="peer sr-only"
+                                        data-testid={`domain-${domain.domainId}-count-${c}`}
+                                      />
+                                      <Label
+                                        htmlFor={id}
+                                        className="flex items-center justify-center rounded-md border text-xs h-8 cursor-pointer hover-elevate peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground peer-data-[state=checked]:border-primary peer-focus-visible:ring-2 peer-focus-visible:ring-ring"
+                                      >
+                                        {c}
+                                      </Label>
+                                    </div>
+                                  );
+                                })}
+                              </RadioGroup>
+                              <Button
+                                size="sm"
+                                className="w-full"
+                                disabled={startQuiz.isPending}
+                                onClick={() =>
+                                  onQuizDomain(domain.domainId, domain.name, Number(selectedCount))
+                                }
+                                data-testid={`domain-quiz-start-${domain.domainId}`}
+                                autoFocus
+                              >
+                                {isStartingThis ? "Starting…" : `Start ${selectedCount}-question quiz`}
+                              </Button>
+                            </PopoverContent>
+                          </Popover>
                           <button
                             type="button"
                             onClick={() => onReviewDomain(domain.domainId, domain.name)}
