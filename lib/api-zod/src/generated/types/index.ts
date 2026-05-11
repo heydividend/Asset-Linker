@@ -23,6 +23,7 @@ export * from "./flashcardInput";
 export * from "./flashcardReviewInput";
 export * from "./flashcardUpdate";
 export * from "./getDashboardTopicHistoryParams";
+export * from "./getDashboardTopicMasteryParams";
 export * from "./healthStatus";
 export * from "./listDueFlashcardsParams";
 export * from "./listQuizAttemptsParams";

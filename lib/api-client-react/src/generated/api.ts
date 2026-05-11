@@ -28,6 +28,7 @@ import type {
   FlashcardReviewInput,
   FlashcardUpdate,
   GetDashboardTopicHistoryParams,
+  GetDashboardTopicMasteryParams,
   HealthStatus,
   ListDueFlashcardsParams,
   ListQuizAttemptsParams,
@@ -4648,42 +4649,66 @@ export function useGetDashboardSummary<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
-export const getGetDashboardTopicMasteryUrl = () => {
-  return `/api/dashboard/topic-mastery`;
+export const getGetDashboardTopicMasteryUrl = (
+  params?: GetDashboardTopicMasteryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/dashboard/topic-mastery?${stringifiedParams}`
+    : `/api/dashboard/topic-mastery`;
 };
 
 export const getDashboardTopicMastery = async (
+  params?: GetDashboardTopicMasteryParams,
   options?: RequestInit,
 ): Promise<TopicMasteryEntry[]> => {
-  return customFetch<TopicMasteryEntry[]>(getGetDashboardTopicMasteryUrl(), {
-    ...options,
-    method: "GET",
-  });
+  return customFetch<TopicMasteryEntry[]>(
+    getGetDashboardTopicMasteryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
 };
 
-export const getGetDashboardTopicMasteryQueryKey = () => {
-  return [`/api/dashboard/topic-mastery`] as const;
+export const getGetDashboardTopicMasteryQueryKey = (
+  params?: GetDashboardTopicMasteryParams,
+) => {
+  return [`/api/dashboard/topic-mastery`, ...(params ? [params] : [])] as const;
 };
 
 export const getGetDashboardTopicMasteryQueryOptions = <
   TData = Awaited<ReturnType<typeof getDashboardTopicMastery>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getDashboardTopicMastery>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: GetDashboardTopicMasteryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDashboardTopicMastery>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetDashboardTopicMasteryQueryKey();
+    queryOptions?.queryKey ?? getGetDashboardTopicMasteryQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getDashboardTopicMastery>>
-  > = ({ signal }) => getDashboardTopicMastery({ signal, ...requestOptions });
+  > = ({ signal }) =>
+    getDashboardTopicMastery(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getDashboardTopicMastery>>,
@@ -4700,15 +4725,18 @@ export type GetDashboardTopicMasteryQueryError = ErrorType<unknown>;
 export function useGetDashboardTopicMastery<
   TData = Awaited<ReturnType<typeof getDashboardTopicMastery>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getDashboardTopicMastery>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetDashboardTopicMasteryQueryOptions(options);
+>(
+  params?: GetDashboardTopicMasteryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDashboardTopicMastery>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDashboardTopicMasteryQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -803,6 +803,12 @@ paths:
     get:
       operationId: getDashboardTopicMastery
       tags: [dashboard]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: "Max number of recent attempts returned per topic (1–20, default 5)."
+          schema: { type: integer, minimum: 1, maximum: 20, default: 5 }
       responses:
         "200":
           description: OK

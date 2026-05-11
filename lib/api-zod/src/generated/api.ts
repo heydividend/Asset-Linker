@@ -942,6 +942,20 @@ export const GetDashboardSummaryResponse = zod.object({
     ),
 });
 
+export const getDashboardTopicMasteryQueryLimitDefault = 5;
+export const getDashboardTopicMasteryQueryLimitMax = 20;
+
+export const GetDashboardTopicMasteryQueryParams = zod.object({
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(getDashboardTopicMasteryQueryLimitMax)
+    .default(getDashboardTopicMasteryQueryLimitDefault)
+    .describe(
+      "Max number of recent attempts returned per topic (1–20, default 5).",
+    ),
+});
+
 export const GetDashboardTopicMasteryResponseItem = zod.object({
   topicId: zod.number(),
   name: zod.string(),

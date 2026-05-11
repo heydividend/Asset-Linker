@@ -17,6 +17,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AskAiButton } from "@/components/AskAiButton";
 import { FixItPlanCard } from "@/components/FixItPlanCard";
 import { MasterySparkline, formatRelativeAttempt } from "@/components/MasterySparkline";
+import { TrendWindowSelector } from "@/components/TrendWindowSelector";
+import { useTrendWindow } from "@/hooks/use-trend-window";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -66,9 +68,10 @@ const phaseStyles: Record<string, { label: string; className: string }> = {
 };
 
 export default function Dashboard() {
+  const [trendWindow, setTrendWindow] = useTrendWindow();
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: plan, isLoading: loadingPlan } = useGetStudyPlanToday();
-  const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery();
+  const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery({ limit: trendWindow });
   const { data: topicsList = [] } = useListTopics();
   const { data: schedule, isLoading: loadingSchedule } = useQuery<Schedule>({
     queryKey: ["plan-schedule"],
@@ -278,7 +281,7 @@ export default function Dashboard() {
     >();
     for (const [dId, b] of byDomain) {
       b.merged.sort((a, c) => c.answeredAt.localeCompare(a.answeredAt));
-      const slice = b.merged.slice(0, 5);
+      const slice = b.merged.slice(0, trendWindow);
       const latest = slice[0]?.answeredAt ?? null;
       const trend = slice.slice().reverse().map((a) => a.correct);
       const attempts = slice.map((a) => ({
@@ -297,7 +300,7 @@ export default function Dashboard() {
       });
     }
     return out;
-  }, [topicMasteryRows, domainIdByTopicId, topicCountByDomain, topicNameById]);
+  }, [topicMasteryRows, domainIdByTopicId, topicCountByDomain, topicNameById, trendWindow]);
 
   return (
     <div className="flex flex-col h-full">
@@ -650,8 +653,14 @@ export default function Dashboard() {
             </Card>
 
             <Card>
-              <CardHeader className="p-4 pb-2">
+              <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
                 <CardTitle className="text-base">Domain Mastery</CardTitle>
+                <TrendWindowSelector
+                  value={trendWindow}
+                  onChange={setTrendWindow}
+                  testId="dashboard-trend-window"
+                  label="Last"
+                />
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 {loadingSummary ? (

@@ -8,6 +8,7 @@ import {
   getGetFixItStreakQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTrendWindow } from "@/hooks/use-trend-window";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,10 +35,12 @@ type WeakRegion = {
 
 export function FixItPlanCard() {
   const [, navigate] = useLocation();
+  const [trendWindow] = useTrendWindow();
   const { data: mastery = [], isLoading: loadingMastery } =
-    useGetDashboardTopicMastery({
-      query: { queryKey: getGetDashboardTopicMasteryQueryKey() },
-    });
+    useGetDashboardTopicMastery(
+      { limit: trendWindow },
+      { query: { queryKey: getGetDashboardTopicMasteryQueryKey({ limit: trendWindow }) } },
+    );
   const { data: topics = [], isLoading: loadingTopics } = useListTopics();
   const today = todayStr();
   const qc = useQueryClient();

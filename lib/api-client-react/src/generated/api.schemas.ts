@@ -665,6 +665,15 @@ export type ListResourcesParams = {
   kind?: string;
 };
 
+export type GetDashboardTopicMasteryParams = {
+  /**
+   * Max number of recent attempts returned per topic (1–20, default 5).
+   * @minimum 1
+   * @maximum 20
+   */
+  limit?: number;
+};
+
 export type GetDashboardTopicHistoryParams = {
   /**
    * Comma-separated topic IDs to filter (omit for all).

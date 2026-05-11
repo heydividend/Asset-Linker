@@ -33,6 +33,8 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { AskAiButton } from "@/components/AskAiButton";
 import { MasterySparkline, formatRelativeAttempt } from "@/components/MasterySparkline";
+import { TrendWindowSelector } from "@/components/TrendWindowSelector";
+import { useTrendWindow } from "@/hooks/use-trend-window";
 import {
   AlertTriangle, Activity, Heart, Stethoscope, Eye, EyeOff, RotateCcw, Play, Brain, TrendingUp,
 } from "lucide-react";
@@ -70,9 +72,11 @@ export default function BodyMapPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: topics = [], isLoading: topicsLoading } = useListTopics();
-  const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery({
-    query: { queryKey: getGetDashboardTopicMasteryQueryKey() },
-  });
+  const [trendWindow, setTrendWindow] = useTrendWindow();
+  const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery(
+    { limit: trendWindow },
+    { query: { queryKey: getGetDashboardTopicMasteryQueryKey({ limit: trendWindow }) } },
+  );
   const startQuiz = useStartQuiz();
 
   const [view, setView] = useState<ViewKey>("anterior");
@@ -145,9 +149,9 @@ export default function BodyMapPage() {
         }
         for (const a of m.recent) merged.push({ ...a, topicName: name });
       }
-      // Most recent 5 across all the region's topics, then chronological for the spark.
+      // Most recent N across all the region's topics, then chronological for the spark.
       merged.sort((a, b) => b.answeredAt.localeCompare(a.answeredAt));
-      const slice = merged.slice(0, 5);
+      const slice = merged.slice(0, trendWindow);
       const latest = slice[0]?.answeredAt ?? null;
       const trend = slice.slice().reverse().map((a) => a.correct);
       out.set(r.id, {
@@ -162,7 +166,7 @@ export default function BodyMapPage() {
       });
     }
     return out;
-  }, [masteryByName]);
+  }, [masteryByName, trendWindow]);
 
   // Build the caption + tooltip for a region's recent-trend sparkline so we
   // can reuse the same pattern across the hover card and region list rows.
@@ -314,6 +318,12 @@ export default function BodyMapPage() {
           </Tabs>
         </div>
         <div className="flex items-center gap-2">
+          <TrendWindowSelector
+            value={trendWindow}
+            onChange={setTrendWindow}
+            testId="bodymap-trend-window"
+            label="Last"
+          />
           {(Object.keys(PRESETS) as (keyof typeof PRESETS)[]).map((name) => (
             <Button
               key={name}

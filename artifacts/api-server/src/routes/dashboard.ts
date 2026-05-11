@@ -131,12 +131,15 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
   });
 });
 
-router.get("/dashboard/topic-mastery", async (_req, res): Promise<void> => {
+router.get("/dashboard/topic-mastery", async (req, res): Promise<void> => {
+  const rawLimit = typeof req.query.limit === "string" ? parseInt(req.query.limit, 10) : NaN;
+  const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(20, rawLimit)) : 5;
+
   const mastery = await db.select().from(topicMastery);
   const tRows = await db.select().from(topics);
   const masteryByTopic = new Map(mastery.map((m) => [m.topicId, m]));
 
-  // Last 5 quiz answers per topic (joined via questions.topic_id), newest first.
+  // Last `limit` quiz answers per topic (joined via questions.topic_id), newest first.
   const recentRows = (await db.execute(sql`
     SELECT topic_id, correct, answered_at FROM (
       SELECT q.topic_id AS topic_id,
@@ -147,7 +150,7 @@ router.get("/dashboard/topic-mastery", async (_req, res): Promise<void> => {
       JOIN questions q ON q.id = qa.question_id
       WHERE q.topic_id IS NOT NULL
     ) t
-    WHERE rn <= 5
+    WHERE rn <= ${limit}
     ORDER BY topic_id ASC, answered_at ASC
   `)) as unknown as { rows: Array<{ topic_id: number; correct: boolean; answered_at: string | Date }> };
 
