@@ -6,6 +6,7 @@ import {
   ALL_TOUR_QUEUE,
   PAGES,
   pageForLocation,
+  TOUR_SEEN_KEY,
   type BocStep,
   type PageKey,
 } from "@/lib/tour";
@@ -14,6 +15,7 @@ type Scope = "page" | "all";
 
 interface TourCtx {
   startTour: (scope: Scope) => void;
+  replayWelcomeTour: () => void;
   isRunning: boolean;
 }
 
@@ -239,6 +241,54 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     [location, runStepsForPage, startPage],
   );
 
+  const replayWelcomeTour = useCallback(() => {
+    try {
+      window.localStorage.removeItem(TOUR_SEEN_KEY);
+    } catch {
+      /* ignore */
+    }
+    startTour("all");
+  }, [startTour]);
+
+  /** Auto-start a tour if the URL has ?tour=page or ?tour=all. Strips the
+   *  param after reading so refreshes don't keep re-launching. Runs once. */
+  const queryHandledRef = useRef(false);
+  useEffect(() => {
+    if (queryHandledRef.current) return;
+    if (typeof window === "undefined") return;
+    let scope: Scope | null = null;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const v = params.get("tour");
+      if (v === "page" || v === "all") {
+        scope = v;
+        params.delete("tour");
+        const newQuery = params.toString();
+        const newUrl =
+          window.location.pathname +
+          (newQuery ? `?${newQuery}` : "") +
+          window.location.hash;
+        window.history.replaceState(null, "", newUrl);
+      }
+    } catch {
+      return;
+    }
+    if (!scope) return;
+    queryHandledRef.current = true;
+    const target: Scope = scope;
+    const t = window.setTimeout(() => {
+      if (target === "all") {
+        try {
+          window.localStorage.removeItem(TOUR_SEEN_KEY);
+        } catch {
+          /* ignore */
+        }
+      }
+      startTour(target);
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, [startTour]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && driverRef.current) {
@@ -250,7 +300,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   }, [stop]);
 
   return (
-    <Ctx.Provider value={{ startTour, isRunning: runningRef.current }}>
+    <Ctx.Provider value={{ startTour, replayWelcomeTour, isRunning: runningRef.current }}>
       {children}
     </Ctx.Provider>
   );

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones, Compass, MapPin, FileText } from "lucide-react";
+import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones, Compass, MapPin, FileText, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,7 +24,7 @@ const navItems = [
 export function Sidebar() {
   const [location] = useLocation();
   const { sidebarWidth, setSidebarWidth, toggleSidebar } = useLayoutStore();
-  const { startTour } = useTour();
+  const { startTour, replayWelcomeTour } = useTour();
   const [tourMenuOpen, setTourMenuOpen] = useState(false);
 
   return (
@@ -115,6 +115,20 @@ export function Sidebar() {
               >
                 <FileText className="h-3.5 w-3.5 mr-2 shrink-0" />
                 Tour the whole app
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-[13px]"
+                onClick={() => {
+                  setTourMenuOpen(false);
+                  replayWelcomeTour();
+                }}
+                data-testid="menu-tour-replay-welcome"
+                title="Reset the first-visit flag and replay the full welcome tour"
+              >
+                <RotateCcw className="h-3.5 w-3.5 mr-2 shrink-0" />
+                Replay welcome tour
               </Button>
               <p className="px-2 pt-1 pb-1 text-[11px] text-muted-foreground">
                 Press <kbd className="rounded border bg-muted px-1 text-[10px]">Esc</kbd> to exit anytime.
