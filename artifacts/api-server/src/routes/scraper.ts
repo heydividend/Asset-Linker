@@ -11,12 +11,12 @@ router.get("/scraper/allowlist", async (_req, res): Promise<void> => {
   res.json({ allowed: ALLOWLIST });
 });
 
-router.get("/scrape-jobs", async (_req, res): Promise<void> => {
+router.get("/scraper/jobs", async (_req, res): Promise<void> => {
   const rows = await db.select().from(scrapeJobs).orderBy(desc(scrapeJobs.createdAt));
   res.json(rows);
 });
 
-router.get("/scrape-jobs/:id", async (req, res): Promise<void> => {
+router.get("/scraper/jobs/:id", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {
     res.status(400).json({ error: "invalid id" });
@@ -30,7 +30,7 @@ router.get("/scrape-jobs/:id", async (req, res): Promise<void> => {
   res.json(r);
 });
 
-router.post("/scrape-jobs", async (req, res): Promise<void> => {
+router.post("/scraper/jobs", async (req, res): Promise<void> => {
   const { url } = req.body ?? {};
   if (!url || typeof url !== "string") {
     res.status(400).json({ error: "url required" });

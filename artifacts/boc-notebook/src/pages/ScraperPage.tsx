@@ -71,11 +71,15 @@ export default function ScraperPage() {
           <CardContent className="space-y-3 text-sm">
             <p>To respect copyright and exam policy, this importer only accepts URLs from these public clinical sources:</p>
             <div className="flex flex-wrap gap-2">
-              {(allow?.allowed ?? []).map((host: string) => (
-                <Badge key={host} variant="outline" className="font-mono text-xs">
-                  <Globe className="h-3 w-3 mr-1" /> {host}
-                </Badge>
-              ))}
+              {(allow?.allowed ?? []).map((entry: unknown) => {
+                const host = typeof entry === "string" ? entry : (entry as { host: string }).host;
+                const note = typeof entry === "string" ? undefined : (entry as { note?: string }).note;
+                return (
+                  <Badge key={host} variant="outline" className="font-mono text-xs" title={note}>
+                    <Globe className="h-3 w-3 mr-1" /> {host}
+                  </Badge>
+                );
+              })}
             </div>
             <p className="text-muted-foreground">Paid prep products and BOC-official content are refused. If you have purchased material, upload your PDF through the AI Tutor chat (paperclip icon) instead.</p>
           </CardContent>
