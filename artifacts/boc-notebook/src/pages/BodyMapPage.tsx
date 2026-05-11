@@ -24,6 +24,9 @@ import {
 import skinImg from "@/assets/anatomy/layer-skin.png";
 import muscleImg from "@/assets/anatomy/layer-muscle.png";
 import skeletonImg from "@/assets/anatomy/layer-skeleton.png";
+import skinBackImg from "@/assets/anatomy/layer-skin-back.png";
+import muscleBackImg from "@/assets/anatomy/layer-muscle-back.png";
+import skeletonBackImg from "@/assets/anatomy/layer-skeleton-back.png";
 
 // SVG hot-zones were authored in a 200×500 viewBox. Convert to percent of
 // the image container so they overlay the anatomical PNGs cleanly.
@@ -32,10 +35,10 @@ const VB_H = 500;
 const pct = (n: number, dim: number) => `${(n / dim) * 100}%`;
 
 type LayerKey = "skin" | "muscle" | "skeleton";
-const LAYERS: { key: LayerKey; label: string; src: string }[] = [
-  { key: "skin", label: "Surface anatomy", src: skinImg },
-  { key: "muscle", label: "Muscular system", src: muscleImg },
-  { key: "skeleton", label: "Skeleton & organs", src: skeletonImg },
+const LAYERS: { key: LayerKey; label: string; front: string; back: string }[] = [
+  { key: "skin", label: "Surface anatomy", front: skinImg, back: skinBackImg },
+  { key: "muscle", label: "Muscular system", front: muscleImg, back: muscleBackImg },
+  { key: "skeleton", label: "Skeleton & organs", front: skeletonImg, back: skeletonBackImg },
 ];
 
 const PRESETS: Record<string, Record<LayerKey, number>> = {
@@ -46,121 +49,6 @@ const PRESETS: Record<string, Record<LayerKey, number>> = {
 };
 
 type ViewKey = "anterior" | "posterior";
-
-/**
- * Posterior silhouette rendered inline as SVG so it stays sharp at any size and
- * shares the same 200×500 coordinate space as the anterior PNG layers — that way
- * the hot-zone overlay math (in %) works without modification.
- */
-function PosteriorSilhouette({ opacity }: { opacity: Record<LayerKey, number> }) {
-  // Skin uses warm tones, muscle uses red, skeleton uses cool gray-blue. We blend
-  // by stacking three semi-transparent SVGs so the existing layer sliders apply.
-  return (
-    <div className="absolute inset-0">
-      {/* Skin / surface */}
-      <svg
-        viewBox="0 0 200 500"
-        className="absolute inset-0 w-full h-full transition-opacity duration-200"
-        style={{ opacity: opacity.skin }}
-        aria-label="Posterior surface anatomy"
-      >
-        <defs>
-          <radialGradient id="skinGrad" cx="50%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#f4cfb1" />
-            <stop offset="100%" stopColor="#c89274" />
-          </radialGradient>
-        </defs>
-        {/* head */}
-        <ellipse cx="100" cy="42" rx="28" ry="32" fill="url(#skinGrad)" />
-        {/* neck */}
-        <rect x="88" y="70" width="24" height="18" rx="6" fill="url(#skinGrad)" />
-        {/* torso (back) */}
-        <path
-          d="M55 95 Q60 88 75 88 L125 88 Q140 88 145 95 L150 215 Q150 225 140 230 L60 230 Q50 225 50 215 Z"
-          fill="url(#skinGrad)"
-        />
-        {/* glutes / pelvis */}
-        <path d="M58 230 L142 230 L138 260 Q100 275 62 260 Z" fill="url(#skinGrad)" />
-        {/* arms */}
-        <path d="M50 100 Q35 110 33 145 L40 200 L48 245 L40 248 L30 200 L25 150 Q28 105 50 95 Z" fill="url(#skinGrad)" />
-        <path d="M150 100 Q165 110 167 145 L160 200 L152 245 L160 248 L170 200 L175 150 Q172 105 150 95 Z" fill="url(#skinGrad)" />
-        {/* legs */}
-        <path d="M62 260 L98 260 L96 420 L88 460 L78 460 L72 420 Z" fill="url(#skinGrad)" />
-        <path d="M138 260 L102 260 L104 420 L112 460 L122 460 L128 420 Z" fill="url(#skinGrad)" />
-        {/* feet (back) */}
-        <ellipse cx="83" cy="468" rx="12" ry="6" fill="url(#skinGrad)" />
-        <ellipse cx="117" cy="468" rx="12" ry="6" fill="url(#skinGrad)" />
-      </svg>
-
-      {/* Muscle layer — traps, lats, glutes, hamstrings, calves */}
-      <svg
-        viewBox="0 0 200 500"
-        className="absolute inset-0 w-full h-full transition-opacity duration-200"
-        style={{ opacity: opacity.muscle }}
-        aria-label="Posterior muscular system"
-      >
-        <g fill="#a83232" opacity="0.85" stroke="#5a1818" strokeWidth="0.8">
-          {/* trapezius */}
-          <path d="M88 78 L112 78 L140 130 L100 160 L60 130 Z" />
-          {/* lats */}
-          <path d="M62 130 L92 130 L96 215 L70 215 Z" />
-          <path d="M138 130 L108 130 L104 215 L130 215 Z" />
-          {/* deltoids (posterior) */}
-          <ellipse cx="58" cy="105" rx="14" ry="11" />
-          <ellipse cx="142" cy="105" rx="14" ry="11" />
-          {/* glutes */}
-          <ellipse cx="82" cy="245" rx="20" ry="16" />
-          <ellipse cx="118" cy="245" rx="20" ry="16" />
-          {/* hamstrings */}
-          <path d="M70 270 L94 270 L92 360 L74 360 Z" />
-          <path d="M130 270 L106 270 L108 360 L126 360 Z" />
-          {/* calves (gastroc) */}
-          <ellipse cx="84" cy="385" rx="11" ry="22" />
-          <ellipse cx="116" cy="385" rx="11" ry="22" />
-        </g>
-      </svg>
-
-      {/* Skeleton layer — spine, scapulae, pelvis, femurs, tibias */}
-      <svg
-        viewBox="0 0 200 500"
-        className="absolute inset-0 w-full h-full transition-opacity duration-200"
-        style={{ opacity: opacity.skeleton }}
-        aria-label="Posterior skeleton"
-      >
-        <g fill="#e8eef5" stroke="#6b7c92" strokeWidth="0.9">
-          {/* skull (back) */}
-          <ellipse cx="100" cy="42" rx="22" ry="26" />
-          {/* cervical + thoracic + lumbar spine vertebrae */}
-          {Array.from({ length: 22 }).map((_, i) => (
-            <rect key={i} x="96" y={75 + i * 7} width="8" height="5" rx="1.2" />
-          ))}
-          {/* scapulae */}
-          <path d="M62 100 L92 100 L88 145 L66 140 Z" />
-          <path d="M138 100 L108 100 L112 145 L134 140 Z" />
-          {/* ribs hint */}
-          {Array.from({ length: 6 }).map((_, i) => (
-            <g key={i} opacity="0.5">
-              <path d={`M70 ${120 + i * 12} Q100 ${128 + i * 12} 130 ${120 + i * 12}`} fill="none" />
-            </g>
-          ))}
-          {/* pelvis */}
-          <path d="M58 230 L142 230 L136 268 Q100 280 64 268 Z" />
-          {/* femurs */}
-          <rect x="78" y="270" width="10" height="120" rx="3" />
-          <rect x="112" y="270" width="10" height="120" rx="3" />
-          {/* tibias / fibulas */}
-          <rect x="80" y="395" width="6" height="65" rx="2" />
-          <rect x="114" y="395" width="6" height="65" rx="2" />
-          <rect x="88" y="395" width="3" height="60" rx="1" opacity="0.7" />
-          <rect x="109" y="395" width="3" height="60" rx="1" opacity="0.7" />
-          {/* calcaneus hint */}
-          <ellipse cx="83" cy="468" rx="8" ry="4" />
-          <ellipse cx="117" cy="468" rx="8" ry="4" />
-        </g>
-      </svg>
-    </div>
-  );
-}
 
 export default function BodyMapPage() {
   const [, navigate] = useLocation();
@@ -307,20 +195,17 @@ export default function BodyMapPage() {
         {/* Body viewer */}
         <div className="overflow-auto p-6 flex justify-center bg-muted/20">
           <div className="relative w-full max-w-md aspect-[3/4]" data-testid="body-viewer">
-            {view === "anterior" ? (
-              LAYERS.map((l) => (
-                <img
-                  key={l.key}
-                  src={l.src}
-                  alt={l.label}
-                  draggable={false}
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none transition-opacity duration-200"
-                  style={{ opacity: opacity[l.key] }}
-                />
-              ))
-            ) : (
-              <PosteriorSilhouette opacity={opacity} />
-            )}
+            {LAYERS.map((l) => (
+              <img
+                key={l.key}
+                src={view === "anterior" ? l.front : l.back}
+                alt={`${l.label} (${view})`}
+                draggable={false}
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none transition-opacity duration-200"
+                style={{ opacity: opacity[l.key] }}
+                data-testid={`layer-image-${l.key}-${view}`}
+              />
+            ))}
 
             {/* Hot-zone overlay (positioned in % so it tracks any image size) */}
             {showHotspots && visible.map((r) => {

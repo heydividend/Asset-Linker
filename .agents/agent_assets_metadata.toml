@@ -18,3 +18,21 @@ id = "uuRUPzdCLXb3dSpKBUDuz"
 uri = "file://artifacts/boc-notebook/src/assets/anatomy/layer-skeleton.png"
 type = "image"
 title = "anatomy skeleton layer"
+
+[[generated]]
+id = "_kmq4X-x8u3CVgRmzQW1D"
+uri = "file://artifacts/boc-notebook/src/assets/anatomy/layer-skin-back.png"
+type = "image"
+title = "posterior skin layer registered"
+
+[[generated]]
+id = "G2JceVcdvHFAOxZ5Zc7ME"
+uri = "file://artifacts/boc-notebook/src/assets/anatomy/layer-muscle-back.png"
+type = "image"
+title = "posterior muscle layer registered"
+
+[[generated]]
+id = "uRCnqWS_WmaRhwvBseojc"
+uri = "file://artifacts/boc-notebook/src/assets/anatomy/layer-skeleton-back.png"
+type = "image"
+title = "posterior skeleton layer registered"
