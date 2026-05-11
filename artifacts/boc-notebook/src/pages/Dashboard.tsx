@@ -824,10 +824,20 @@ export default function Dashboard() {
 
           <div className="space-y-4 min-w-0">
             <Card data-testid="continue-learning-card">
-              <CardHeader className="p-4 pb-2">
+              <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
                 <CardTitle className="text-base flex items-center gap-2">
                   <RotateCw className="h-4 w-4 text-primary" /> Continue learning
                 </CardTitle>
+                <Link href="/notebooks">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground"
+                    data-testid="continue-learning-view-all"
+                  >
+                    View all <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </Link>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 {loadingSummary ? (
@@ -878,8 +888,18 @@ export default function Dashboard() {
             </Card>
 
             <Card>
-              <CardHeader className="p-4 pb-2">
+              <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
                 <CardTitle className="text-base">Weak Topics</CardTitle>
+                <Link href="/quiz">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground"
+                    data-testid="weak-topics-view-all"
+                  >
+                    View all <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </Link>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 {loadingSummary ? (
@@ -1051,12 +1071,24 @@ export default function Dashboard() {
             <Card data-tour="dashboard-domain-mastery">
               <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
                 <CardTitle className="text-base">Domain Mastery</CardTitle>
-                <TrendWindowSelector
-                  value={trendWindow}
-                  onChange={setTrendWindow}
-                  testId="dashboard-trend-window"
-                  label="Last"
-                />
+                <div className="flex items-center gap-1">
+                  <TrendWindowSelector
+                    value={trendWindow}
+                    onChange={setTrendWindow}
+                    testId="dashboard-trend-window"
+                    label="Last"
+                  />
+                  <Link href="/quiz">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-muted-foreground"
+                      data-testid="domain-mastery-view-all"
+                    >
+                      View all <ArrowRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 {loadingSummary ? (
