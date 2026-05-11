@@ -16,7 +16,17 @@ export interface StudyPlanItem {
   /** @nullable */
   topicId?: number | null;
   /** @nullable */
+  domainId?: number | null;
+  /** @nullable */
   notebookId?: number | null;
   /** @nullable */
+  gameId?: string | null;
+  /** @nullable */
   link?: string | null;
+  /** Stable identifier for this item, used to record completion. */
+  key: string;
+  /** If true, this item must be completed for the day to count as complete. */
+  mandatory: boolean;
+  /** True when this item has been marked complete today. */
+  completed: boolean;
 }

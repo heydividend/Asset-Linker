@@ -1,12 +1,21 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Check, RotateCw, Sparkles, Trophy, X, ZoomIn } from "lucide-react";
+import { ArrowLeft, Check, RotateCw, Sparkles, Trophy, X, ZoomIn, History } from "lucide-react";
 import games from "@/data/games.json";
 import { cn } from "@/lib/utils";
+import {
+  useCreateGameSession,
+  useListGameSessions,
+  getListGameSessionsQueryKey,
+  getGetGamesSummaryQueryKey,
+  getGetStudyPlanTodayQueryKey,
+  getGetStudyPlanCompletionsQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Pair { label: string; image: string }
 
@@ -37,7 +46,14 @@ export default function MatchingGame() {
   const [score, setScore] = useState(0);
   const [misses, setMisses] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
   const [zoomed, setZoomed] = useState<Pair | null>(null);
+  const startedAtRef = useRef<number>(Date.now());
+  const submittedSeedRef = useRef<number>(-1);
+
+  const qc = useQueryClient();
+  const createSession = useCreateGameSession();
+  const { data: history = [] } = useListGameSessions({ gameId: params?.id ?? "" });
 
   useEffect(() => {
     if (!game) return;
@@ -49,18 +65,28 @@ export default function MatchingGame() {
     setPickedLabel(null);
     setSolved(new Set());
     setWrong(null);
+    setScore(0);
+    setMisses(0);
+    setStreak(0);
+    setBestStreak(0);
+    startedAtRef.current = Date.now();
+    submittedSeedRef.current = -1;
   }, [seed, game, allPairs]);
 
   useEffect(() => {
-    if (!pickedImage || !pickedLabel) return;
+    if (!pickedImage || !pickedLabel) return undefined;
     const correct = pickedImage === pickedLabel;
     if (correct) {
       setSolved((prev) => new Set(prev).add(pickedImage));
       setScore((s) => s + 10 + streak * 2);
-      setStreak((s) => s + 1);
+      setStreak((s) => {
+        const next = s + 1;
+        setBestStreak((b) => Math.max(b, next));
+        return next;
+      });
       setPickedImage(null);
       setPickedLabel(null);
-      return;
+      return undefined;
     }
     setWrong({ image: pickedImage, label: pickedLabel });
     setMisses((m) => m + 1);
@@ -73,6 +99,37 @@ export default function MatchingGame() {
     return () => clearTimeout(t);
   }, [pickedImage, pickedLabel, streak]);
 
+  const allDone = round.length > 0 && solved.size === round.length;
+
+  // Persist a session row exactly once per completed round so the daily plan
+  // and per-game leaderboard pick it up. Ref-guarded to avoid double-posting
+  // from React strict-mode re-renders or downstream state updates.
+  useEffect(() => {
+    if (!game || !allDone) return;
+    if (submittedSeedRef.current === seed) return;
+    submittedSeedRef.current = seed;
+    createSession.mutate(
+      {
+        data: {
+          gameId: game.id,
+          score,
+          totalPairs: round.length,
+          misses,
+          bestStreak,
+          durationMs: Date.now() - startedAtRef.current,
+        },
+      },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getListGameSessionsQueryKey({ gameId: game.id }) });
+          qc.invalidateQueries({ queryKey: getGetGamesSummaryQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetStudyPlanTodayQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetStudyPlanCompletionsQueryKey() });
+        },
+      },
+    );
+  }, [allDone, game, seed, score, misses, bestStreak, round.length, createSession, qc]);
+
   if (!game) {
     return (
       <div className="p-6">
@@ -82,7 +139,8 @@ export default function MatchingGame() {
     );
   }
 
-  const allDone = round.length > 0 && solved.size === round.length;
+  const bestEver = history.reduce((m, s) => Math.max(m, s.score), 0);
+  const lastPlay = history[0];
 
   return (
     <div className="flex flex-col h-full">
@@ -100,15 +158,31 @@ export default function MatchingGame() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto space-y-4">
+          {(history.length > 0) && (
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground" data-testid="game-history-summary">
+              <span className="inline-flex items-center gap-1"><History className="h-3 w-3" /> Played {history.length} time{history.length === 1 ? "" : "s"}</span>
+              <span>· Best score <strong className="text-foreground">{bestEver}</strong></span>
+              {lastPlay && <span>· Last: {lastPlay.score} ({lastPlay.misses} miss{lastPlay.misses === 1 ? "" : "es"})</span>}
+            </div>
+          )}
           {allDone ? (
-            <Card className="p-8 text-center space-y-4">
+            <Card className="p-8 text-center space-y-4" data-testid="game-round-complete">
               <Trophy className="h-12 w-12 text-amber-500 mx-auto" />
               <div>
                 <h2 className="text-xl font-semibold">Round complete!</h2>
-                <p className="text-sm text-muted-foreground">Score {score} · {misses} miss{misses === 1 ? "" : "es"}</p>
+                <p className="text-sm text-muted-foreground">Score {score} · {misses} miss{misses === 1 ? "" : "es"} · best streak ×{bestStreak}</p>
+                {createSession.isPending && (
+                  <p className="text-xs text-muted-foreground mt-1">Saving your round…</p>
+                )}
+                {createSession.isSuccess && (
+                  <p className="text-xs text-emerald-600 mt-1">Marked complete in today's plan.</p>
+                )}
               </div>
-              <Button onClick={() => setSeed((x) => x + 1)} data-testid="button-play-again">Play again</Button>
+              <div className="flex justify-center gap-2">
+                <Button onClick={() => setSeed((x) => x + 1)} data-testid="button-play-again">Play again</Button>
+                <Link href="/games"><Button variant="outline">Back to games</Button></Link>
+              </div>
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 gap-6">

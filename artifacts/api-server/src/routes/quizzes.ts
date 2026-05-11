@@ -2,6 +2,8 @@ import { Router, type IRouter } from "express";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, questions, quizzes, quizAnswers, topicMastery } from "@workspace/db";
 import { parseId } from "../lib/parseId";
+import { getOrCreateSessionId } from "../lib/sessionId";
+import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
 
 const router: IRouter = Router();
 
@@ -250,10 +252,27 @@ router.post("/quizzes/:id/finish", async (req, res): Promise<void> => {
   }
   const ans = await db.select().from(quizAnswers).where(eq(quizAnswers.quizId, id));
   const score = ans.length === 0 ? 0 : (ans.filter((a) => a.correct).length / ans.length) * 100;
-  await db
+  const [updated] = await db
     .update(quizzes)
     .set({ finished: true, score, finishedAt: new Date() })
-    .where(eq(quizzes.id, id));
+    .where(eq(quizzes.id, id))
+    .returning();
+
+  // Auto-mark today's quiz plan-items complete. We mark the most-specific key
+  // matching this quiz (topicId > domainId > "any") so finishing a targeted
+  // quiz checks the targeted plan row, not just the generic one.
+  if (updated) {
+    const sessionId = getOrCreateSessionId(req, res);
+    const date = todayStr();
+    if (updated.topicId) {
+      await markPlanItemComplete(sessionId, date, `quiz:topic:${updated.topicId}`);
+    }
+    if (updated.domainId) {
+      await markPlanItemComplete(sessionId, date, `quiz:domain:${updated.domainId}`);
+    }
+    await markPlanItemComplete(sessionId, date, "quiz:any");
+  }
+
   res.json({ id, score, total: ans.length, correct: ans.filter((a) => a.correct).length });
 });
 

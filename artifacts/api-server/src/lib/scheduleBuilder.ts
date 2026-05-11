@@ -1,4 +1,5 @@
 import type { Domain } from "@workspace/db";
+import { gameForDayIndex } from "./gamesCatalog";
 
 export type PlanItemKind =
   | "quiz"
@@ -10,7 +11,8 @@ export type PlanItemKind =
   | "mock_exam"
   | "body_map"
   | "matching"
-  | "rest";
+  | "rest"
+  | "game";
 
 export interface PlanItem {
   kind: PlanItemKind;
@@ -20,6 +22,7 @@ export interface PlanItem {
   domainId?: number;
   topicId?: number;
   notebookId?: number;
+  gameId?: string;
   link?: string;
 }
 
@@ -322,6 +325,22 @@ export function buildSchedule(
         { kind: "matching", title: "One matching game of your choice", estMinutes: 8, link: "/games" },
         { kind: "rest", title: "Recover. Hydrate. Walk. Sleep early.", estMinutes: 0 },
       );
+    }
+
+    // Inject a daily matching-game item on every active study day. Games are
+    // mandatory in the daily mix per the BOC plan, so we also include them on
+    // light/rest Sundays. Skip only the actual exam day, where the day is
+    // intentionally "light review only".
+    if (!isExamDay) {
+      const g = gameForDayIndex(i);
+      items.push({
+        kind: "game",
+        title: `Quick game: ${g.title}`,
+        description: "Image-matching round to lock in visual recall.",
+        estMinutes: g.estMinutes,
+        gameId: g.id,
+        link: `/games/${g.id}`,
+      });
     }
 
     const totalMinutes = items.reduce((s, it) => s + it.estMinutes, 0);

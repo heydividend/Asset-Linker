@@ -10,4 +10,12 @@ import type { StudyPlanItem } from "./studyPlanItem";
 export interface StudyPlan {
   date: Date;
   items: StudyPlanItem[];
+  /** Number of mandatory items in today's plan. */
+  mandatoryCount: number;
+  /** Mandatory items completed so far today. */
+  completedMandatoryCount: number;
+  /** Total items (mandatory or not) completed today. */
+  completedCount: number;
+  /** True when every mandatory item is complete. */
+  dayComplete: boolean;
 }

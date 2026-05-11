@@ -15,3 +15,5 @@ export * from "./conversations";
 export * from "./messages";
 export * from "./examSchedule";
 export * from "./fixItCompletions";
+export * from "./gameSessions";
+export * from "./planCompletions";

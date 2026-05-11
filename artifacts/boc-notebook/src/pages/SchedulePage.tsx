@@ -19,7 +19,10 @@ interface DayItem {
   domainId?: number | null;
   topicId?: number | null;
   notebookId?: number | null;
+  gameId?: string | null;
   link?: string;
+  key?: string;
+  mandatory?: boolean;
 }
 
 function deriveLink(it: DayItem): string | null {
@@ -47,6 +50,8 @@ function deriveLink(it: DayItem): string | null {
       return "/games";
     case "resource":
       return "/notebooks";
+    case "game":
+      return it.gameId ? `/games/${it.gameId}` : "/games";
     default:
       return null;
   }

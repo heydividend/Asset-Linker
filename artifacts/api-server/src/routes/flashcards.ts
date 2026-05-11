@@ -3,6 +3,8 @@ import { and, asc, desc, eq, inArray, lte } from "drizzle-orm";
 import { db, flashcards, notes, topics, domains } from "@workspace/db";
 import { parseId } from "../lib/parseId";
 import { chatJson, truncate } from "../lib/openaiHelpers";
+import { getOrCreateSessionId } from "../lib/sessionId";
+import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
 
 const router: IRouter = Router();
 
@@ -179,6 +181,13 @@ router.post("/flashcards/:id/review", async (req, res): Promise<void> => {
     .set({ easeFactor, intervalDays, repetitions, dueAt, lastReviewedAt: new Date() })
     .where(eq(flashcards.id, id))
     .returning();
+
+  // Reviewing a flashcard satisfies today's daily flashcards plan item.
+  // Single review is enough to count toward the mandatory mix — the user
+  // has visibly engaged with spaced repetition.
+  const sessionId = getOrCreateSessionId(req, res);
+  await markPlanItemComplete(sessionId, todayStr(), "flashcards:due");
+
   res.json(updated);
 });
 

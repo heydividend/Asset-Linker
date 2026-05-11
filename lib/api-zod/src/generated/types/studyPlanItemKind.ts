@@ -16,4 +16,7 @@ export const StudyPlanItemKind = {
   audio: "audio",
   study_guide: "study_guide",
   resource: "resource",
+  game: "game",
+  mock_exam: "mock_exam",
+  rest: "rest",
 } as const;

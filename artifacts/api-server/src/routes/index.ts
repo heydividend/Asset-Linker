@@ -12,6 +12,8 @@ import openaiRouter from "./openai";
 import dashboardRouter from "./dashboard";
 import planRouter from "./plan";
 import fixItPlanRouter from "./fixItPlan";
+import gameSessionsRouter from "./gameSessions";
+import planCompletionsRouter from "./planCompletions";
 
 const router: IRouter = Router();
 
@@ -28,5 +30,7 @@ router.use(openaiRouter);
 router.use(dashboardRouter);
 router.use(planRouter);
 router.use(fixItPlanRouter);
+router.use(gameSessionsRouter);
+router.use(planCompletionsRouter);
 
 export default router;

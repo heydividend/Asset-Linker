@@ -3,6 +3,8 @@ import { and, desc, eq, type SQL } from "drizzle-orm";
 import { db, notebooks, studyGuides, notes } from "@workspace/db";
 import { parseId } from "../lib/parseId";
 import { chatText, truncate } from "../lib/openaiHelpers";
+import { getOrCreateSessionId } from "../lib/sessionId";
+import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
 
 const router: IRouter = Router();
 
@@ -122,6 +124,14 @@ router.get("/study-guides/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Not found" });
     return;
   }
+  // Opening a study guide counts as completing today's study_guide plan item
+  // (notebook-specific first, then the generic "any" fallback).
+  const sessionId = getOrCreateSessionId(req, res);
+  const date = todayStr();
+  if (g.notebookId) {
+    await markPlanItemComplete(sessionId, date, `study_guide:notebook:${g.notebookId}`);
+  }
+  await markPlanItemComplete(sessionId, date, "study_guide:any");
   res.json(g);
 });
 

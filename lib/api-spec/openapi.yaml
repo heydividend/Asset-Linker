@@ -916,6 +916,76 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/StudyPlan" }
+  /plan/today/completions:
+    get:
+      operationId: getStudyPlanCompletions
+      tags: [plan]
+      summary: Returns the set of plan-item keys completed today for this session
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PlanCompletions" }
+  /plan/today/complete:
+    post:
+      operationId: markPlanItemComplete
+      tags: [plan]
+      summary: Mark a today plan item complete by key (idempotent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PlanCompletionInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PlanCompletions" }
+  /games/sessions:
+    get:
+      operationId: listGameSessions
+      tags: [games]
+      summary: Recent matching-game sessions for this user
+      parameters:
+        - { name: gameId, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/GameSession" }
+    post:
+      operationId: createGameSession
+      tags: [games]
+      summary: Persist a completed matching-game round
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GameSessionInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GameSession" }
+  /games/summary:
+    get:
+      operationId: getGamesSummary
+      tags: [games]
+      summary: Per-game best/last-score summary for this user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/GameSummaryEntry" }
   /plan/fix-it/streak:
     get:
       operationId: getFixItStreak
@@ -1491,23 +1561,83 @@ components:
 
     StudyPlan:
       type: object
-      required: [date, items]
+      required:
+        [date, items, mandatoryCount, completedMandatoryCount, completedCount, dayComplete]
       properties:
         date: { type: string, format: date }
         items:
           type: array
           items: { $ref: "#/components/schemas/StudyPlanItem" }
+        mandatoryCount: { type: integer, description: "Number of mandatory items in today's plan." }
+        completedMandatoryCount: { type: integer, description: "Mandatory items completed so far today." }
+        completedCount: { type: integer, description: "Total items (mandatory or not) completed today." }
+        dayComplete: { type: boolean, description: "True when every mandatory item is complete." }
     StudyPlanItem:
       type: object
-      required: [kind, title, estMinutes]
+      required: [kind, title, estMinutes, key, mandatory, completed]
       properties:
-        kind: { type: string, enum: [quiz, flashcards, review, audio, study_guide, resource] }
+        kind:
+          type: string
+          enum:
+            [quiz, flashcards, review, audio, study_guide, resource, game, mock_exam, rest]
         title: { type: string }
         description: { type: ["string", "null"] }
         estMinutes: { type: integer }
         topicId: { type: ["integer", "null"] }
+        domainId: { type: ["integer", "null"] }
         notebookId: { type: ["integer", "null"] }
+        gameId: { type: ["string", "null"] }
         link: { type: ["string", "null"] }
+        key: { type: string, description: "Stable identifier for this item, used to record completion." }
+        mandatory: { type: boolean, description: "If true, this item must be completed for the day to count as complete." }
+        completed: { type: boolean, description: "True when this item has been marked complete today." }
+
+    PlanCompletions:
+      type: object
+      required: [date, completedKeys]
+      properties:
+        date: { type: string, format: date }
+        completedKeys:
+          type: array
+          items: { type: string }
+    PlanCompletionInput:
+      type: object
+      required: [itemKey]
+      properties:
+        itemKey: { type: string }
+
+    GameSessionInput:
+      type: object
+      required: [gameId, score, totalPairs]
+      properties:
+        gameId: { type: string }
+        score: { type: integer, minimum: 0 }
+        totalPairs: { type: integer, minimum: 0 }
+        misses: { type: integer, minimum: 0 }
+        bestStreak: { type: integer, minimum: 0 }
+        durationMs: { type: integer, minimum: 0 }
+    GameSession:
+      type: object
+      required: [id, sessionId, gameId, score, totalPairs, misses, bestStreak, durationMs, completedAt]
+      properties:
+        id: { type: integer }
+        sessionId: { type: string }
+        gameId: { type: string }
+        score: { type: integer }
+        totalPairs: { type: integer }
+        misses: { type: integer }
+        bestStreak: { type: integer }
+        durationMs: { type: integer }
+        completedAt: { type: string, format: date-time }
+    GameSummaryEntry:
+      type: object
+      required: [gameId, plays, bestScore, lastScore, lastPlayedAt]
+      properties:
+        gameId: { type: string }
+        plays: { type: integer }
+        bestScore: { type: integer }
+        lastScore: { type: integer }
+        lastPlayedAt: { type: string, format: date-time }
 
     FixItStreak:
       type: object

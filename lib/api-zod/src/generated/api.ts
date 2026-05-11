@@ -1137,15 +1137,45 @@ export const GetStudyPlanTodayResponse = zod.object({
         "audio",
         "study_guide",
         "resource",
+        "game",
+        "mock_exam",
+        "rest",
       ]),
       title: zod.string(),
       description: zod.string().nullish(),
       estMinutes: zod.number(),
       topicId: zod.number().nullish(),
+      domainId: zod.number().nullish(),
       notebookId: zod.number().nullish(),
+      gameId: zod.string().nullish(),
       link: zod.string().nullish(),
+      key: zod
+        .string()
+        .describe(
+          "Stable identifier for this item, used to record completion.",
+        ),
+      mandatory: zod
+        .boolean()
+        .describe(
+          "If true, this item must be completed for the day to count as complete.",
+        ),
+      completed: zod
+        .boolean()
+        .describe("True when this item has been marked complete today."),
     }),
   ),
+  mandatoryCount: zod
+    .number()
+    .describe("Number of mandatory items in today's plan."),
+  completedMandatoryCount: zod
+    .number()
+    .describe("Mandatory items completed so far today."),
+  completedCount: zod
+    .number()
+    .describe("Total items (mandatory or not) completed today."),
+  dayComplete: zod
+    .boolean()
+    .describe("True when every mandatory item is complete."),
 });
 
 export const RegenerateStudyPlanResponse = zod.object({
@@ -1159,16 +1189,120 @@ export const RegenerateStudyPlanResponse = zod.object({
         "audio",
         "study_guide",
         "resource",
+        "game",
+        "mock_exam",
+        "rest",
       ]),
       title: zod.string(),
       description: zod.string().nullish(),
       estMinutes: zod.number(),
       topicId: zod.number().nullish(),
+      domainId: zod.number().nullish(),
       notebookId: zod.number().nullish(),
+      gameId: zod.string().nullish(),
       link: zod.string().nullish(),
+      key: zod
+        .string()
+        .describe(
+          "Stable identifier for this item, used to record completion.",
+        ),
+      mandatory: zod
+        .boolean()
+        .describe(
+          "If true, this item must be completed for the day to count as complete.",
+        ),
+      completed: zod
+        .boolean()
+        .describe("True when this item has been marked complete today."),
     }),
   ),
+  mandatoryCount: zod
+    .number()
+    .describe("Number of mandatory items in today's plan."),
+  completedMandatoryCount: zod
+    .number()
+    .describe("Mandatory items completed so far today."),
+  completedCount: zod
+    .number()
+    .describe("Total items (mandatory or not) completed today."),
+  dayComplete: zod
+    .boolean()
+    .describe("True when every mandatory item is complete."),
 });
+
+/**
+ * @summary Returns the set of plan-item keys completed today for this session
+ */
+export const GetStudyPlanCompletionsResponse = zod.object({
+  date: zod.coerce.date(),
+  completedKeys: zod.array(zod.string()),
+});
+
+/**
+ * @summary Mark a today plan item complete by key (idempotent)
+ */
+export const MarkPlanItemCompleteBody = zod.object({
+  itemKey: zod.string(),
+});
+
+export const MarkPlanItemCompleteResponse = zod.object({
+  date: zod.coerce.date(),
+  completedKeys: zod.array(zod.string()),
+});
+
+/**
+ * @summary Recent matching-game sessions for this user
+ */
+export const ListGameSessionsQueryParams = zod.object({
+  gameId: zod.coerce.string().optional(),
+});
+
+export const ListGameSessionsResponseItem = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  gameId: zod.string(),
+  score: zod.number(),
+  totalPairs: zod.number(),
+  misses: zod.number(),
+  bestStreak: zod.number(),
+  durationMs: zod.number(),
+  completedAt: zod.coerce.date(),
+});
+export const ListGameSessionsResponse = zod.array(ListGameSessionsResponseItem);
+
+/**
+ * @summary Persist a completed matching-game round
+ */
+export const createGameSessionBodyScoreMin = 0;
+
+export const createGameSessionBodyTotalPairsMin = 0;
+
+export const createGameSessionBodyMissesMin = 0;
+
+export const createGameSessionBodyBestStreakMin = 0;
+
+export const createGameSessionBodyDurationMsMin = 0;
+
+export const CreateGameSessionBody = zod.object({
+  gameId: zod.string(),
+  score: zod.number().min(createGameSessionBodyScoreMin),
+  totalPairs: zod.number().min(createGameSessionBodyTotalPairsMin),
+  misses: zod.number().min(createGameSessionBodyMissesMin).optional(),
+  bestStreak: zod.number().min(createGameSessionBodyBestStreakMin).optional(),
+  durationMs: zod.number().min(createGameSessionBodyDurationMsMin).optional(),
+});
+
+/**
+ * @summary Per-game best/last-score summary for this user
+ */
+export const GetGamesSummaryResponseItem = zod.object({
+  gameId: zod.string(),
+  plays: zod.number(),
+  bestScore: zod.number(),
+  lastScore: zod.number(),
+  lastPlayedAt: zod.coerce.date(),
+});
+export const GetGamesSummaryResponse = zod.array(GetGamesSummaryResponseItem);
 
 /**
  * @summary Returns the user's fix-it plan completion dates and current streak

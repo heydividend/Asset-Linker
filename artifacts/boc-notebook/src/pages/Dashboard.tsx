@@ -5,8 +5,10 @@ import {
   useGetStudyPlanToday,
   useGetDashboardTopicMastery,
   useStartQuiz,
+  useMarkPlanItemComplete,
   getListQuizAttemptsQueryKey,
   getGetDashboardTopicMasteryQueryKey,
+  getGetStudyPlanTodayQueryKey,
   useListTopics,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -35,6 +37,10 @@ import {
   Sparkles,
   GraduationCap,
   Play,
+  Check,
+  CheckCircle2,
+  Circle,
+  Star,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -91,6 +97,7 @@ export default function Dashboard() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const startQuiz = useStartQuiz();
+  const markComplete = useMarkPlanItemComplete();
 
   const [openTopicId, setOpenTopicId] = useState<number | null>(null);
   const QUIZ_COUNT_OPTIONS = [5, 10, 20] as const;
@@ -486,8 +493,36 @@ export default function Dashboard() {
           <div className="xl:col-span-2 space-y-4 min-w-0">
             <FixItPlanCard />
             <Card>
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-base">Today's Study Plan</CardTitle>
+              <CardHeader className="p-4 pb-2 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <CardTitle className="text-base">Today's Study Plan</CardTitle>
+                  {plan && plan.mandatoryCount > 0 && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span
+                        className={
+                          plan.dayComplete
+                            ? "text-emerald-600 font-semibold inline-flex items-center gap-1"
+                            : "text-muted-foreground tabular-nums"
+                        }
+                        data-testid="plan-progress-summary"
+                      >
+                        {plan.dayComplete && <CheckCircle2 className="h-3.5 w-3.5" />}
+                        {plan.completedMandatoryCount} of {plan.mandatoryCount} completed
+                      </span>
+                      {plan.dayComplete && (
+                        <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 gap-1" data-testid="plan-day-complete-badge">
+                          <Star className="h-3 w-3" /> Day complete
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {plan && plan.mandatoryCount > 0 && (
+                  <Progress
+                    value={Math.round((plan.completedMandatoryCount / plan.mandatoryCount) * 100)}
+                    className="h-1.5"
+                  />
+                )}
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 {loadingPlan ? (
@@ -499,11 +534,58 @@ export default function Dashboard() {
                 ) : plan?.items?.length ? (
                   <div className="space-y-3">
                     {plan.items.map((item, i) => (
-                      <div key={i} className="flex items-start gap-3 p-3 border rounded-lg hover-elevate transition-all min-w-0">
+                      <div
+                        key={item.key ?? i}
+                        data-testid={`plan-item-${item.key ?? i}`}
+                        className={`flex items-start gap-3 p-3 border rounded-lg transition-all min-w-0 ${
+                          item.completed
+                            ? "bg-emerald-500/5 border-emerald-500/30"
+                            : item.mandatory
+                            ? "border-primary/30"
+                            : "hover-elevate"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!item.completed) {
+                              markComplete.mutate(
+                                { data: { itemKey: item.key } },
+                                {
+                                  onSuccess: () =>
+                                    qc.invalidateQueries({ queryKey: getGetStudyPlanTodayQueryKey() }),
+                                },
+                              );
+                            }
+                          }}
+                          disabled={item.completed || markComplete.isPending}
+                          aria-label={item.completed ? "Completed" : "Mark complete"}
+                          data-testid={`plan-item-toggle-${item.key ?? i}`}
+                          className={`mt-0.5 shrink-0 rounded-full transition-colors ${
+                            item.completed ? "text-emerald-600" : "text-muted-foreground hover:text-primary"
+                          }`}
+                        >
+                          {item.completed ? (
+                            <CheckCircle2 className="h-5 w-5" />
+                          ) : (
+                            <Circle className="h-5 w-5" />
+                          )}
+                        </button>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="outline" className="uppercase text-[10px] tracking-wider px-1.5 py-0">{item.kind.replace('_', ' ')}</Badge>
-                            <h4 className="font-medium text-sm text-foreground">{item.title}</h4>
+                            {item.mandatory && (
+                              <Badge className="bg-primary/10 text-primary border-primary/30 text-[10px] tracking-wider px-1.5 py-0 uppercase" data-testid={`plan-item-mandatory-${item.key}`}>
+                                Required
+                              </Badge>
+                            )}
+                            <h4
+                              className={`font-medium text-sm ${
+                                item.completed ? "text-muted-foreground line-through" : "text-foreground"
+                              }`}
+                            >
+                              {item.title}
+                            </h4>
                           </div>
                           {item.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>}
                           <div className="mt-1.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
@@ -512,7 +594,9 @@ export default function Dashboard() {
                         </div>
                         {item.link && (
                           <Link href={item.link}>
-                            <Button size="sm" variant="secondary" className="h-7 px-2.5 text-xs shrink-0">Start</Button>
+                            <Button size="sm" variant={item.completed ? "ghost" : "secondary"} className="h-7 px-2.5 text-xs shrink-0">
+                              {item.completed ? <><Check className="h-3 w-3 mr-1" />Done</> : "Start"}
+                            </Button>
                           </Link>
                         )}
                       </div>

@@ -9,7 +9,14 @@ import {
   domains,
   examSchedule,
 } from "@workspace/db";
-import { buildSchedule, todayStr } from "../lib/scheduleBuilder";
+import {
+  buildSchedule,
+  todayStr,
+  type PlanItem,
+} from "../lib/scheduleBuilder";
+import { isMandatoryKind, planItemKey } from "../lib/planItemKey";
+import { getOrCreateSessionId } from "../lib/sessionId";
+import { listCompletedKeys } from "../lib/planCompletions";
 
 const router: IRouter = Router();
 
@@ -26,10 +33,27 @@ async function getOrCreateSchedule() {
   return created;
 }
 
+// Adds key + mandatory to every plan item, deduping repeats by key so a day
+// only ever has one canonical representative for a given activity.
+function decorateItems(items: PlanItem[]) {
+  const seen = new Set<string>();
+  const out: (PlanItem & { key: string; mandatory: boolean })[] = [];
+  for (const it of items) {
+    const key = planItemKey(it);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ ...it, key, mandatory: isMandatoryKind(it.kind) });
+  }
+  return out;
+}
+
 router.get("/plan/schedule", async (_req, res): Promise<void> => {
   const sched = await getOrCreateSchedule();
   const dRows = await db.select().from(domains).orderBy(domains.id);
-  const days = buildSchedule(sched.startDate, sched.examDate, dRows);
+  const days = buildSchedule(sched.startDate, sched.examDate, dRows).map((d) => ({
+    ...d,
+    items: decorateItems(d.items),
+  }));
   const today = todayStr();
   const todayIdx = days.findIndex((d) => d.date === today);
   res.json({
@@ -72,8 +96,8 @@ router.put("/plan/schedule", async (req, res): Promise<void> => {
   res.json(row);
 });
 
-async function buildTodayItems() {
-  const items: any[] = [];
+async function buildTodayItems(sessionId: string) {
+  const items: PlanItem[] = [];
   const sched = await getOrCreateSchedule();
   const dRows = await db.select().from(domains).orderBy(domains.id);
   const days = buildSchedule(sched.startDate, sched.examDate, dRows);
@@ -125,21 +149,36 @@ async function buildTodayItems() {
     });
   }
 
+  const decorated = decorateItems(items).slice(0, 8);
+  const completedKeys = new Set(await listCompletedKeys(sessionId, today));
+  const itemsOut = decorated.map((it) => ({
+    ...it,
+    completed: completedKeys.has(it.key),
+  }));
+  const mandatory = itemsOut.filter((it) => it.mandatory);
+  const completedCount = itemsOut.filter((it) => it.completed).length;
+  const completedMandatory = mandatory.filter((it) => it.completed).length;
   return {
     date: today,
     daysToExam: todayDay?.daysToExam,
     phase: todayDay?.phase,
     title: todayDay?.title,
-    items: items.slice(0, 8),
+    items: itemsOut,
+    mandatoryCount: mandatory.length,
+    completedMandatoryCount: completedMandatory,
+    completedCount,
+    dayComplete: mandatory.length > 0 && completedMandatory === mandatory.length,
   };
 }
 
-router.get("/plan/today", async (_req, res): Promise<void> => {
-  res.json(await buildTodayItems());
+router.get("/plan/today", async (req, res): Promise<void> => {
+  const sessionId = getOrCreateSessionId(req, res);
+  res.json(await buildTodayItems(sessionId));
 });
 
-router.post("/plan/regenerate", async (_req, res): Promise<void> => {
-  res.json(await buildTodayItems());
+router.post("/plan/regenerate", async (req, res): Promise<void> => {
+  const sessionId = getOrCreateSessionId(req, res);
+  res.json(await buildTodayItems(sessionId));
 });
 
 export default router;

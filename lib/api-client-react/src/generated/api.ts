@@ -27,11 +27,15 @@ import type {
   FlashcardInput,
   FlashcardReviewInput,
   FlashcardUpdate,
+  GameSession,
+  GameSessionInput,
+  GameSummaryEntry,
   GetDashboardTopicHistoryParams,
   GetDashboardTopicMasteryParams,
   HealthStatus,
   ListAllStudyGuidesParams,
   ListDueFlashcardsParams,
+  ListGameSessionsParams,
   ListQuizAttemptsParams,
   ListResourcesParams,
   ListTopicsParams,
@@ -54,6 +58,8 @@ import type {
   OpenaiConversationWithMessages,
   OpenaiMessage,
   OpenaiMessageInput,
+  PlanCompletionInput,
+  PlanCompletions,
   Quiz,
   QuizAnswerInput,
   QuizAnswerResult,
@@ -5337,6 +5343,426 @@ export const useRegenerateStudyPlan = <
 > => {
   return useMutation(getRegenerateStudyPlanMutationOptions(options));
 };
+
+/**
+ * @summary Returns the set of plan-item keys completed today for this session
+ */
+export const getGetStudyPlanCompletionsUrl = () => {
+  return `/api/plan/today/completions`;
+};
+
+export const getStudyPlanCompletions = async (
+  options?: RequestInit,
+): Promise<PlanCompletions> => {
+  return customFetch<PlanCompletions>(getGetStudyPlanCompletionsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStudyPlanCompletionsQueryKey = () => {
+  return [`/api/plan/today/completions`] as const;
+};
+
+export const getGetStudyPlanCompletionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStudyPlanCompletions>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudyPlanCompletions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStudyPlanCompletionsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStudyPlanCompletions>>
+  > = ({ signal }) => getStudyPlanCompletions({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStudyPlanCompletions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStudyPlanCompletionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStudyPlanCompletions>>
+>;
+export type GetStudyPlanCompletionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Returns the set of plan-item keys completed today for this session
+ */
+
+export function useGetStudyPlanCompletions<
+  TData = Awaited<ReturnType<typeof getStudyPlanCompletions>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudyPlanCompletions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStudyPlanCompletionsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Mark a today plan item complete by key (idempotent)
+ */
+export const getMarkPlanItemCompleteUrl = () => {
+  return `/api/plan/today/complete`;
+};
+
+export const markPlanItemComplete = async (
+  planCompletionInput: PlanCompletionInput,
+  options?: RequestInit,
+): Promise<PlanCompletions> => {
+  return customFetch<PlanCompletions>(getMarkPlanItemCompleteUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(planCompletionInput),
+  });
+};
+
+export const getMarkPlanItemCompleteMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markPlanItemComplete>>,
+    TError,
+    { data: BodyType<PlanCompletionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markPlanItemComplete>>,
+  TError,
+  { data: BodyType<PlanCompletionInput> },
+  TContext
+> => {
+  const mutationKey = ["markPlanItemComplete"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markPlanItemComplete>>,
+    { data: BodyType<PlanCompletionInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return markPlanItemComplete(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MarkPlanItemCompleteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markPlanItemComplete>>
+>;
+export type MarkPlanItemCompleteMutationBody = BodyType<PlanCompletionInput>;
+export type MarkPlanItemCompleteMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark a today plan item complete by key (idempotent)
+ */
+export const useMarkPlanItemComplete = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markPlanItemComplete>>,
+    TError,
+    { data: BodyType<PlanCompletionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof markPlanItemComplete>>,
+  TError,
+  { data: BodyType<PlanCompletionInput> },
+  TContext
+> => {
+  return useMutation(getMarkPlanItemCompleteMutationOptions(options));
+};
+
+/**
+ * @summary Recent matching-game sessions for this user
+ */
+export const getListGameSessionsUrl = (params?: ListGameSessionsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/games/sessions?${stringifiedParams}`
+    : `/api/games/sessions`;
+};
+
+export const listGameSessions = async (
+  params?: ListGameSessionsParams,
+  options?: RequestInit,
+): Promise<GameSession[]> => {
+  return customFetch<GameSession[]>(getListGameSessionsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListGameSessionsQueryKey = (
+  params?: ListGameSessionsParams,
+) => {
+  return [`/api/games/sessions`, ...(params ? [params] : [])] as const;
+};
+
+export const getListGameSessionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listGameSessions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListGameSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listGameSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListGameSessionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listGameSessions>>
+  > = ({ signal }) => listGameSessions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listGameSessions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListGameSessionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listGameSessions>>
+>;
+export type ListGameSessionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Recent matching-game sessions for this user
+ */
+
+export function useListGameSessions<
+  TData = Awaited<ReturnType<typeof listGameSessions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListGameSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listGameSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListGameSessionsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Persist a completed matching-game round
+ */
+export const getCreateGameSessionUrl = () => {
+  return `/api/games/sessions`;
+};
+
+export const createGameSession = async (
+  gameSessionInput: GameSessionInput,
+  options?: RequestInit,
+): Promise<GameSession> => {
+  return customFetch<GameSession>(getCreateGameSessionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(gameSessionInput),
+  });
+};
+
+export const getCreateGameSessionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createGameSession>>,
+    TError,
+    { data: BodyType<GameSessionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createGameSession>>,
+  TError,
+  { data: BodyType<GameSessionInput> },
+  TContext
+> => {
+  const mutationKey = ["createGameSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createGameSession>>,
+    { data: BodyType<GameSessionInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createGameSession(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateGameSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createGameSession>>
+>;
+export type CreateGameSessionMutationBody = BodyType<GameSessionInput>;
+export type CreateGameSessionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Persist a completed matching-game round
+ */
+export const useCreateGameSession = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createGameSession>>,
+    TError,
+    { data: BodyType<GameSessionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createGameSession>>,
+  TError,
+  { data: BodyType<GameSessionInput> },
+  TContext
+> => {
+  return useMutation(getCreateGameSessionMutationOptions(options));
+};
+
+/**
+ * @summary Per-game best/last-score summary for this user
+ */
+export const getGetGamesSummaryUrl = () => {
+  return `/api/games/summary`;
+};
+
+export const getGamesSummary = async (
+  options?: RequestInit,
+): Promise<GameSummaryEntry[]> => {
+  return customFetch<GameSummaryEntry[]>(getGetGamesSummaryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetGamesSummaryQueryKey = () => {
+  return [`/api/games/summary`] as const;
+};
+
+export const getGetGamesSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGamesSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getGamesSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGamesSummaryQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGamesSummary>>> = ({
+    signal,
+  }) => getGamesSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGamesSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetGamesSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGamesSummary>>
+>;
+export type GetGamesSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Per-game best/last-score summary for this user
+ */
+
+export function useGetGamesSummary<
+  TData = Awaited<ReturnType<typeof getGamesSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getGamesSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetGamesSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Returns the user's fix-it plan completion dates and current streak

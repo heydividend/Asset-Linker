@@ -673,6 +673,9 @@ export const StudyPlanItemKind = {
   audio: "audio",
   study_guide: "study_guide",
   resource: "resource",
+  game: "game",
+  mock_exam: "mock_exam",
+  rest: "rest",
 } as const;
 
 export interface StudyPlanItem {
@@ -684,14 +687,75 @@ export interface StudyPlanItem {
   /** @nullable */
   topicId?: number | null;
   /** @nullable */
+  domainId?: number | null;
+  /** @nullable */
   notebookId?: number | null;
   /** @nullable */
+  gameId?: string | null;
+  /** @nullable */
   link?: string | null;
+  /** Stable identifier for this item, used to record completion. */
+  key: string;
+  /** If true, this item must be completed for the day to count as complete. */
+  mandatory: boolean;
+  /** True when this item has been marked complete today. */
+  completed: boolean;
 }
 
 export interface StudyPlan {
   date: string;
   items: StudyPlanItem[];
+  /** Number of mandatory items in today's plan. */
+  mandatoryCount: number;
+  /** Mandatory items completed so far today. */
+  completedMandatoryCount: number;
+  /** Total items (mandatory or not) completed today. */
+  completedCount: number;
+  /** True when every mandatory item is complete. */
+  dayComplete: boolean;
+}
+
+export interface PlanCompletions {
+  date: string;
+  completedKeys: string[];
+}
+
+export interface PlanCompletionInput {
+  itemKey: string;
+}
+
+export interface GameSessionInput {
+  gameId: string;
+  /** @minimum 0 */
+  score: number;
+  /** @minimum 0 */
+  totalPairs: number;
+  /** @minimum 0 */
+  misses?: number;
+  /** @minimum 0 */
+  bestStreak?: number;
+  /** @minimum 0 */
+  durationMs?: number;
+}
+
+export interface GameSession {
+  id: number;
+  sessionId: string;
+  gameId: string;
+  score: number;
+  totalPairs: number;
+  misses: number;
+  bestStreak: number;
+  durationMs: number;
+  completedAt: string;
+}
+
+export interface GameSummaryEntry {
+  gameId: string;
+  plays: number;
+  bestScore: number;
+  lastScore: number;
+  lastPlayedAt: string;
 }
 
 export interface FixItStreak {
@@ -756,4 +820,8 @@ export type GetDashboardTopicHistoryParams = {
    * Comma-separated topic IDs to filter (omit for all).
    */
   topicIds?: string;
+};
+
+export type ListGameSessionsParams = {
+  gameId?: string;
 };
