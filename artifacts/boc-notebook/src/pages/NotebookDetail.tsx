@@ -30,7 +30,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AskAiButton } from "@/components/AskAiButton";
 import { ListenAsPodcastButton, PodcastList } from "@/components/PodcastPlayer";
 import { useToast } from "@/hooks/use-toast";
-import { Bot, FileText, Headphones, Plus, Trash2, BookOpen, Sparkles, Brain, Loader2 } from "lucide-react";
+import { Bot, FileText, Headphones, Plus, Trash2, BookOpen, Sparkles, Brain, Loader2, ChevronLeft, PanelLeftOpen } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 export default function NotebookDetail() {
@@ -72,6 +72,14 @@ export default function NotebookDetail() {
   const [guideForm, setGuideForm] = useState({ format: "outline" as "outline" | "summary" | "qa" | "mindmap", focus: "" });
   const [audioOpen, setAudioOpen] = useState(false);
   const [audioForm, setAudioForm] = useState({ voice: "nova" as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer", style: "lecture" as "lecture" | "podcast" | "quickrecap", focus: "" });
+  const [sourcesCollapsed, setSourcesCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("boc:notebook-sources-collapsed") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("boc:notebook-sources-collapsed", sourcesCollapsed ? "1" : "0");
+  }, [sourcesCollapsed]);
 
   if (isLoading) return <div className="p-6">Loading notebook…</div>;
   if (!notebook) return <div className="p-6">Notebook not found.</div>;
@@ -169,12 +177,14 @@ export default function NotebookDetail() {
   return (
     <div className="flex h-full">
       {/* LEFT: Sources */}
-      <aside className="w-72 border-r bg-sidebar flex flex-col" data-tour="notebook-sources">
-        <div className="h-14 border-b flex items-center justify-between px-4">
-          <span className="font-semibold text-sm flex items-center gap-2"><BookOpen className="h-4 w-4" /> Sources</span>
+      {!sourcesCollapsed && (
+      <aside className="w-80 border-r bg-sidebar flex flex-col" data-tour="notebook-sources">
+        <div className="h-14 border-b flex items-center justify-between px-3 gap-1">
+          <span className="font-semibold text-sm flex items-center gap-2 min-w-0"><BookOpen className="h-4 w-4 shrink-0" /> <span className="truncate">Sources</span></span>
+          <div className="flex items-center gap-1 shrink-0">
           <Dialog open={noteOpen} onOpenChange={setNoteOpen}>
             <DialogTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-7 w-7" data-testid="button-add-note">
+              <Button size="icon" variant="ghost" className="h-7 w-7" data-testid="button-add-note" title="Add a source">
                 <Plus className="h-4 w-4" />
               </Button>
             </DialogTrigger>
@@ -200,6 +210,17 @@ export default function NotebookDetail() {
               </div>
             </DialogContent>
           </Dialog>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7"
+            onClick={() => setSourcesCollapsed(true)}
+            data-testid="button-collapse-sources"
+            title="Hide sources"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          </div>
         </div>
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
@@ -210,15 +231,16 @@ export default function NotebookDetail() {
               <div key={n.id} className={`group flex items-center gap-1 rounded-md ${selectedNote?.id === n.id ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"}`}>
                 <button
                   onClick={() => setSelectedNoteId(n.id)}
-                  className="flex-1 text-left px-2 py-2 text-sm truncate"
+                  className="flex-1 text-left px-2 py-2 text-sm break-words leading-snug"
                   data-testid={`note-item-${n.id}`}
+                  title={n.title}
                 >
-                  <FileText className="h-3 w-3 inline mr-1" />{n.title}
+                  <FileText className="h-3 w-3 inline mr-1 shrink-0" />{n.title}
                 </button>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-7 w-7 opacity-0 group-hover:opacity-100"
+                  className="h-7 w-7 opacity-0 group-hover:opacity-100 shrink-0"
                   onClick={() => deleteNote.mutate({ id: n.id }, { onSuccess: invalidate })}
                   data-testid={`button-delete-note-${n.id}`}
                 >
@@ -229,15 +251,30 @@ export default function NotebookDetail() {
           </div>
         </ScrollArea>
       </aside>
+      )}
 
       {/* CENTER: Workspace */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 border-b flex items-center justify-between px-6">
-          <div>
-            <h1 className="font-semibold" data-testid="text-notebook-title">{notebook.title}</h1>
-            {notebook.description && <p className="text-xs text-muted-foreground">{notebook.description}</p>}
+      <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <header className="h-14 border-b flex items-center justify-between gap-2 px-4">
+          <div className="flex items-center gap-2 min-w-0">
+            {sourcesCollapsed && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 shrink-0"
+                onClick={() => setSourcesCollapsed(false)}
+                data-testid="button-show-sources"
+                title="Show sources"
+              >
+                <PanelLeftOpen className="h-4 w-4 mr-1.5" /> Sources
+              </Button>
+            )}
+            <div className="min-w-0">
+              <h1 className="font-semibold truncate" data-testid="text-notebook-title">{notebook.title}</h1>
+              {notebook.description && <p className="text-xs text-muted-foreground truncate">{notebook.description}</p>}
+            </div>
           </div>
-          <Button variant="outline" size="sm" onClick={onStartQuiz} disabled={startQuiz.isPending} data-testid="button-quiz-from-notebook">
+          <Button variant="outline" size="sm" onClick={onStartQuiz} disabled={startQuiz.isPending} data-testid="button-quiz-from-notebook" className="shrink-0">
             <Brain className="h-4 w-4 mr-1" /> Quiz from this notebook
           </Button>
         </header>
