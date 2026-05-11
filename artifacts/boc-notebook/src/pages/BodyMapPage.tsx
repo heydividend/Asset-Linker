@@ -637,6 +637,7 @@ export default function BodyMapPage() {
                   <AskAiButton
                     context={`I'm reviewing ${selected.name} for the BOC exam. Quiz me on 5 high-yield clinical scenarios for this region — include red flags, special tests, and return-to-play criteria.`}
                     label="Ask AI to quiz me"
+                    onAsked={() => setSelected(null)}
                   />
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -809,6 +810,7 @@ export default function BodyMapPage() {
                           size="sm"
                           variant="outline"
                           label="Ask AI"
+                          onAsked={() => setSelected(null)}
                         />
                       </div>
 
@@ -836,6 +838,7 @@ export default function BodyMapPage() {
                                 size="icon"
                                 variant="ghost"
                                 className="h-5 w-5 opacity-0 group-hover:opacity-100 shrink-0"
+                                onAsked={() => setSelected(null)}
                               />
                             </li>
                           ))}
@@ -855,6 +858,7 @@ export default function BodyMapPage() {
                                 size="icon"
                                 variant="ghost"
                                 className="h-5 w-5 opacity-0 group-hover:opacity-100 shrink-0"
+                                onAsked={() => setSelected(null)}
                               />
                             </li>
                           ))}
@@ -886,6 +890,7 @@ export default function BodyMapPage() {
                               size="icon"
                               variant="ghost"
                               className="h-5 w-5 opacity-0 group-hover:opacity-100 shrink-0"
+                              onAsked={() => setSelected(null)}
                             />
                           </li>
                         ))}
