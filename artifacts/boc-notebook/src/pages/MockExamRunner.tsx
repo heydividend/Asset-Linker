@@ -38,7 +38,33 @@ export default function MockExamRunner() {
   const params = useParams();
   const id = Number(params.id);
   const qc = useQueryClient();
-  const { data: exam, isLoading } = useGetMockExam(id, { query: { enabled: !!id, queryKey: getGetMockExamQueryKey(id) } });
+  const [, navigate] = useLocation();
+  const [tourActive, setTourActive] = useState<boolean>(() =>
+    typeof window !== "undefined" &&
+    !!(window as unknown as { __bocTourMockRunPreview?: boolean }).__bocTourMockRunPreview,
+  );
+
+  useEffect(() => {
+    const onPreview = () => setTourActive(true);
+    const onEnd = () => {
+      setTourActive(false);
+      // Leave the sentinel /mock-exam/0 route once the tour ends.
+      if (window.location.pathname.endsWith("/mock-exam/0")) {
+        navigate("/mock-exam");
+      }
+    };
+    window.addEventListener("boc:tour:mockrun:preview", onPreview);
+    window.addEventListener("boc:tour:mockrun:end", onEnd);
+    return () => {
+      window.removeEventListener("boc:tour:mockrun:preview", onPreview);
+      window.removeEventListener("boc:tour:mockrun:end", onEnd);
+    };
+  }, [navigate]);
+
+  const realExamId = Number.isInteger(id) && id > 0;
+  const { data: exam, isLoading } = useGetMockExam(id, {
+    query: { enabled: realExamId && !tourActive, queryKey: getGetMockExamQueryKey(id) },
+  });
   const answer = useAnswerMockExamQuestion();
   const heartbeat = useHeartbeatMockExam();
   const submit = useSubmitMockExam();
@@ -51,7 +77,6 @@ export default function MockExamRunner() {
   const [now, setNow] = useState(Date.now());
   const submittedRef = useRef(false);
   const exitingRef = useRef(false);
-  const [, navigate] = useLocation();
 
   // Initialize localIdx once from the server's currentIndex (resume support).
   // After that, navigation is driven entirely by local state so refetches
@@ -132,6 +157,8 @@ export default function MockExamRunner() {
     queryFn: () => fetch(`/api/mock-exams/${id}/result`).then((r) => r.json()),
     enabled: !!exam?.submitted,
   });
+
+  if (tourActive) return <TourSampleMockView />;
 
   if (isLoading || !exam) return <div className="p-6">Loading exam…</div>;
 
@@ -377,4 +404,84 @@ export default function MockExamRunner() {
 
 function Stethoscope() {
   return <span className="inline-block w-5 h-5 rounded-full bg-primary" />;
+}
+
+/**
+ * Tour-only sample mock-exam screen. Mounted when the mock-run tour is
+ * launched outside of an actual exam attempt (sentinel route /mock-exam/0
+ * with the __bocTourMockRunPreview window flag set). Mirrors the real
+ * runner's data-testids so every tour step lands on a real DOM element.
+ * No exam data is fetched, no answers are recorded, and nothing here
+ * persists.
+ */
+function TourSampleMockView() {
+  const [, navigate] = useLocation();
+  const sample = {
+    stem:
+      "A 22-year-old collegiate basketball player lands awkwardly from a rebound and reports immediate medial knee pain. He can bear weight but has tenderness along the medial joint line and a positive valgus stress test at 30° of flexion with a soft endpoint. Which structure is MOST likely injured?",
+    choices: [
+      "Anterior cruciate ligament",
+      "Medial collateral ligament",
+      "Medial meniscus",
+      "Posterior cruciate ligament",
+    ],
+  };
+  const onExitSample = () => navigate("/mock-exam");
+  return (
+    <div className="fixed inset-0 z-[60] bg-background flex flex-col">
+      <header className="h-14 border-b flex items-center justify-between px-6">
+        <div className="flex items-center gap-3">
+          <Stethoscope />
+          <span className="font-semibold">BOC Mock Exam</span>
+          <Badge variant="outline">Q 1 of 175</Badge>
+          <Badge variant="outline" className="text-[11px]">Sample · tour preview</Badge>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-2xl font-mono tabular-nums" data-testid="text-timer">
+            3:59:42
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onExitSample}
+            data-testid="button-exit-exam"
+            title="Save progress and exit — you can resume later"
+          >
+            <LogOut className="h-4 w-4 mr-1" /> Exit
+          </Button>
+          <Button variant="destructive" size="sm" onClick={onExitSample} data-testid="button-submit-exam">
+            Submit
+          </Button>
+        </div>
+      </header>
+      <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg leading-relaxed" data-testid="text-mock-stem">
+              {sample.stem}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {sample.choices.map((c, ci) => (
+              <button
+                key={ci}
+                type="button"
+                disabled
+                className="w-full text-left p-3 rounded-lg border border-border opacity-80"
+                data-testid={`mock-choice-${ci}`}
+              >
+                <span className="font-medium mr-2">{String.fromCharCode(65 + ci)}.</span>
+                {c}
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+        <div className="flex justify-end">
+          <Button onClick={onExitSample} data-testid="button-mock-next">
+            Next <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }

@@ -366,6 +366,16 @@ function quizRunSteps(): BocStep[] {
   ];
 }
 
+function activateMockRunPreview(): void {
+  (window as unknown as { __bocTourMockRunPreview?: boolean }).__bocTourMockRunPreview = true;
+  window.dispatchEvent(new Event("boc:tour:mockrun:preview"));
+}
+
+function mockRunCleanup(): void {
+  (window as unknown as { __bocTourMockRunPreview?: boolean }).__bocTourMockRunPreview = false;
+  window.dispatchEvent(new Event("boc:tour:mockrun:end"));
+}
+
 function mockExamSteps(): BocStep[] {
   return [
     {
@@ -600,16 +610,19 @@ export const PAGES: Record<PageKey, PageDef> = {
     key: "mockRun",
     label: "Mock exam in progress",
     match: (loc) => /^\/mock-exam\/\d+/.test(loc),
-    defaultPath: "/mock-exam",
+    defaultPath: "/mock-exam/0",
+    readyDelayMs: 500,
     prepare: async () => {
-      if (/^\/mock-exam\/\d+/.test(window.location.pathname)) return {};
-      return {
-        skip: true,
-        reason:
-          "You're not inside an active mock exam right now. Start one from the Mock Exam page — once it begins, this tour explains the timer, navigation rules, and submitting.",
-      };
+      const path = window.location.pathname;
+      // Real, in-progress mock exam: don't seed a sample.
+      if (/^\/mock-exam\/[1-9]\d*/.test(path)) return {};
+      // Otherwise navigate to the sentinel /mock-exam/0 route and let
+      // MockExamRunner render a tour-only sample question.
+      activateMockRunPreview();
+      return { navigateTo: "/mock-exam/0" };
     },
     steps: mockRunSteps,
+    cleanup: mockRunCleanup,
   },
   bodyMap: {
     key: "bodyMap",
