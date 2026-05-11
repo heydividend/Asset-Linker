@@ -519,6 +519,10 @@ export const GetQuizResponse = zod.object({
   score: zod.number().nullish(),
 });
 
+export const DeleteQuizParams = zod.object({
+  id: zod.coerce.number(),
+});
+
 export const AnswerQuizQuestionParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -616,6 +620,10 @@ export const GetMockExamResponse = zod.object({
       selectedIndex: zod.number().nullish(),
     }),
   ),
+});
+
+export const DeleteMockExamParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 export const AnswerMockExamQuestionParams = zod.object({

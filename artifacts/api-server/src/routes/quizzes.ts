@@ -134,6 +134,16 @@ router.get("/quizzes/:id", async (req, res): Promise<void> => {
   });
 });
 
+router.delete("/quizzes/:id", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  await db.delete(quizzes).where(eq(quizzes.id, id));
+  res.sendStatus(204);
+});
+
 router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {

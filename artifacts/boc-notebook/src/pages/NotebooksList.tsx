@@ -1,9 +1,9 @@
-import { useListNotebooks, useCreateNotebook } from "@workspace/api-client-react";
+import { useListNotebooks, useCreateNotebook, useDeleteNotebook } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Book, Plus, BookOpen, Brain, FileUp, Loader2 } from "lucide-react";
+import { Book, Plus, BookOpen, Brain, FileUp, Loader2, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,6 +28,7 @@ const NEW_NOTEBOOK_VALUE = "__new__";
 export default function NotebooksList() {
   const { data: notebooks = [], isLoading } = useListNotebooks();
   const createNotebook = useCreateNotebook();
+  const deleteNotebook = useDeleteNotebook();
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -44,6 +45,22 @@ export default function NotebooksList() {
     resolver: zodResolver(formSchema),
     defaultValues: { title: "", description: "" },
   });
+
+  const onDeleteNotebook = (e: React.MouseEvent, id: number, title: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`Delete "${title}"? This will remove all its notes, flashcards, and study guides. This cannot be undone.`)) return;
+    deleteNotebook.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListNotebooksQueryKey() });
+          toast({ title: "Notebook deleted" });
+        },
+        onError: (err) => toast({ title: "Delete failed", description: String(err), variant: "destructive" }),
+      },
+    );
+  };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     createNotebook.mutate({ data: values }, {
@@ -246,21 +263,34 @@ export default function NotebooksList() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {notebooks.map((nb) => (
-            <Link key={nb.id} href={`/notebooks/${nb.id}`}>
-              <Card className="hover-elevate cursor-pointer h-full overflow-hidden">
-                <CardHeader className="min-w-0 p-4 pb-2">
-                  <CardTitle className="flex items-center gap-2 min-w-0 text-sm">
-                    <Book className="w-4 h-4 text-primary shrink-0" />
-                    <span className="truncate" title={nb.title}>{nb.title}</span>
-                  </CardTitle>
-                  {nb.description && <CardDescription className="line-clamp-2 break-words text-xs">{nb.description}</CardDescription>}
-                </CardHeader>
-                <CardContent className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted-foreground mt-auto p-4 pt-0">
-                  <div className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5 shrink-0"/> {nb.noteCount} Notes</div>
-                  <div className="flex items-center gap-1"><Brain className="w-3.5 h-3.5 shrink-0"/> {nb.flashcardCount} Cards</div>
-                </CardContent>
-              </Card>
-            </Link>
+            <div key={nb.id} className="relative group">
+              <Link href={`/notebooks/${nb.id}`}>
+                <Card className="hover-elevate cursor-pointer h-full overflow-hidden">
+                  <CardHeader className="min-w-0 p-4 pb-2 pr-10">
+                    <CardTitle className="flex items-center gap-2 min-w-0 text-sm">
+                      <Book className="w-4 h-4 text-primary shrink-0" />
+                      <span className="truncate" title={nb.title}>{nb.title}</span>
+                    </CardTitle>
+                    {nb.description && <CardDescription className="line-clamp-2 break-words text-xs">{nb.description}</CardDescription>}
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted-foreground mt-auto p-4 pt-0">
+                    <div className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5 shrink-0"/> {nb.noteCount} Notes</div>
+                    <div className="flex items-center gap-1"><Brain className="w-3.5 h-3.5 shrink-0"/> {nb.flashcardCount} Cards</div>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity bg-background/80 backdrop-blur"
+                onClick={(e) => onDeleteNotebook(e, nb.id, nb.title)}
+                disabled={deleteNotebook.isPending}
+                data-testid={`button-delete-notebook-${nb.id}`}
+                aria-label={`Delete ${nb.title}`}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           ))}
         </div>
       )}

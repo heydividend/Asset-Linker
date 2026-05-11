@@ -1,18 +1,37 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
-import { useStartMockExam, useListMockExams, getListMockExamsQueryKey } from "@workspace/api-client-react";
+import { useStartMockExam, useListMockExams, useDeleteMockExam, getListMockExamsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Stethoscope, ShieldAlert, Clock, ListChecks, Award } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Stethoscope, ShieldAlert, Clock, ListChecks, Award, Trash2 } from "lucide-react";
 
 export default function MockExamLanding() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const start = useStartMockExam();
+  const del = useDeleteMockExam();
+  const { toast } = useToast();
   const { data: history = [] } = useListMockExams({ query: { queryKey: getListMockExamsQueryKey() } });
+
+  const onDelete = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!confirm("Delete this mock exam attempt? This cannot be undone.")) return;
+    del.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getListMockExamsQueryKey() });
+          toast({ title: "Attempt deleted" });
+        },
+        onError: (err) => toast({ title: "Delete failed", description: String(err), variant: "destructive" }),
+      },
+    );
+  };
   const [count, setCount] = useState("175");
   const [time, setTime] = useState("14400"); // 4 hours
 
@@ -81,20 +100,37 @@ export default function MockExamLanding() {
                 {history.map((m) => {
                   const passed = (m.scorePercent ?? 0) >= 75;
                   return (
-                    <Link key={m.id} href={`/mock-exam/${m.id}`}>
-                      <button className="w-full flex items-center justify-between p-3 border rounded-md hover-elevate text-left" data-testid={`mock-attempt-${m.id}`}>
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline">{m.totalQuestions}q</Badge>
-                          <span className="font-medium">{new Date(m.startedAt).toLocaleString()}</span>
-                          {!m.submitted && <Badge variant="secondary">In progress</Badge>}
-                        </div>
-                        {m.submitted && (
-                          <Badge className={passed ? "bg-primary text-primary-foreground" : "bg-destructive text-destructive-foreground"}>
-                            {Math.round(m.scorePercent ?? 0)}% {passed ? "Pass" : "Fail"}
-                          </Badge>
-                        )}
-                      </button>
-                    </Link>
+                    <div
+                      key={m.id}
+                      className="flex items-center gap-2 p-3 border rounded-md hover-elevate"
+                      data-testid={`mock-attempt-${m.id}`}
+                    >
+                      <Link href={`/mock-exam/${m.id}`} className="flex-1">
+                        <button className="w-full flex items-center justify-between text-left">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline">{m.totalQuestions}q</Badge>
+                            <span className="font-medium">{new Date(m.startedAt).toLocaleString()}</span>
+                            {!m.submitted && <Badge variant="secondary">In progress</Badge>}
+                          </div>
+                          {m.submitted && (
+                            <Badge className={passed ? "bg-primary text-primary-foreground" : "bg-destructive text-destructive-foreground"}>
+                              {Math.round(m.scorePercent ?? 0)}% {passed ? "Pass" : "Fail"}
+                            </Badge>
+                          )}
+                        </button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={(e) => onDelete(e, m.id)}
+                        disabled={del.isPending}
+                        data-testid={`button-delete-mock-attempt-${m.id}`}
+                        aria-label="Delete attempt"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   );
                 })}
               </div>

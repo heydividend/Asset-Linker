@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import {
   useListQuizAttempts,
   useStartQuiz,
+  useDeleteQuiz,
   useListNotebooks,
   useListTopics,
   useListDomains,
@@ -13,7 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardList, Play, Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ClipboardList, Play, Sparkles, Trash2 } from "lucide-react";
 
 const MODES = [
   { value: "adaptive", label: "Adaptive (focus on your weak areas)" },
@@ -30,6 +32,23 @@ export default function QuizHub() {
   const { data: topics = [] } = useListTopics();
   const { data: domains = [] } = useListDomains();
   const start = useStartQuiz();
+  const del = useDeleteQuiz();
+  const { toast } = useToast();
+
+  const onDelete = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (!confirm("Delete this quiz attempt? This cannot be undone.")) return;
+    del.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
+          toast({ title: "Attempt deleted" });
+        },
+        onError: (err) => toast({ title: "Delete failed", description: String(err), variant: "destructive" }),
+      },
+    );
+  };
 
   const [mode, setMode] = useState<"adaptive" | "weakness" | "domain" | "topic">("adaptive");
   const [count, setCount] = useState("10");
@@ -140,21 +159,36 @@ export default function QuizHub() {
                   const finished = !!a.finishedAt;
                   const pct = a.totalQuestions > 0 ? Math.round((a.correctCount / a.totalQuestions) * 100) : 0;
                   return (
-                    <button
+                    <div
                       key={a.id}
-                      onClick={() => navigate(`/quiz/${a.id}`)}
-                      className="w-full flex items-center justify-between gap-2 p-2.5 border rounded-md hover-elevate text-left min-w-0"
+                      className="flex items-center gap-2 p-2.5 border rounded-md hover-elevate min-w-0"
                       data-testid={`attempt-${a.id}`}
                     >
-                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                        <Badge variant="outline" className="uppercase text-[10px] px-1.5 py-0">{a.mode}</Badge>
-                        <span className="font-medium text-xs">{a.totalQuestions}q</span>
-                        {!finished && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">In progress</Badge>}
-                      </div>
-                      <div className="text-xs text-muted-foreground shrink-0">
-                        {finished ? `${pct}% (${a.correctCount}/${a.totalQuestions})` : "Resume"}
-                      </div>
-                    </button>
+                      <button
+                        onClick={() => navigate(`/quiz/${a.id}`)}
+                        className="flex-1 flex items-center justify-between gap-2 text-left min-w-0"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                          <Badge variant="outline" className="uppercase text-[10px] px-1.5 py-0">{a.mode}</Badge>
+                          <span className="font-medium text-xs">{a.totalQuestions}q</span>
+                          {!finished && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">In progress</Badge>}
+                        </div>
+                        <div className="text-xs text-muted-foreground shrink-0">
+                          {finished ? `${pct}% (${a.correctCount}/${a.totalQuestions})` : "Resume"}
+                        </div>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={(e) => onDelete(e, a.id)}
+                        disabled={del.isPending}
+                        data-testid={`button-delete-attempt-${a.id}`}
+                        aria-label="Delete attempt"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   );
                 })}
               </div>

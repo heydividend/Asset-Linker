@@ -117,6 +117,16 @@ async function serializeExam(exam: typeof mockExams.$inferSelect, includeAnswers
   };
 }
 
+router.delete("/mock-exams/:id", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  await db.delete(mockExams).where(eq(mockExams.id, id));
+  res.sendStatus(204);
+});
+
 router.post("/mock-exams/:id/answer", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {

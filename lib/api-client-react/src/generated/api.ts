@@ -2675,6 +2675,84 @@ export function useGetQuiz<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export const getDeleteQuizUrl = (id: number) => {
+  return `/api/quizzes/${id}`;
+};
+
+export const deleteQuiz = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteQuizUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteQuizMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteQuiz>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteQuiz>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteQuiz"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteQuiz>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteQuiz(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteQuizMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteQuiz>>
+>;
+
+export type DeleteQuizMutationError = ErrorType<unknown>;
+
+export const useDeleteQuiz = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteQuiz>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteQuiz>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteQuizMutationOptions(options));
+};
+
 export const getAnswerQuizQuestionUrl = (id: number) => {
   return `/api/quizzes/${id}/answer`;
 };
@@ -3067,6 +3145,84 @@ export function useGetMockExam<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+export const getDeleteMockExamUrl = (id: number) => {
+  return `/api/mock-exams/${id}`;
+};
+
+export const deleteMockExam = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteMockExamUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteMockExamMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMockExam>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMockExam>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteMockExam"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMockExam>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteMockExam(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteMockExamMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMockExam>>
+>;
+
+export type DeleteMockExamMutationError = ErrorType<unknown>;
+
+export const useDeleteMockExam = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMockExam>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMockExam>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteMockExamMutationOptions(options));
+};
 
 export const getAnswerMockExamQuestionUrl = (id: number) => {
   return `/api/mock-exams/${id}/answer`;
