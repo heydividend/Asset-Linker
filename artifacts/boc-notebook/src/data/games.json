@@ -2138,6 +2138,97 @@
           "image": "/games/ch25-spine/fig_20_00.jpg"
         }
       ]
+    },
+    {
+      "id": "ch28-skin",
+      "title": "Ch 28: Skin Disorders",
+      "description": "Match each skin lesion or condition to its name.",
+      "pairs": [
+        {
+          "label": "Folliculitis",
+          "image": "/games/ch28-skin/fig_03_01.jpg"
+        },
+        {
+          "label": "Acne vulgaris",
+          "image": "/games/ch28-skin/fig_03_02.jpg"
+        },
+        {
+          "label": "Tinea pedis (athlete's foot)",
+          "image": "/games/ch28-skin/fig_04_00.jpg"
+        },
+        {
+          "label": "Candidiasis",
+          "image": "/games/ch28-skin/fig_04_01.jpg"
+        },
+        {
+          "label": "Pityriasis versicolor",
+          "image": "/games/ch28-skin/fig_04_02.jpg"
+        },
+        {
+          "label": "Herpes simplex type 1 (cold sore)",
+          "image": "/games/ch28-skin/fig_04_03.jpg"
+        },
+        {
+          "label": "Herpes simplex type 2 (genital)",
+          "image": "/games/ch28-skin/fig_04_04.jpg"
+        },
+        {
+          "label": "Herpes zoster (shingles)",
+          "image": "/games/ch28-skin/fig_04_05.jpg"
+        },
+        {
+          "label": "Genital warts (condyloma)",
+          "image": "/games/ch28-skin/fig_04_06.jpg"
+        },
+        {
+          "label": "Common warts (verruca vulgaris)",
+          "image": "/games/ch28-skin/fig_04_07.jpg"
+        },
+        {
+          "label": "Palmar warts",
+          "image": "/games/ch28-skin/fig_04_08.jpg"
+        },
+        {
+          "label": "Molluscum contagiosum",
+          "image": "/games/ch28-skin/fig_05_00.jpg"
+        },
+        {
+          "label": "Contact dermatitis",
+          "image": "/games/ch28-skin/fig_05_04.jpg"
+        },
+        {
+          "label": "Miliaria (heat rash)",
+          "image": "/games/ch28-skin/fig_05_05.jpg"
+        },
+        {
+          "label": "Scabies",
+          "image": "/games/ch28-skin/fig_05_06.jpg"
+        },
+        {
+          "label": "Pediculosis (lice nits)",
+          "image": "/games/ch28-skin/fig_05_07.jpg"
+        },
+        {
+          "label": "Skin lesion with central ulceration",
+          "image": "/games/ch28-skin/fig_06_05.jpg"
+        },
+        {
+          "label": "Malignant melanoma",
+          "image": "/games/ch28-skin/fig_07_00.jpg"
+        },
+        {
+          "label": "Neisseria gonorrhoeae (microscope)",
+          "image": "/games/ch28-skin/fig_11_00.jpg"
+        },
+        {
+          "label": "Trichomonas vaginalis (microscope)",
+          "image": "/games/ch28-skin/fig_11_01.jpg"
+        },
+        {
+          "label": "Treponema pallidum / syphilis (microscope)",
+          "image": "/games/ch28-skin/fig_11_02.jpg"
+        }
+      ]
     }
   ]
 }
