@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   useListOpenaiConversations,
   useCreateOpenaiConversation,
@@ -12,7 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Plus, Send, Trash2, Loader2, Paperclip, Eraser } from "lucide-react";
+import { Bot, Plus, Send, Trash2, Loader2, Paperclip, Eraser, ArrowDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { CopyMessageButton } from "@/components/CopyMessageButton";
@@ -37,14 +37,48 @@ export default function TutorPage() {
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Radix <ScrollArea> renders an internal viewport that is the actual
+  // scrollable element; the outer ref points to the root wrapper. Resolve
+  // the viewport once so scroll reads/writes hit the right node.
+  const getViewport = useCallback((): HTMLElement | null => {
+    const root = scrollRef.current;
+    if (!root) return null;
+    return root.querySelector<HTMLElement>("[data-radix-scroll-area-viewport]");
+  }, []);
+  const [atBottom, setAtBottom] = useState(true);
 
   // Intentionally do NOT auto-select a conversation. The AI Tutor page should
   // open clean — previous chats live in the sidebar as recents and the user
   // can pick one or start a new chat.
 
+  // Track whether the user is pinned to the bottom. If they scroll up to
+  // re-read, stop auto-scrolling and show a "scroll to latest" pill instead.
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, displayedStream, pendingUserMessage]);
+    const vp = getViewport();
+    if (!vp) return;
+    const onScroll = () => {
+      const distance = vp.scrollHeight - vp.scrollTop - vp.clientHeight;
+      setAtBottom(distance < 60);
+    };
+    vp.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => vp.removeEventListener("scroll", onScroll);
+  }, [getViewport, activeId]);
+
+  // Auto-scroll only when user is already at the bottom — never yank them
+  // away from older content they're reading.
+  useEffect(() => {
+    if (!atBottom) return;
+    const vp = getViewport();
+    if (vp) vp.scrollTop = vp.scrollHeight;
+  }, [messages, displayedStream, pendingUserMessage, atBottom, getViewport]);
+
+  const scrollToLatest = useCallback(() => {
+    const vp = getViewport();
+    if (!vp) return;
+    vp.scrollTo({ top: vp.scrollHeight, behavior: "smooth" });
+    setAtBottom(true);
+  }, [getViewport]);
 
   // Drop the optimistic user echo and streaming buffer once the persisted
   // assistant message arrives via refetch, so we don't double-render.
@@ -373,7 +407,20 @@ export default function TutorPage() {
             )}
           </div>
         </ScrollArea>
-        <div className="border-t p-4">
+        <div className="relative border-t p-4">
+          {!atBottom && activeId != null && (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={scrollToLatest}
+              data-testid="button-scroll-to-latest"
+              className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 h-7 px-2.5 text-xs shadow-lg rounded-full"
+            >
+              <ArrowDown className="h-3.5 w-3.5 mr-1" />
+              {busy ? "Jump to latest" : "Scroll to latest"}
+            </Button>
+          )}
           <form
             onSubmit={(e) => {
               e.preventDefault();
