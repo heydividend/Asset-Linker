@@ -5,6 +5,8 @@ import {
   useAnswerQuizQuestion,
   useFinishQuiz,
   getGetQuizQueryKey,
+  getGetDashboardTopicMasteryQueryKey,
+  getGetDashboardSummaryQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +43,16 @@ export default function QuizRunner() {
   };
 
   const onFinish = () => {
-    finish.mutate({ id: quiz.id }, { onSuccess: () => qc.invalidateQueries({ queryKey: getGetQuizQueryKey(id) }) });
+    finish.mutate(
+      { id: quiz.id },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getGetQuizQueryKey(id) });
+          qc.invalidateQueries({ queryKey: getGetDashboardTopicMasteryQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+        },
+      },
+    );
   };
 
   if (finished) {

@@ -104,4 +104,21 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
   });
 });
 
+router.get("/dashboard/topic-mastery", async (_req, res): Promise<void> => {
+  const mastery = await db.select().from(topicMastery);
+  const tRows = await db.select().from(topics);
+  const masteryByTopic = new Map(mastery.map((m) => [m.topicId, m]));
+  const result = tRows.map((t) => {
+    const m = masteryByTopic.get(t.id);
+    return {
+      topicId: t.id,
+      name: t.name,
+      mastery: m?.mastery ?? 0,
+      attempts: m?.attempts ?? 0,
+      correct: m?.correct ?? 0,
+    };
+  });
+  res.json(result);
+});
+
 export default router;

@@ -4,7 +4,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useListTopics,
   useStartQuiz,
+  useGetDashboardTopicMastery,
   getListQuizAttemptsQueryKey,
+  getGetDashboardTopicMasteryQueryKey,
 } from "@workspace/api-client-react";
 import { bodyRegions, type BodyRegion } from "@/data/bodyRegions";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,6 +57,9 @@ export default function BodyMapPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: topics = [], isLoading: topicsLoading } = useListTopics();
+  const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery({
+    query: { queryKey: getGetDashboardTopicMasteryQueryKey() },
+  });
   const startQuiz = useStartQuiz();
 
   const [view, setView] = useState<ViewKey>("anterior");
@@ -74,6 +79,43 @@ export default function BodyMapPage() {
     for (const t of topics) m.set(t.name, t.id);
     return m;
   }, [topics]);
+
+  // name → {mastery, attempts} lookup for surfacing per-region mastery badges.
+  const masteryByName = useMemo(() => {
+    const m = new Map<string, { mastery: number; attempts: number }>();
+    for (const row of topicMasteryRows) {
+      m.set(row.name, { mastery: row.mastery, attempts: row.attempts });
+    }
+    return m;
+  }, [topicMasteryRows]);
+
+  // Aggregate mastery across all of a region's seeded topics, weighted by attempts.
+  const regionMastery = useMemo(() => {
+    const out = new Map<string, { pct: number | null; attempts: number }>();
+    for (const r of bodyRegions) {
+      let totalAttempts = 0;
+      let totalCorrect = 0;
+      for (const name of r.topicNames) {
+        const m = masteryByName.get(name);
+        if (!m || m.attempts === 0) continue;
+        totalAttempts += m.attempts;
+        totalCorrect += m.mastery * m.attempts;
+      }
+      out.set(r.id, {
+        pct: totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : null,
+        attempts: totalAttempts,
+      });
+    }
+    return out;
+  }, [masteryByName]);
+
+  const masteryTone = (pct: number | null): { label: string; cls: string; hint: string } => {
+    if (pct == null) return { label: "—", cls: "border-muted text-muted-foreground", hint: "No attempts yet" };
+    const rounded = Math.round(pct);
+    if (rounded >= 80) return { label: `${rounded}%`, cls: "border-primary/60 text-primary", hint: "Solid" };
+    if (rounded >= 60) return { label: `${rounded}%`, cls: "border-amber-500/60 text-amber-600 dark:text-amber-400", hint: "Getting there" };
+    return { label: `${rounded}%`, cls: "border-destructive/60 text-destructive", hint: "Needs work" };
+  };
 
   const setLayer = (k: LayerKey, v: number) => setOpacity((o) => ({ ...o, [k]: v }));
   const applyPreset = (name: keyof typeof PRESETS) => setOpacity(PRESETS[name]);
@@ -95,6 +137,7 @@ export default function BodyMapPage() {
       {
         onSuccess: (q) => {
           qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetDashboardTopicMasteryQueryKey() });
           setSelected(null);
           navigate(`/quiz/${q.id}`);
         },
@@ -229,6 +272,8 @@ export default function BodyMapPage() {
                 borderRadius = "0.4rem";
               }
 
+              const rm = regionMastery.get(r.id) ?? { pct: null, attempts: 0 };
+              const tone = masteryTone(rm.pct);
               return (
                 <HoverCard key={r.id} openDelay={120} closeDelay={50}>
                   <HoverCardTrigger asChild>
@@ -262,6 +307,16 @@ export default function BodyMapPage() {
                         </div>
                         <Stethoscope className="h-4 w-4 text-primary mt-0.5" />
                       </div>
+                      <div
+                        className={`flex items-center justify-between rounded-md border px-2 py-1.5 text-xs ${tone.cls}`}
+                        data-testid={`hover-mastery-${r.id}`}
+                      >
+                        <span className="font-medium">Mastery</span>
+                        <span className="flex items-center gap-2">
+                          <span className="tabular-nums font-semibold">{tone.label}</span>
+                          <span className="text-[10px] opacity-80">{tone.hint}</span>
+                        </span>
+                      </div>
                       <p className="text-xs text-muted-foreground">{r.blurb}</p>
                       <div className="text-xs space-y-0.5">
                         <p className="font-medium">Common injuries:</p>
@@ -269,9 +324,20 @@ export default function BodyMapPage() {
                           {r.injuries.slice(0, 3).map((i) => <li key={i.name}>{i.name}</li>)}
                         </ul>
                       </div>
-                      <Button size="sm" variant="outline" className="w-full" onClick={() => setSelected(r)}>
-                        Open full breakdown
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => setSelected(r)}>
+                          Open
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => onQuizRegion(r)}
+                          disabled={startQuiz.isPending || topicsLoading}
+                          data-testid={`hover-drill-${r.id}`}
+                        >
+                          <Play className="h-3 w-3 mr-1" /> Drill
+                        </Button>
+                      </div>
                     </div>
                   </HoverCardContent>
                 </HoverCard>
@@ -289,19 +355,33 @@ export default function BodyMapPage() {
           </div>
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
-              {visible.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => setSelected(r)}
-                  onMouseEnter={() => setHovered(r.id)}
-                  onMouseLeave={() => setHovered(null)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between hover-elevate ${hovered === r.id ? "bg-sidebar-accent" : ""}`}
-                  data-testid={`region-list-${r.id}`}
-                >
-                  <span>{r.name}</span>
-                  <Badge variant="outline" className="text-[10px]">{r.injuries.length}</Badge>
-                </button>
-              ))}
+              {visible.map((r) => {
+                const rm = regionMastery.get(r.id) ?? { pct: null, attempts: 0 };
+                const tone = masteryTone(rm.pct);
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => setSelected(r)}
+                    onMouseEnter={() => setHovered(r.id)}
+                    onMouseLeave={() => setHovered(null)}
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between gap-2 hover-elevate ${hovered === r.id ? "bg-sidebar-accent" : ""}`}
+                    data-testid={`region-list-${r.id}`}
+                    title={rm.attempts > 0 ? `${rm.attempts} attempt${rm.attempts === 1 ? "" : "s"} on this region — ${tone.hint.toLowerCase()}` : "No attempts yet"}
+                  >
+                    <span className="truncate">{r.name}</span>
+                    <span className="flex items-center gap-1 shrink-0">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] tabular-nums ${tone.cls}`}
+                        data-testid={`region-mastery-${r.id}`}
+                      >
+                        {tone.label}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">{r.injuries.length}</Badge>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </ScrollArea>
         </aside>

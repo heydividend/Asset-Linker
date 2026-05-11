@@ -435,6 +435,15 @@ export interface MockExamResult {
   weakTopics: TopicScore[];
 }
 
+export interface TopicMasteryEntry {
+  topicId: number;
+  name: string;
+  /** 0..1 fraction correct */
+  mastery: number;
+  attempts: number;
+  correct: number;
+}
+
 export interface OpenaiConversation {
   id: number;
   title: string;

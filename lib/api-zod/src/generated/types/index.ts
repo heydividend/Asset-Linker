@@ -71,4 +71,5 @@ export * from "./studyPlan";
 export * from "./studyPlanItem";
 export * from "./studyPlanItemKind";
 export * from "./topic";
+export * from "./topicMasteryEntry";
 export * from "./topicScore";

@@ -906,6 +906,17 @@ export const GetDashboardSummaryResponse = zod.object({
   ),
 });
 
+export const GetDashboardTopicMasteryResponseItem = zod.object({
+  topicId: zod.number(),
+  name: zod.string(),
+  mastery: zod.number().describe("0..1 fraction correct"),
+  attempts: zod.number(),
+  correct: zod.number(),
+});
+export const GetDashboardTopicMasteryResponse = zod.array(
+  GetDashboardTopicMasteryResponseItem,
+);
+
 export const GetStudyPlanTodayResponse = zod.object({
   date: zod.coerce.date(),
   items: zod.array(

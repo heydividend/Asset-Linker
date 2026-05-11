@@ -62,6 +62,7 @@ import type {
   StudyGuideInput,
   StudyPlan,
   Topic,
+  TopicMasteryEntry,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -4457,6 +4458,75 @@ export function useGetDashboardSummary<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetDashboardSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getGetDashboardTopicMasteryUrl = () => {
+  return `/api/dashboard/topic-mastery`;
+};
+
+export const getDashboardTopicMastery = async (
+  options?: RequestInit,
+): Promise<TopicMasteryEntry[]> => {
+  return customFetch<TopicMasteryEntry[]>(getGetDashboardTopicMasteryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDashboardTopicMasteryQueryKey = () => {
+  return [`/api/dashboard/topic-mastery`] as const;
+};
+
+export const getGetDashboardTopicMasteryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDashboardTopicMastery>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardTopicMastery>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDashboardTopicMasteryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDashboardTopicMastery>>
+  > = ({ signal }) => getDashboardTopicMastery({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardTopicMastery>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDashboardTopicMasteryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDashboardTopicMastery>>
+>;
+export type GetDashboardTopicMasteryQueryError = ErrorType<unknown>;
+
+export function useGetDashboardTopicMastery<
+  TData = Awaited<ReturnType<typeof getDashboardTopicMastery>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardTopicMastery>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDashboardTopicMasteryQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -779,6 +779,18 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DashboardSummary" }
+  /dashboard/topic-mastery:
+    get:
+      operationId: getDashboardTopicMastery
+      tags: [dashboard]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TopicMasteryEntry" }
   /plan/today:
     get:
       operationId: getStudyPlanToday
@@ -1149,6 +1161,15 @@ components:
         topicId: { type: integer }
         name: { type: string }
         mastery: { type: number }
+    TopicMasteryEntry:
+      type: object
+      required: [topicId, name, mastery, attempts, correct]
+      properties:
+        topicId: { type: integer }
+        name: { type: string }
+        mastery: { type: number, description: "0..1 fraction correct" }
+        attempts: { type: integer }
+        correct: { type: integer }
 
     OpenaiConversation:
       type: object
