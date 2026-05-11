@@ -18,12 +18,14 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AskAiButton } from "@/components/AskAiButton";
+import { useToast } from "@/hooks/use-toast";
 import { Library, Plus, ExternalLink, Trash2, Sparkles } from "lucide-react";
 
 const KINDS = ["article", "video", "podcast", "book", "paper", "guideline", "other"] as const;
 
 export default function ResourcesPage() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [filterKind, setFilterKind] = useState<string>("all");
   const params: Record<string, string> = {};
   if (filterKind !== "all") params.kind = filterKind;
@@ -37,24 +39,62 @@ export default function ResourcesPage() {
   const [form, setForm] = useState({ title: "", url: "", kind: "article", provider: "", topicId: "", domainId: "", notes: "" });
 
   const onCreate = () => {
-    if (!form.title || !form.url) return;
-    const data: Record<string, unknown> = { title: form.title, url: form.url, kind: form.kind };
-    if (form.provider) data.provider = form.provider;
+    const title = form.title.trim();
+    const url = form.url.trim();
+    if (!title) {
+      toast({ title: "Title is required", description: "Add a short title so you can find this later.", variant: "destructive" });
+      return;
+    }
+    if (!url) {
+      toast({ title: "URL is required", description: "Paste the link to the article, video, or paper.", variant: "destructive" });
+      return;
+    }
+    try {
+      new URL(url);
+    } catch {
+      toast({ title: "That doesn't look like a valid URL", description: "Include the protocol, e.g. https://example.com/article.", variant: "destructive" });
+      return;
+    }
+    const data: Record<string, unknown> = { title, url, kind: form.kind };
+    if (form.provider.trim()) data.provider = form.provider.trim();
     if (form.topicId) data.topicId = Number(form.topicId);
     if (form.domainId) data.domainId = Number(form.domainId);
-    if (form.notes) data.notes = form.notes;
+    if (form.notes.trim()) data.notes = form.notes.trim();
     create.mutate({ data: data as Parameters<typeof create.mutate>[0]["data"] }, {
       onSuccess: () => {
         setOpen(false);
         setForm({ title: "", url: "", kind: "article", provider: "", topicId: "", domainId: "", notes: "" });
         qc.invalidateQueries({ queryKey: getListResourcesQueryKey() });
+        qc.invalidateQueries({ queryKey: getListRecommendedResourcesQueryKey() });
+        toast({ title: "Resource saved", description: title });
+      },
+      onError: (e) => {
+        toast({
+          title: "Couldn't save resource",
+          description: e instanceof Error ? e.message : "Try again in a moment.",
+          variant: "destructive",
+        });
       },
     });
   };
 
-  const onDelete = (id: number) => {
-    if (!confirm("Delete this resource?")) return;
-    del.mutate({ id }, { onSuccess: () => qc.invalidateQueries({ queryKey: getListResourcesQueryKey() }) });
+  const onDelete = (id: number, title: string) => {
+    if (del.isPending) return;
+    if (!confirm(`Delete "${title}"?`)) return;
+    del.mutate({ id }, {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getListResourcesQueryKey() });
+        qc.invalidateQueries({ queryKey: getListRecommendedResourcesQueryKey() });
+        toast({ title: "Resource deleted", description: title });
+      },
+      onError: (e) => {
+        toast({
+          title: "Couldn't delete resource",
+          description: e instanceof Error ? e.message : "Try again in a moment.",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   return (
@@ -100,7 +140,9 @@ export default function ResourcesPage() {
                   </SelectContent>
                 </Select>
                 <Textarea placeholder="Notes (optional)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} data-testid="input-resource-notes" />
-                <Button onClick={onCreate} disabled={create.isPending} data-testid="button-save-resource">Save</Button>
+                <Button onClick={onCreate} disabled={create.isPending} data-testid="button-save-resource">
+                  {create.isPending ? "Saving…" : "Save"}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -114,7 +156,7 @@ export default function ResourcesPage() {
             </h2>
             <div className="grid sm:grid-cols-2 gap-3">
               {recommended.map((r) => (
-                <ResourceCard key={r.id} r={r} onDelete={onDelete} />
+                <ResourceCard key={r.id} r={r} onDelete={onDelete} deletePending={del.isPending} />
               ))}
             </div>
           </section>
@@ -126,7 +168,7 @@ export default function ResourcesPage() {
             <p className="text-xs text-muted-foreground">No resources yet. Add one above.</p>
           ) : (
             <div className="grid sm:grid-cols-2 gap-3">
-              {resources.map((r) => <ResourceCard key={r.id} r={r} onDelete={onDelete} />)}
+              {resources.map((r) => <ResourceCard key={r.id} r={r} onDelete={onDelete} deletePending={del.isPending} />)}
             </div>
           )}
         </section>
@@ -135,7 +177,7 @@ export default function ResourcesPage() {
   );
 }
 
-function ResourceCard({ r, onDelete }: { r: { id: number; title: string; url: string; kind: string; provider?: string | null; notes?: string | null }; onDelete: (id: number) => void }) {
+function ResourceCard({ r, onDelete, deletePending }: { r: { id: number; title: string; url: string; kind: string; provider?: string | null; notes?: string | null }; onDelete: (id: number, title: string) => void; deletePending?: boolean }) {
   return (
     <Card data-testid={`resource-${r.id}`} className="overflow-hidden">
       <CardHeader className="p-3 pb-1.5">
@@ -152,7 +194,7 @@ function ResourceCard({ r, onDelete }: { r: { id: number; title: string; url: st
             <ExternalLink className="h-3 w-3 shrink-0" /> Open
           </a>
           <AskAiButton context={`Help me get the most out of this resource: "${r.title}" at ${r.url}. What should I focus on for the BOC?`} size="icon" variant="ghost" className="h-6 w-6" />
-          <Button variant="ghost" size="icon" onClick={() => onDelete(r.id)} className="h-6 w-6 ml-auto" data-testid={`button-delete-resource-${r.id}`}>
+          <Button variant="ghost" size="icon" onClick={() => onDelete(r.id, r.title)} disabled={deletePending} className="h-6 w-6 ml-auto" data-testid={`button-delete-resource-${r.id}`}>
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
