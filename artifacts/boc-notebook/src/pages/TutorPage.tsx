@@ -6,12 +6,13 @@ import {
   useListOpenaiMessages,
   getListOpenaiConversationsQueryKey,
   getListOpenaiMessagesQueryKey,
+  getListNotebooksQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Plus, Send, Trash2, Loader2 } from "lucide-react";
+import { Bot, Plus, Send, Trash2, Loader2, Paperclip } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function TutorPage() {
@@ -27,7 +28,9 @@ export default function TutorPage() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!activeId && convs[0]) setActiveId(convs[0].id);
@@ -71,7 +74,19 @@ export default function TutorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: text }),
       });
-      if (!res.body) return;
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try {
+          const j = await res.json();
+          if (j?.error) msg = j.error;
+        } catch { /* ignore */ }
+        toast({ title: "AI request failed", description: msg, variant: "destructive" });
+        return;
+      }
+      if (!res.body) {
+        toast({ title: "AI returned no response", variant: "destructive" });
+        return;
+      }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = "";
@@ -100,8 +115,66 @@ export default function TutorPage() {
           } catch { /* ignore */ }
         }
       }
+    } catch (e) {
+      toast({
+        title: "Couldn't reach the tutor",
+        description: e instanceof Error ? e.message : "Try again in a moment.",
+        variant: "destructive",
+      });
     } finally {
       setBusy(false);
+      setStreaming("");
+    }
+  };
+
+  const onPickFile = () => {
+    if (!activeId || uploading || busy) return;
+    fileRef.current?.click();
+  };
+
+  const onFileChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !activeId) return;
+    if (file.size > 40 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 40 MB.", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("saveToLibrary", "true");
+      const res = await fetch(`/api/openai/conversations/${activeId}/upload`, {
+        method: "POST",
+        body: fd,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({
+          title: "Upload failed",
+          description: (json as { error?: string }).error ?? `HTTP ${res.status}`,
+          variant: "destructive",
+        });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: getListOpenaiMessagesQueryKey(activeId) });
+      const j = json as { extractedChars?: number; savedNoteId?: number | null };
+      if (j.savedNoteId) {
+        qc.invalidateQueries({ queryKey: getListNotebooksQueryKey() });
+      }
+      toast({
+        title: "File attached",
+        description: `${file.name} — ${j.extractedChars ?? 0} chars extracted. Ask a question about it below.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : "Network error.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -174,14 +247,33 @@ export default function TutorPage() {
             }}
             className="flex gap-2 max-w-3xl mx-auto"
           >
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp"
+              className="hidden"
+              onChange={onFileChosen}
+              data-testid="input-tutor-file"
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              onClick={onPickFile}
+              disabled={!activeId || busy || uploading}
+              title="Attach a PDF, text file, or image"
+              data-testid="button-tutor-attach"
+            >
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+            </Button>
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask your tutor…"
-              disabled={!activeId || busy}
+              placeholder={uploading ? "Uploading file…" : "Ask your tutor…"}
+              disabled={!activeId || busy || uploading}
               data-testid="input-tutor-message"
             />
-            <Button type="submit" size="icon" disabled={!activeId || busy || !input.trim()} data-testid="button-tutor-send">
+            <Button type="submit" size="icon" disabled={!activeId || busy || uploading || !input.trim()} data-testid="button-tutor-send">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </form>
