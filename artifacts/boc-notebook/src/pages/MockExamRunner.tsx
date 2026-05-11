@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AskAiButton } from "@/components/AskAiButton";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
+import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, ChevronRight, Trophy } from "lucide-react";
 
 interface MockExamResult {
@@ -40,9 +41,22 @@ export default function MockExamRunner() {
   const answer = useAnswerMockExamQuestion();
   const heartbeat = useHeartbeatMockExam();
   const submit = useSubmitMockExam();
+  const { toast } = useToast();
   const [localIdx, setLocalIdx] = useState<number | null>(null);
+  const [localPicks, setLocalPicks] = useState<Record<number, number>>({});
+  const [pendingAnswerIdx, setPendingAnswerIdx] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
   const submittedRef = useRef(false);
+
+  // Initialize localIdx once from the server's currentIndex (resume support).
+  // After that, navigation is driven entirely by local state so refetches
+  // don't yank the user forward when the server bumps currentIndex.
+  useEffect(() => {
+    if (exam && !exam.submitted && localIdx === null) {
+      const start = Math.min(exam.currentIndex ?? 0, Math.max(0, exam.totalQuestions - 1));
+      setLocalIdx(start);
+    }
+  }, [exam, localIdx]);
 
   // Hide global chrome while exam is in progress
   useEffect(() => {
@@ -178,21 +192,55 @@ export default function MockExamRunner() {
     );
   }
 
-  const idx = localIdx ?? exam.currentIndex;
-  const q = exam.questions[idx];
   const total = exam.totalQuestions;
+  const rawIdx = localIdx ?? exam.currentIndex;
+  const idx = Math.min(Math.max(0, rawIdx), Math.max(0, total - 1));
+  const q = exam.questions[idx];
 
   if (!q) return <div className="p-6">No question.</div>;
 
+  const pickedIdx = localPicks[idx] ?? q.selectedIndex;
+  const isAnswered = pickedIdx != null;
+  const isPendingHere = pendingAnswerIdx === idx;
+  const canAdvance = isAnswered && !isPendingHere;
+
   const onPick = (choiceIdx: number) => {
-    if (q.selectedIndex != null) return;
+    if (isAnswered || isPendingHere) return;
+    const targetIdx = idx;
+    setLocalPicks((p) => ({ ...p, [targetIdx]: choiceIdx }));
+    setPendingAnswerIdx(targetIdx);
     answer.mutate(
-      { id: exam.id, data: { index: idx, selectedIndex: choiceIdx } },
-      { onSuccess: () => qc.invalidateQueries({ queryKey: getGetMockExamQueryKey(id) }) },
+      { id: exam.id, data: { index: targetIdx, selectedIndex: choiceIdx } },
+      {
+        onSuccess: () => {
+          setPendingAnswerIdx((cur) => (cur === targetIdx ? null : cur));
+          qc.invalidateQueries({ queryKey: getGetMockExamQueryKey(id) });
+        },
+        onError: (err) => {
+          // Roll back optimistic pick AND any forward navigation past this question.
+          setLocalPicks((p) => {
+            const next = { ...p };
+            delete next[targetIdx];
+            return next;
+          });
+          setPendingAnswerIdx((cur) => (cur === targetIdx ? null : cur));
+          setLocalIdx((cur) => (cur != null && cur > targetIdx ? targetIdx : cur));
+          toast({
+            title: "Couldn't save your answer",
+            description: err instanceof Error ? err.message : "Please try again.",
+            variant: "destructive",
+          });
+        },
+      },
     );
   };
 
+  const submitBlocked = pendingAnswerIdx !== null || answer.isPending || submit.isPending;
   const onSubmit = () => {
+    if (submitBlocked) {
+      toast({ title: "Hang on", description: "Saving your last answer…" });
+      return;
+    }
     if (!confirm("Submit your exam now? You will not be able to change answers.")) return;
     submit.mutate({ id: exam.id }, { onSuccess: () => qc.invalidateQueries({ queryKey: getGetMockExamQueryKey(id) }) });
   };
@@ -209,7 +257,7 @@ export default function MockExamRunner() {
           <div className={`text-2xl font-mono tabular-nums ${remaining < 600 ? "text-destructive" : ""}`} data-testid="text-timer">
             {formatTime(remaining)}
           </div>
-          <Button variant="destructive" size="sm" onClick={onSubmit} data-testid="button-submit-exam">Submit</Button>
+          <Button variant="destructive" size="sm" onClick={onSubmit} disabled={submitBlocked} data-testid="button-submit-exam">Submit</Button>
         </div>
       </header>
       <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full space-y-6">
@@ -221,13 +269,13 @@ export default function MockExamRunner() {
           </CardHeader>
           <CardContent className="space-y-2">
             {q.choices.map((c, ci) => {
-              const picked = q.selectedIndex === ci;
+              const picked = pickedIdx === ci;
               return (
                 <button
                   key={ci}
                   onClick={() => onPick(ci)}
-                  disabled={q.selectedIndex != null}
-                  className={`w-full text-left p-3 rounded-lg border ${picked ? "border-primary bg-primary/10" : "border-border hover-elevate cursor-pointer"} ${q.selectedIndex != null && !picked ? "opacity-60" : ""}`}
+                  disabled={isAnswered}
+                  className={`w-full text-left p-3 rounded-lg border ${picked ? "border-primary bg-primary/10" : "border-border hover-elevate cursor-pointer"} ${isAnswered && !picked ? "opacity-60" : ""}`}
                   data-testid={`mock-choice-${ci}`}
                 >
                   <span className="font-medium mr-2">{String.fromCharCode(65 + ci)}.</span>
@@ -239,11 +287,11 @@ export default function MockExamRunner() {
         </Card>
         <div className="flex justify-end">
           {idx + 1 < total ? (
-            <Button onClick={() => setLocalIdx(idx + 1)} disabled={q.selectedIndex == null} data-testid="button-mock-next">
+            <Button onClick={() => setLocalIdx(idx + 1)} disabled={!canAdvance} data-testid="button-mock-next">
               Next <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={onSubmit} data-testid="button-mock-finish">Submit exam</Button>
+            <Button onClick={onSubmit} disabled={!canAdvance || submitBlocked} data-testid="button-mock-finish">Submit exam</Button>
           )}
         </div>
       </div>

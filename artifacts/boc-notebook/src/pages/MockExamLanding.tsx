@@ -76,7 +76,7 @@ export default function MockExamLanding() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Total questions</label>
-                <Input type="number" value={count} onChange={(e) => setCount(e.target.value)} min={10} max={200} data-testid="input-total-questions" />
+                <Input type="number" value={count} onChange={(e) => setCount(e.target.value)} min={3} max={200} data-testid="input-total-questions" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Time limit (seconds)</label>
