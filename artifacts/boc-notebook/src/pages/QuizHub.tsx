@@ -56,7 +56,19 @@ export default function QuizHub() {
   const [topicId, setTopicId] = useState<string>("");
   const [notebookId, setNotebookId] = useState<string>("");
 
+  const needsDomain = mode === "domain" && !domainId;
+  const needsTopic = mode === "topic" && !topicId;
+  const startDisabled = start.isPending || needsDomain || needsTopic;
+
   const onStart = () => {
+    if (needsDomain) {
+      toast({ title: "Pick a domain", description: "Choose which domain to quiz on.", variant: "destructive" });
+      return;
+    }
+    if (needsTopic) {
+      toast({ title: "Pick a topic", description: "Choose which topic to quiz on.", variant: "destructive" });
+      return;
+    }
     const data: { mode: typeof mode; count: number; notebookId?: number; topicId?: number; domainId?: number } = {
       mode,
       count: Number(count),
@@ -70,6 +82,13 @@ export default function QuizHub() {
         onSuccess: (q) => {
           qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
           navigate(`/quiz/${q.id}`);
+        },
+        onError: (e) => {
+          toast({
+            title: "Couldn't start the quiz",
+            description: e instanceof Error ? e.message : "Try a different selection.",
+            variant: "destructive",
+          });
         },
       },
     );
@@ -142,7 +161,7 @@ export default function QuizHub() {
                 </Select>
               </div>
             </div>
-            <Button onClick={onStart} disabled={start.isPending} data-testid="button-start-quiz">
+            <Button onClick={onStart} disabled={startDisabled} data-testid="button-start-quiz">
               <Play className="h-4 w-4 mr-2" /> Start quiz
             </Button>
           </CardContent>

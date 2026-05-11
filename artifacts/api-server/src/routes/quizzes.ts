@@ -37,11 +37,25 @@ async function buildQuizQuestionView(qids: number[], answers: Map<number, { sele
 router.get("/quizzes", async (req, res): Promise<void> => {
   const limit = Math.min(parseInt((req.query.limit as string) ?? "20", 10) || 20, 100);
   const rows = await db.select().from(quizzes).orderBy(desc(quizzes.startedAt)).limit(limit);
+  const ids = rows.map((r) => r.id);
+  const correctByQuiz = new Map<number, number>();
+  if (ids.length > 0) {
+    const counts = await db
+      .select({
+        quizId: quizAnswers.quizId,
+        correct: sql<number>`sum(case when ${quizAnswers.correct} then 1 else 0 end)`.as("correct"),
+      })
+      .from(quizAnswers)
+      .where(inArray(quizAnswers.quizId, ids))
+      .groupBy(quizAnswers.quizId);
+    for (const c of counts) correctByQuiz.set(c.quizId, Number(c.correct) || 0);
+  }
   res.json(
     rows.map((r) => ({
       id: r.id,
       mode: r.mode,
-      questionCount: r.questionIds.length,
+      totalQuestions: r.questionIds.length,
+      correctCount: correctByQuiz.get(r.id) ?? 0,
       currentIndex: r.currentIndex,
       finished: r.finished,
       score: r.score,
