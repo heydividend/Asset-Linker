@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AskAiButton } from "@/components/AskAiButton";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySparkline";
 import { Progress } from "@/components/ui/progress";
@@ -222,7 +223,7 @@ export default function QuizRunner() {
                 {isCorrect ? <Check className="h-5 w-5 text-primary" /> : <X className="h-5 w-5 text-destructive" />}
                 <span className="font-semibold">{isCorrect ? "Correct" : "Not quite"}</span>
               </div>
-              {q.rationale && <p className="text-sm">{q.rationale}</p>}
+              {q.rationale && <MarkdownMessage content={q.rationale} />}
               <div className="flex items-center gap-2 flex-wrap">
                 {q.sourceUrl && (
                   <a href={q.sourceUrl} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">
@@ -378,7 +379,12 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
                       </div>
                     );
                   })}
-                  {qq.rationale && <p className="text-muted-foreground"><strong>Rationale:</strong> {qq.rationale}</p>}
+                  {qq.rationale && (
+                    <div className="text-muted-foreground">
+                      <p className="mb-1"><strong>Rationale:</strong></p>
+                      <MarkdownMessage content={qq.rationale} />
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 flex-wrap">
                     {qq.sourceUrl && (
                       <a href={qq.sourceUrl} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">

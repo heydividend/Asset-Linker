@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { AskAiButton } from "@/components/AskAiButton";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { useToast } from "@/hooks/use-toast";
 import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, CheckCheck, Target, X, Play, Wand2, Loader2 } from "lucide-react";
 import { Link, useSearch, useLocation } from "wouter";
@@ -399,9 +400,15 @@ export default function FlashcardsReview() {
               />
             </div>
             <div className="flex-1 flex items-center justify-center text-center">
-              <p className="text-2xl font-medium leading-relaxed" data-testid="flashcard-content">
-                {revealed ? card.back : card.front}
-              </p>
+              {revealed ? (
+                <div className="w-full text-left" data-testid="flashcard-content">
+                  <MarkdownMessage content={card.back} className="prose-base" />
+                </div>
+              ) : (
+                <p className="text-2xl font-medium leading-relaxed" data-testid="flashcard-content">
+                  {card.front}
+                </p>
+              )}
             </div>
             <div className="mt-6">
               {!revealed ? (
@@ -503,9 +510,15 @@ function BrowseMode({ cards, isLoading, idx, setIdx, revealed, setRevealed, onEx
                 <span className="text-xs text-muted-foreground">Browse mode — no SRS rating</span>
               </div>
               <div className="flex-1 flex items-center justify-center text-center">
-                <p className="text-2xl font-medium leading-relaxed" data-testid="flashcard-browse-content">
-                  {revealed ? card.back : card.front}
-                </p>
+                {revealed ? (
+                  <div className="w-full text-left" data-testid="flashcard-browse-content">
+                    <MarkdownMessage content={card.back} className="prose-base" />
+                  </div>
+                ) : (
+                  <p className="text-2xl font-medium leading-relaxed" data-testid="flashcard-browse-content">
+                    {card.front}
+                  </p>
+                )}
               </div>
               <div className="mt-6 flex items-center justify-between gap-2">
                 <Button variant="outline" onClick={goPrev} disabled={safeIdx === 0} data-testid="button-browse-prev">
