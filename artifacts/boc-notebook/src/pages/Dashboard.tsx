@@ -1,10 +1,16 @@
-import { useGetDashboardSummary, useGetStudyPlanToday } from "@workspace/api-client-react";
+import { useMemo } from "react";
+import {
+  useGetDashboardSummary,
+  useGetStudyPlanToday,
+  useGetDashboardTopicMastery,
+} from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AskAiButton } from "@/components/AskAiButton";
 import { FixItPlanCard } from "@/components/FixItPlanCard";
+import { MasterySparkline } from "@/components/MasterySparkline";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BrainCircuit, BookOpen, Clock, Activity, ArrowRight } from "lucide-react";
@@ -13,6 +19,19 @@ import { Badge } from "@/components/ui/badge";
 export default function Dashboard() {
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: plan, isLoading: loadingPlan } = useGetStudyPlanToday();
+  const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery();
+
+  // topicId → chronological correctness of last ≤5 attempts, for the sparkline.
+  const trendByTopicId = useMemo(() => {
+    const m = new Map<number, boolean[]>();
+    for (const row of topicMasteryRows) {
+      m.set(
+        row.topicId,
+        (row.recentAttempts ?? []).map((a: { correct: boolean }) => a.correct),
+      );
+    }
+    return m;
+  }, [topicMasteryRows]);
 
   return (
     <div className="flex flex-col h-full">
@@ -152,19 +171,38 @@ export default function Dashboard() {
                     {[1, 2, 3].map(i => <Skeleton key={i} className="h-7 w-full" />)}
                   </div>
                 ) : summary?.weakTopics?.length ? (
-                  <div className="flex flex-col gap-1.5">
-                    {summary.weakTopics.map(topic => (
-                      <div key={topic.topicId} className="flex items-center gap-2 bg-secondary text-secondary-foreground pl-2.5 pr-1 py-1 rounded-md text-xs min-w-0">
-                        <span className="flex-1 min-w-0 truncate" title={topic.name}>{topic.name}</span>
-                        <AskAiButton 
-                          context={`I am weak in the topic: ${topic.name}. Can you explain the core concepts I need to know for the BOC exam?`} 
-                          size="icon" 
-                          variant="ghost" 
-                          className="h-6 w-6 hover:bg-background/50 rounded-md shrink-0"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  <ul className="flex flex-col gap-1.5" data-testid="weak-topics-list">
+                    {summary.weakTopics.map(topic => {
+                      const trend = trendByTopicId.get(topic.topicId) ?? [];
+                      const masteryPct = Math.round((topic.mastery ?? 0) * 100);
+                      return (
+                        <li
+                          key={topic.topicId}
+                          className="bg-secondary text-secondary-foreground pl-2.5 pr-1 py-1 rounded-md text-xs min-w-0 space-y-1"
+                          data-testid={`weak-topic-${topic.topicId}`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="flex-1 min-w-0 truncate font-medium" title={topic.name}>
+                              {topic.name}
+                            </span>
+                            <AskAiButton
+                              context={`I am weak in the topic: ${topic.name}. Can you explain the core concepts I need to know for the BOC exam?`}
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6 hover:bg-background/50 rounded-md shrink-0"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-2 pr-1 text-muted-foreground">
+                            <MasterySparkline
+                              trend={trend}
+                              testId={`weak-topic-trend-${topic.topicId}`}
+                            />
+                            <span className="text-xs tabular-nums">{masteryPct}% mastery</span>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 ) : (
                   <p className="text-xs text-muted-foreground">No weak areas identified yet. Take more quizzes!</p>
                 )}
