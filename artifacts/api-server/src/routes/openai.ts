@@ -89,7 +89,7 @@ async function ensureLibraryNotebook(): Promise<number> {
   return created.id;
 }
 
-const SYSTEM = `You are an expert Athletic Training tutor helping a student prepare for the Board of Certification (BOC) exam.
+const SYSTEM_BASE = `You are an expert Athletic Training tutor helping a student prepare for the Board of Certification (BOC) exam.
 Be warm, precise, and clinically accurate. Use the BOC's 5 domains as your frame:
 1) Risk Reduction, Wellness & Health Literacy
 2) Assessment, Evaluation & Diagnosis
@@ -110,6 +110,37 @@ Do not invent definitions that conflict with these.
 ${BOC_GLOSSARY}
 <<<BOC_GLOSSARY_END>>>
 `;
+
+const REFERENCE_LIBRARY_NOTEBOOK_ID = 4;
+let referenceCache: { text: string; loadedAt: number } | null = null;
+const REFERENCE_TTL_MS = 5 * 60 * 1000;
+
+async function loadReferenceLibrary(): Promise<string> {
+  const now = Date.now();
+  if (referenceCache && now - referenceCache.loadedAt < REFERENCE_TTL_MS) {
+    return referenceCache.text;
+  }
+  const rows = await db
+    .select()
+    .from(notes)
+    .where(eq(notes.notebookId, REFERENCE_LIBRARY_NOTEBOOK_ID))
+    .orderBy(asc(notes.id));
+  // Skip the BOC Glossary (already in SYSTEM_BASE) and assemble the rest.
+  const sections = rows
+    .filter((r) => !/glossary/i.test(r.title))
+    .map((r) => `## ${r.title}\n\n${r.content}`)
+    .join("\n\n---\n\n");
+  const text = sections
+    ? `\nADDITIONAL REFERENCE LIBRARY — User-curated study materials. Treat these as authoritative ground truth alongside the glossary. Cite them by section title when relevant.\n\n<<<REFERENCE_LIBRARY_START>>>\n${sections}\n<<<REFERENCE_LIBRARY_END>>>\n`
+    : "";
+  referenceCache = { text, loadedAt: now };
+  return text;
+}
+
+async function buildSystemPrompt(): Promise<string> {
+  const refLib = await loadReferenceLibrary();
+  return SYSTEM_BASE + refLib;
+}
 
 router.get("/openai/conversations", async (_req, res): Promise<void> => {
   const rows = await db.select().from(conversations).orderBy(desc(conversations.createdAt));
@@ -286,10 +317,11 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
 
   let fullText = "";
   try {
+    const systemPrompt = await buildSystemPrompt();
     const stream = anthropic.messages.stream({
       model: "claude-sonnet-4-6",
       max_tokens: 8192,
-      system: SYSTEM,
+      system: systemPrompt,
       messages: claudeMessages,
     });
     for await (const event of stream) {
