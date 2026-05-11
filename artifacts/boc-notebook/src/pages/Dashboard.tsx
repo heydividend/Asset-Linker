@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   useGetDashboardSummary,
@@ -19,6 +19,7 @@ import { FixItPlanCard } from "@/components/FixItPlanCard";
 import { MasterySparkline } from "@/components/MasterySparkline";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   BrainCircuit,
   BookOpen,
@@ -86,9 +87,13 @@ export default function Dashboard() {
   const { toast } = useToast();
   const startQuiz = useStartQuiz();
 
-  const onQuizTopic = (topicId: number, topicName: string) => {
+  const [openTopicId, setOpenTopicId] = useState<number | null>(null);
+  const [countByTopicId, setCountByTopicId] = useState<Record<number, number>>({});
+  const QUIZ_COUNT_OPTIONS = [5, 10, 20] as const;
+
+  const onQuizTopic = (topicId: number, topicName: string, count: number) => {
     startQuiz.mutate(
-      { data: { mode: "region", count: 10, topicIds: [topicId] } },
+      { data: { mode: "region", count, topicIds: [topicId] } },
       {
         onSuccess: (q) => {
           qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
@@ -392,41 +397,112 @@ export default function Dashboard() {
                       const isStartingThis =
                         startQuiz.isPending &&
                         startQuiz.variables?.data?.topicIds?.[0] === topic.topicId;
+                      const selectedCount = countByTopicId[topic.topicId] ?? 10;
+                      const isOpen = openTopicId === topic.topicId;
                       return (
                         <li
                           key={topic.topicId}
                           className="bg-secondary text-secondary-foreground rounded-md text-xs min-w-0 relative group focus-within:ring-2 focus-within:ring-ring"
                           data-testid={`weak-topic-${topic.topicId}`}
                         >
-                          <button
-                            type="button"
-                            onClick={() => onQuizTopic(topic.topicId, topic.name)}
-                            disabled={startQuiz.isPending}
-                            title={`Start a focused quiz on ${topic.name}`}
-                            aria-label={`Start a focused quiz on ${topic.name}`}
-                            data-testid={`weak-topic-quiz-${topic.topicId}`}
-                            className="w-full text-left pl-2.5 pr-9 py-1 space-y-1 rounded-md hover:bg-secondary/70 hover-elevate active-elevate-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                          <Popover
+                            open={isOpen}
+                            onOpenChange={(o) => setOpenTopicId(o ? topic.topicId : null)}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="flex-1 min-w-0 truncate font-medium" title={topic.name}>
-                                {topic.name}
-                              </span>
-                              {isStartingThis ? (
-                                <span className="text-[10px] text-muted-foreground shrink-0">
-                                  Starting…
-                                </span>
-                              ) : (
-                                <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 shrink-0 transition-opacity" />
-                              )}
-                            </div>
-                            <div className="flex items-center justify-between gap-2 pr-1 text-muted-foreground">
-                              <MasterySparkline
-                                trend={trend}
-                                testId={`weak-topic-trend-${topic.topicId}`}
-                              />
-                              <span className="text-xs tabular-nums">{masteryPct}% mastery</span>
-                            </div>
-                          </button>
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                disabled={startQuiz.isPending}
+                                title={`Start a focused quiz on ${topic.name}`}
+                                aria-label={`Start a focused quiz on ${topic.name}`}
+                                data-testid={`weak-topic-quiz-${topic.topicId}`}
+                                className="w-full text-left pl-2.5 pr-9 py-1 space-y-1 rounded-md hover:bg-secondary/70 hover-elevate active-elevate-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="flex-1 min-w-0 truncate font-medium" title={topic.name}>
+                                    {topic.name}
+                                  </span>
+                                  {isStartingThis ? (
+                                    <span className="text-[10px] text-muted-foreground shrink-0">
+                                      Starting…
+                                    </span>
+                                  ) : (
+                                    <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 shrink-0 transition-opacity" />
+                                  )}
+                                </div>
+                                <div className="flex items-center justify-between gap-2 pr-1 text-muted-foreground">
+                                  <MasterySparkline
+                                    trend={trend}
+                                    testId={`weak-topic-trend-${topic.topicId}`}
+                                  />
+                                  <span className="text-xs tabular-nums">{masteryPct}% mastery</span>
+                                </div>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              align="start"
+                              className="w-64 p-3 space-y-3"
+                              data-testid={`weak-topic-confirm-${topic.topicId}`}
+                            >
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium leading-snug">
+                                  Start a {selectedCount}-question quiz on {topic.name}?
+                                </p>
+                                <p className="text-[11px] text-muted-foreground">
+                                  Pick how many questions you want.
+                                </p>
+                              </div>
+                              <div
+                                role="radiogroup"
+                                aria-label="Question count"
+                                className="flex gap-1.5"
+                              >
+                                {QUIZ_COUNT_OPTIONS.map((c) => {
+                                  const active = c === selectedCount;
+                                  return (
+                                    <button
+                                      key={c}
+                                      type="button"
+                                      role="radio"
+                                      aria-checked={active}
+                                      onClick={() =>
+                                        setCountByTopicId((m) => ({ ...m, [topic.topicId]: c }))
+                                      }
+                                      data-testid={`weak-topic-count-${topic.topicId}-${c}`}
+                                      className={`flex-1 px-2 py-1 rounded-md border text-xs font-medium transition-colors ${
+                                        active
+                                          ? "bg-primary text-primary-foreground border-primary"
+                                          : "bg-background hover:bg-accent border-input"
+                                      }`}
+                                    >
+                                      {c}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex justify-end gap-2 pt-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setOpenTopicId(null)}
+                                  data-testid={`weak-topic-cancel-${topic.topicId}`}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setOpenTopicId(null);
+                                    onQuizTopic(topic.topicId, topic.name, selectedCount);
+                                  }}
+                                  disabled={startQuiz.isPending}
+                                  data-testid={`weak-topic-start-${topic.topicId}`}
+                                >
+                                  Start
+                                </Button>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                           <div className="absolute top-1 right-1">
                             <AskAiButton
                               context={`I am weak in the topic: ${topic.name}. Can you explain the core concepts I need to know for the BOC exam?`}
