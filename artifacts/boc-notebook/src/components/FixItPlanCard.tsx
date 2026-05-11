@@ -35,7 +35,7 @@ type WeakRegion = {
 
 export function FixItPlanCard() {
   const [, navigate] = useLocation();
-  const [trendWindow] = useTrendWindow();
+  const [trendWindow] = useTrendWindow("dashboard");
   const { data: mastery = [], isLoading: loadingMastery } =
     useGetDashboardTopicMastery(
       { limit: trendWindow },

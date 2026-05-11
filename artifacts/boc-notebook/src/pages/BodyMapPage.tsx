@@ -72,7 +72,7 @@ export default function BodyMapPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: topics = [], isLoading: topicsLoading } = useListTopics();
-  const [trendWindow, setTrendWindow] = useTrendWindow();
+  const [trendWindow, setTrendWindow] = useTrendWindow("bodyMap");
   const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery(
     { limit: trendWindow },
     { query: { queryKey: getGetDashboardTopicMasteryQueryKey({ limit: trendWindow }) } },

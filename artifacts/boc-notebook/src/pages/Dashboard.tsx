@@ -68,7 +68,7 @@ const phaseStyles: Record<string, { label: string; className: string }> = {
 };
 
 export default function Dashboard() {
-  const [trendWindow, setTrendWindow] = useTrendWindow();
+  const [trendWindow, setTrendWindow] = useTrendWindow("dashboard");
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: plan, isLoading: loadingPlan } = useGetStudyPlanToday();
   const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery({ limit: trendWindow });
