@@ -8,6 +8,8 @@ export type PlanItemKind =
   | "study_guide"
   | "resource"
   | "mock_exam"
+  | "body_map"
+  | "matching"
   | "rest";
 
 export interface PlanItem {
@@ -50,6 +52,52 @@ export function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Domain → chapter focus + body-map regions + matching game ids.
+// Keys are matched case-insensitively on a substring of the domain name.
+const DOMAIN_CONTENT: Record<
+  string,
+  { chapters: string; regions: string[]; gameIds: string[] }
+> = {
+  risk: {
+    chapters: "Chs 5–7, 14, 28 (nutrition, environment, PPE, infection control, skin)",
+    regions: ["skin"],
+    gameIds: ["ch7-equipment", "ch28-skin"],
+  },
+  assessment: {
+    chapters: "Chs 9, 13, 18–27 (musculoskeletal trauma, off-the-field eval, regional exams)",
+    regions: ["shoulder-r", "knee-r", "ankle-r", "lspine"],
+    gameIds: ["mmt", "gon", "ch18-foot", "ch20-knee", "ch22-shoulder", "ch13-evaluation"],
+  },
+  critical: {
+    chapters: "Chs 12, 25–27 (acute care, spine, head/face, thorax/abdomen emergencies)",
+    regions: ["head", "cspine", "chest", "abdomen"],
+    gameIds: ["ch12-acute-care", "ch25-spine", "ch27-thorax"],
+  },
+  therapeutic: {
+    chapters: "Chs 8, 10, 15–17 (taping, tissue response, modalities, rehab, pharm)",
+    regions: ["lspine", "shoulder-r", "knee-r"],
+    gameIds: ["ch8-taping", "ch15-modalities", "ch16-rehab"],
+  },
+  healthcare: {
+    chapters: "Chs 1–3, 11 (the AT role, organization, legal/insurance, psychosocial)",
+    regions: [],
+    gameIds: [],
+  },
+};
+
+function contentFor(domainName?: string) {
+  const n = (domainName ?? "").toLowerCase();
+  for (const k of Object.keys(DOMAIN_CONTENT)) {
+    if (n.includes(k)) return DOMAIN_CONTENT[k];
+  }
+  return { chapters: "core BOC content", regions: [], gameIds: [] };
+}
+
+function pick<T>(arr: T[], idx: number): T | undefined {
+  if (arr.length === 0) return undefined;
+  return arr[idx % arr.length];
+}
+
 export function buildSchedule(
   startDate: string,
   examDate: string,
@@ -81,6 +129,9 @@ export function buildSchedule(
     else phase = "foundation";
 
     const focusDomain = orderedDomains[i % orderedDomains.length];
+    const content = contentFor(focusDomain?.name);
+    const region = pick(content.regions, i);
+    const gameId = pick(content.gameIds, i);
 
     const items: PlanItem[] = [];
     let title = "";
@@ -88,25 +139,32 @@ export function buildSchedule(
     if (isExamDay) {
       title = "Exam Day — light review only";
       items.push(
-        { kind: "review", title: "Light morning review of formula sheets", estMinutes: 20 },
+        { kind: "review", title: "Light morning review of formula sheets and red-flag lists", estMinutes: 20 },
         { kind: "rest", title: "Hydrate, eat well, arrive 30 min early", estMinutes: 0 },
       );
     } else if (phase === "final_review") {
       title = `Final Review — ${focusDomain?.name ?? "all domains"}`;
       items.push(
-        { kind: "flashcards", title: "Review all due flashcards", estMinutes: 30, link: "/flashcards" },
+        { kind: "flashcards", title: "Sweep ALL due flashcards", estMinutes: 30, link: "/flashcards" },
         {
           kind: "quiz",
           title: "60-question mixed adaptive quiz",
-          description: "Heavily weighted toward your weakest topics.",
+          description: "Heavily weighted toward your weakest topics across all 5 domains.",
           estMinutes: 60,
           link: "/quiz",
         },
         {
           kind: "review",
-          title: `Re-read ${focusDomain?.name ?? "weak"} study guides`,
+          title: `Re-read ${focusDomain?.name ?? "weak"} study guides (${content.chapters})`,
           estMinutes: 25,
           domainId: focusDomain?.id,
+        },
+        {
+          kind: "body_map",
+          title: "Whole-body red-flag walkthrough",
+          description: "Tap each region — recite emergency action and one high-yield fact.",
+          estMinutes: 20,
+          link: "/body-map",
         },
       );
     } else if (phase === "integration") {
@@ -134,6 +192,7 @@ export function buildSchedule(
           {
             kind: "quiz",
             title: `Topic quiz: ${focusDomain?.name}`,
+            description: content.chapters,
             estMinutes: 25,
             domainId: focusDomain?.id,
             link: "/quiz",
@@ -147,30 +206,49 @@ export function buildSchedule(
           {
             kind: "audio",
             title: `Audio overview while commuting`,
-            description: "Generate or listen to an existing audio overview.",
+            description: "Generate or listen to an existing audio overview for this domain.",
             estMinutes: 15,
           },
           {
             kind: "review",
-            title: "Practice case scenarios",
+            title: "Practice case scenarios with the AI tutor",
+            description: "Ask for 3 BOC-style case vignettes in this domain.",
             estMinutes: 30,
             domainId: focusDomain?.id,
+            link: "/tutor",
           },
         );
+        if (region) {
+          items.push({
+            kind: "body_map",
+            title: `Body map drill: ${region.replace(/-/g, " ")}`,
+            description: "Recite injuries, red flags, and on-field management for this region.",
+            estMinutes: 10,
+            link: "/body-map",
+          });
+        }
+        if (gameId) {
+          items.push({
+            kind: "matching",
+            title: `Matching game: ${gameId.replace(/-/g, " ")}`,
+            estMinutes: 8,
+            link: `/games/${gameId}`,
+          });
+        }
       }
     } else if (phase === "deep_study") {
       title = `Deep Study — ${focusDomain?.name}`;
       items.push(
         {
           kind: "study_guide",
-          title: `Generate study guide for ${focusDomain?.name}`,
-          description: "Use the notebook for this domain to generate or revisit a guide.",
+          title: `Study ${focusDomain?.name} — ${content.chapters}`,
+          description: "Open the matching notebook(s) and generate or revisit a guide.",
           estMinutes: 45,
           domainId: focusDomain?.id,
         },
         {
           kind: "flashcards",
-          title: "Review due cards + add 10 new",
+          title: "Review due cards + add 10 new from today's reading",
           estMinutes: 25,
           link: "/flashcards",
         },
@@ -182,20 +260,38 @@ export function buildSchedule(
           link: "/quiz",
         },
       );
+      if (gameId) {
+        items.push({
+          kind: "matching",
+          title: `Matching game: ${gameId.replace(/-/g, " ")}`,
+          description: "Reinforce the day's terminology with image-based matching.",
+          estMinutes: 8,
+          link: `/games/${gameId}`,
+        });
+      }
+      if (region) {
+        items.push({
+          kind: "body_map",
+          title: `Body map: open the ${region.replace(/-/g, " ")} region`,
+          description: "Walk through evaluation, red flags, and treatment.",
+          estMinutes: 10,
+          link: "/body-map",
+        });
+      }
     } else {
       // foundation
       title = `Foundation — ${focusDomain?.name}`;
       items.push(
         {
           kind: "study_guide",
-          title: `Read overview of ${focusDomain?.name}`,
+          title: `Read overview: ${focusDomain?.name} (${content.chapters})`,
           estMinutes: 35,
           domainId: focusDomain?.id,
         },
         {
           kind: "flashcards",
           title: "Build initial flashcard set",
-          description: "Generate flashcards from your notes.",
+          description: "Generate flashcards from your notes for this domain.",
           estMinutes: 20,
           link: "/flashcards",
         },
@@ -207,6 +303,14 @@ export function buildSchedule(
           link: "/quiz",
         },
       );
+      if (region) {
+        items.push({
+          kind: "body_map",
+          title: `Body map preview: ${region.replace(/-/g, " ")}`,
+          estMinutes: 8,
+          link: "/body-map",
+        });
+      }
     }
 
     // Rest day on Sundays during foundation/deep_study (but not in final review)
@@ -215,6 +319,7 @@ export function buildSchedule(
       items.length = 0;
       items.push(
         { kind: "flashcards", title: "Quick 10-minute flashcard sweep", estMinutes: 10, link: "/flashcards" },
+        { kind: "matching", title: "One matching game of your choice", estMinutes: 8, link: "/games" },
         { kind: "rest", title: "Recover. Hydrate. Walk. Sleep early.", estMinutes: 0 },
       );
     }
