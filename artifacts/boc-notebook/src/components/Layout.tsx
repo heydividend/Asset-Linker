@@ -6,9 +6,11 @@ import { useLocation } from "wouter";
 import { useLayoutStore } from "@/hooks/use-layout";
 
 // Routes that own their full width (no docked chat panel).
+// - /tutor is itself the full-page Ask-AI surface (docked panel would be redundant).
+// - /mock-exam/:id is the strict timed exam runner (no AI assistance allowed).
+// All other routes — including /notebooks/:id — get the docked Ask-AI panel.
 function shouldHideChat(location: string): boolean {
   if (/^\/mock-exam\/\d+/.test(location)) return true;
-  if (/^\/notebooks\/\d+/.test(location)) return true;
   if (location === "/tutor") return true;
   return false;
 }
