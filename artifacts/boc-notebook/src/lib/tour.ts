@@ -325,12 +325,22 @@ function quizSteps(): BocStep[] {
   ];
 }
 
+function activateQuizRunPreview(): void {
+  (window as unknown as { __bocTourQuizRunPreview?: boolean }).__bocTourQuizRunPreview = true;
+  window.dispatchEvent(new Event("boc:tour:quizrun:preview"));
+}
+
+function quizRunCleanup(): void {
+  (window as unknown as { __bocTourQuizRunPreview?: boolean }).__bocTourQuizRunPreview = false;
+  window.dispatchEvent(new Event("boc:tour:quizrun:end"));
+}
+
 function quizRunSteps(): BocStep[] {
   return [
     {
       popover: centerPopover(
         "You're inside a quiz",
-        "Read the stem, pick the best choice. Once you answer, the correct option, rationale, and an Ask-AI button appear so you can learn from each item — right and wrong.",
+        "Read the stem, pick the best choice. Once you answer, the correct option, rationale, and an Ask-AI button appear so you can learn from each item — right and wrong.<br/><br/><em>For this walkthrough we're showing a sample question — your real quiz history isn't affected.</em>",
       ),
     },
     {
@@ -565,16 +575,19 @@ export const PAGES: Record<PageKey, PageDef> = {
     key: "quizRun",
     label: "Quiz in progress",
     match: (loc) => /^\/quiz\/\d+/.test(loc),
-    defaultPath: "/quiz",
+    defaultPath: "/quiz/0",
+    readyDelayMs: 500,
     prepare: async () => {
-      if (/^\/quiz\/\d+/.test(window.location.pathname)) return {};
-      return {
-        skip: true,
-        reason:
-          "You're not inside an active quiz right now. Start a Practice Quiz from the sidebar — once you're answering questions, this tour walks through choices, rationales, the Ask-AI button, and finishing up.",
-      };
+      const path = window.location.pathname;
+      // Real, in-progress quiz: don't seed a sample.
+      if (/^\/quiz\/[1-9]\d*/.test(path)) return {};
+      // Otherwise navigate to the sentinel /quiz/0 route and let
+      // QuizRunner render a tour-only sample question.
+      activateQuizRunPreview();
+      return { navigateTo: "/quiz/0" };
     },
     steps: quizRunSteps,
+    cleanup: quizRunCleanup,
   },
   mockExam: {
     key: "mockExam",

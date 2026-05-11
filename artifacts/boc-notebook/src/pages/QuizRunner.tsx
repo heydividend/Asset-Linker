@@ -40,18 +40,45 @@ export default function QuizRunner() {
   const params = useParams();
   const id = Number(params.id);
   const qc = useQueryClient();
-  const { data: quiz, isLoading } = useGetQuiz(id, { query: { enabled: !!id, queryKey: getGetQuizQueryKey(id) } });
+  const [, navigate] = useLocation();
+  const [tourActive, setTourActive] = useState<boolean>(() =>
+    typeof window !== "undefined" &&
+    !!(window as unknown as { __bocTourQuizRunPreview?: boolean }).__bocTourQuizRunPreview,
+  );
+
+  useEffect(() => {
+    const onPreview = () => setTourActive(true);
+    const onEnd = () => {
+      setTourActive(false);
+      // Leave the sentinel /quiz/0 route once the tour ends.
+      if (window.location.pathname.endsWith("/quiz/0")) {
+        navigate("/quiz");
+      }
+    };
+    window.addEventListener("boc:tour:quizrun:preview", onPreview);
+    window.addEventListener("boc:tour:quizrun:end", onEnd);
+    return () => {
+      window.removeEventListener("boc:tour:quizrun:preview", onPreview);
+      window.removeEventListener("boc:tour:quizrun:end", onEnd);
+    };
+  }, [navigate]);
+
+  const realQuizId = Number.isInteger(id) && id > 0;
+  const { data: quiz, isLoading } = useGetQuiz(id, {
+    query: { enabled: realQuizId && !tourActive, queryKey: getGetQuizQueryKey(id) },
+  });
   const answer = useAnswerQuizQuestion();
   const finish = useFinishQuiz();
   const [localIdx, setLocalIdx] = useState<number | null>(null);
   const [multiPicks, setMultiPicks] = useState<Record<number, number[]>>({});
   const [submittingMulti, setSubmittingMulti] = useState(false);
-  const [, navigate] = useLocation();
 
   const onExit = () => {
     if (!confirm("Exit this quiz? Your answers so far are saved — you can resume later from the Practice page.")) return;
     navigate("/quiz");
   };
+
+  if (tourActive) return <TourSampleQuizView />;
 
   if (isLoading || !quiz) return <div className="p-6">Loading quiz…</div>;
 
@@ -420,3 +447,104 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
       </div>
     );
   }
+
+/**
+ * Tour-only sample quiz screen. Mounted when the in-quiz tour is launched
+ * outside of an actual quiz attempt (sentinel route /quiz/0 with the
+ * __bocTourQuizRunPreview window flag set). Mirrors the real runner's
+ * data-testids so every tour step lands on a real DOM element. No quiz
+ * data is fetched, no answers are recorded, and nothing here persists.
+ */
+function TourSampleQuizView() {
+  const [, navigate] = useLocation();
+  const sample = {
+    stem:
+      "A 17-year-old soccer player rolls his ankle into inversion during a match. On the sideline he has tenderness over the lateral malleolus and is unable to bear weight for more than four steps. Which of the following is the MOST appropriate next step to determine the need for radiographs?",
+    choices: [
+      "Anterior drawer test",
+      "Talar tilt test",
+      "Apply the Ottawa Ankle Rules",
+      "Squeeze (syndesmosis) test",
+    ],
+    correctIndex: 2,
+    rationale:
+      "The **Ottawa Ankle Rules** are validated clinical decision rules indicating ankle radiographs when there is bony tenderness in the malleolar zone *or* inability to bear weight for four steps both immediately and in the clinic — exactly this athlete's presentation. The anterior drawer and talar tilt assess ligamentous laxity, not fracture; the squeeze test screens for a high-ankle (syndesmotic) injury.",
+  };
+  const onExitSample = () => navigate("/quiz");
+  return (
+    <div className="flex flex-col h-full">
+      <header className="h-14 border-b flex items-center px-6 gap-4">
+        <h1 className="text-lg font-semibold">Question 1 of 10</h1>
+        <Progress value={10} className="flex-1 h-2 max-w-xs" />
+        <Badge variant="outline" className="text-[11px]">Sample · tour preview</Badge>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onExitSample}
+          data-testid="button-exit-quiz"
+          title="Save progress and exit — you can resume later"
+        >
+          <LogOut className="h-4 w-4 mr-1" /> Exit
+        </Button>
+      </header>
+      <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg leading-relaxed" data-testid="text-question-stem">
+              {sample.stem}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {sample.choices.map((c, ci) => {
+              const isCorrectChoice = ci === sample.correctIndex;
+              return (
+                <button
+                  key={ci}
+                  type="button"
+                  disabled
+                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                    isCorrectChoice ? "border-primary bg-primary/10" : "border-border opacity-60"
+                  }`}
+                  data-testid={`choice-${ci}`}
+                >
+                  <span className="font-medium mr-2">{String.fromCharCode(65 + ci)}.</span>
+                  {c}
+                </button>
+              );
+            })}
+          </CardContent>
+        </Card>
+        <Card className="border-primary">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Check className="h-5 w-5 text-primary" />
+              <span className="font-semibold">Correct</span>
+            </div>
+            <MarkdownMessage content={sample.rationale} />
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground italic">
+                In a real attempt, an Ask-AI button appears here so you can dig deeper into this rationale.
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+        <div className="flex justify-between gap-2">
+          <span />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onExitSample}
+              data-testid="button-finish-quiz"
+            >
+              Finish quiz
+            </Button>
+            <Button type="button" onClick={onExitSample} data-testid="button-next-question">
+              Next <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
