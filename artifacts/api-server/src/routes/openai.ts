@@ -115,6 +115,16 @@ const REFERENCE_LIBRARY_NOTEBOOK_ID = 4;
 let referenceCache: { text: string; loadedAt: number } | null = null;
 const REFERENCE_TTL_MS = 5 * 60 * 1000;
 
+// Per-note cap so the full Reference Library fits in Claude's 200K context.
+// ~22K chars/note × ~32 notes ≈ 700K chars (~175K tokens) leaving headroom
+// for the base prompt, glossary, conversation history, and the response.
+const MAX_NOTE_CHARS = 22000;
+
+function capNoteContent(content: string): string {
+  if (content.length <= MAX_NOTE_CHARS) return content;
+  return content.slice(0, MAX_NOTE_CHARS) + "\n\n[... section truncated for length — ask the tutor for more detail on a specific subtopic if needed ...]";
+}
+
 async function loadReferenceLibrary(): Promise<string> {
   const now = Date.now();
   if (referenceCache && now - referenceCache.loadedAt < REFERENCE_TTL_MS) {
@@ -128,7 +138,7 @@ async function loadReferenceLibrary(): Promise<string> {
   // Skip the BOC Glossary (already in SYSTEM_BASE) and assemble the rest.
   const sections = rows
     .filter((r) => !/glossary/i.test(r.title))
-    .map((r) => `## ${r.title}\n\n${r.content}`)
+    .map((r) => `## ${r.title}\n\n${capNoteContent(r.content)}`)
     .join("\n\n---\n\n");
   const text = sections
     ? `\nADDITIONAL REFERENCE LIBRARY — User-curated study materials. Treat these as authoritative ground truth alongside the glossary. Cite them by section title when relevant.\n\n<<<REFERENCE_LIBRARY_START>>>\n${sections}\n<<<REFERENCE_LIBRARY_END>>>\n`
