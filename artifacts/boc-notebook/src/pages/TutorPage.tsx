@@ -58,6 +58,13 @@ export default function TutorPage() {
     del.mutate({ id }, {
       onSuccess: () => {
         if (activeId === id) setActiveId(null);
+        // Synchronously drop the deleted conv from the cache so the
+        // auto-select effect doesn't immediately re-pick it before the
+        // server refetch returns.
+        qc.setQueryData<typeof convs>(
+          getListOpenaiConversationsQueryKey(),
+          (prev) => (prev ?? []).filter((c) => c.id !== id),
+        );
         qc.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
         toast({ title: "Conversation deleted" });
       },
@@ -81,6 +88,10 @@ export default function TutorPage() {
         ),
       );
       setActiveId(null);
+      // Synchronously empty the cache so the auto-select effect (which
+      // runs on the next render with stale convs) doesn't re-pick a
+      // just-deleted conversation.
+      qc.setQueryData(getListOpenaiConversationsQueryKey(), []);
       qc.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
       toast({ title: "All conversations deleted" });
     } catch (e) {
@@ -111,6 +122,17 @@ export default function TutorPage() {
           if (j?.error) msg = j.error;
         } catch { /* ignore */ }
         toast({ title: "AI request failed", description: msg, variant: "destructive" });
+        if (res.status === 404) {
+          // The conversation we held in state no longer exists on the server
+          // (e.g. cleared from another tab). Reset and refresh the list so the
+          // user can pick or start a new chat instead of being stuck.
+          setActiveId(null);
+          qc.setQueryData<typeof convs>(
+            getListOpenaiConversationsQueryKey(),
+            (prev) => (prev ?? []).filter((c) => c.id !== activeId),
+          );
+          qc.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
+        }
         return;
       }
       if (!res.body) {
