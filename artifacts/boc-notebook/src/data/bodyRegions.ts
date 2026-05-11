@@ -41,29 +41,88 @@ export const bodyRegions: BodyRegion[] = [
     domain: "Critical Incident Management",
     shape: "ellipse", cx: 100, cy: 42, rx: 28, ry: 32,
     labelX: 145, labelY: 42, side: "both",
-    blurb: "Concussion, skull fx, facial injuries.",
+    blurb: "Concussion, skull fx, eye/ear/nose/face/dental injuries.",
     injuries: [
       {
         name: "Sport-related concussion",
-        redFlags: ["LOC > 30 s", "GCS < 15", "worsening HA", "repeated vomiting", "seizure", "focal neuro deficit"],
+        redFlags: ["LOC > 30 s", "GCS < 15", "worsening HA", "repeated vomiting", "seizure", "focal neuro deficit", "unequal pupils", "Battle sign / raccoon eyes (basilar skull fx)"],
         evaluation: [
           "Remove from play immediately — when in doubt, sit them out.",
           "SCAT6 (≥13 yr) or Child SCAT6 (5–12 yr) sideline assessment.",
           "Symptom checklist, cognitive screen, mBESS, tandem gait.",
+          "VOMS: smooth pursuit, saccades, near-point convergence (abnormal ≥6 cm), VOR, visual motion sensitivity.",
           "Refer to physician for any red flag or persistent symptoms.",
         ],
         treatment: [
-          "24–48 h relative rest, then sub-symptom-threshold aerobic activity.",
+          "24–48 h relative rest, then sub-symptom-threshold aerobic activity (Buffalo treadmill test guides intensity).",
           "Stepwise 6-stage RTP progression — 24 h between stages.",
           "No same-day return to play in any organized sport.",
           "Academic accommodations during symptomatic phase.",
         ],
         rtp: "Symptom-free at rest AND through full progression AND medical clearance.",
       },
+      {
+        name: "Orbital blowout fracture / globe injury",
+        redFlags: ["diplopia (esp. upward gaze)", "enophthalmos", "infraorbital numbness", "hyphema (blood in anterior chamber)", "ruptured globe — teardrop pupil, extruded contents"],
+        evaluation: [
+          "Direct blow from object smaller than orbit (racquetball, fist, elbow).",
+          "Check vision, EOMs, pupils (PERRLA), confrontation visual fields.",
+          "Palpate orbital rim for step-off; check infraorbital sensation (V2).",
+        ],
+        treatment: [
+          "Suspected globe rupture: rigid eye shield (NO patch / pressure), upright transport, NPO, EMS.",
+          "Hyphema: upright posture, rigid shield, urgent ophthalmology — high re-bleed risk.",
+          "Blowout fx: ice, head elevation, nasal precautions (no nose-blowing), urgent referral.",
+        ],
+      },
+      {
+        name: "Nasal fracture / epistaxis",
+        evaluation: [
+          "Inspect for septal deviation; palpate dorsum for crepitus / step-off.",
+          "Check septum for hematoma (bluish, boggy swelling) — must be drained <24 h to prevent saddle-nose / cartilage necrosis.",
+          "Rule out CSF rhinorrhea (clear fluid, halo sign on gauze) → basilar skull fx.",
+        ],
+        treatment: [
+          "Anterior epistaxis: lean forward, pinch soft cartilage 10–15 min, ice to bridge.",
+          "Refer for reduction within 5–10 days while still mobile.",
+          "Septal hematoma → ENT same-day for drainage.",
+        ],
+      },
+      {
+        name: "Dental avulsion (knocked-out permanent tooth)",
+        redFlags: ["associated mandible fx", "airway compromise from displaced teeth"],
+        evaluation: [
+          "Identify permanent vs deciduous (do NOT replant deciduous).",
+          "Handle by crown only — never the root.",
+          "Inspect socket for fracture / debris.",
+        ],
+        treatment: [
+          "Rinse gently with saline (do NOT scrub).",
+          "Replant in socket within 30 min for best prognosis (every minute counts).",
+          "If unable to replant: store in Hank's Balanced Salt Solution > milk > saliva (cheek pouch in conscious athlete) > saline. NEVER water.",
+          "Urgent dental referral.",
+        ],
+      },
+      {
+        name: "Auricular hematoma ('cauliflower ear')",
+        evaluation: [
+          "Common in wrestlers, BJJ, rugby — shear injury to auricle.",
+          "Painful, fluctuant swelling separating perichondrium from cartilage.",
+        ],
+        treatment: [
+          "Drain within 7 days (needle aspiration or I&D) followed by compressive bolster dressing.",
+          "Untreated → avascular necrosis of cartilage → permanent deformity.",
+          "Prevent with properly fitted headgear.",
+        ],
+      },
     ],
     highYield: [
       "SCAT6 replaced SCAT5 in 2023 (Amsterdam Consensus).",
+      "VOMS near-point convergence ≥6 cm = abnormal, supports concussion dx.",
       "Second-impact syndrome → diffuse cerebral edema, often fatal.",
+      "Avulsed tooth: replant <30 min; storage order = HBSS > milk > saliva > saline (NEVER water).",
+      "Globe rupture: rigid shield only — no patch, no pressure, NPO, upright transport.",
+      "Battle sign (mastoid bruise) or raccoon eyes = basilar skull fracture → EMS.",
       "EAP must specify spine-board, AED, EMS activation.",
     ],
     topicNames: ["Concussion Assessment", "Emergency Action Plans"],
@@ -74,30 +133,48 @@ export const bodyRegions: BodyRegion[] = [
     domain: "Critical Incident Management",
     shape: "rect", x: 88, y: 74, width: 24, height: 16,
     labelX: 145, labelY: 82, side: "both",
-    blurb: "C-spine sprain, stinger, suspected fracture.",
+    blurb: "C-spine sprain, stinger, disc herniation, suspected fracture.",
     injuries: [
       {
         name: "Suspected cervical fracture",
-        redFlags: ["midline tenderness", "neuro deficit", "altered mental status", "distracting injury"],
+        redFlags: ["midline tenderness", "neuro deficit", "altered mental status", "distracting injury", "high-energy MOI (axial loading, spear tackle)"],
         evaluation: [
           "Manual in-line stabilization — head squeeze, do NOT remove helmet on field.",
           "Spine-boarding with log-roll or 6+ plus lift technique.",
+          "NEXUS criteria: no midline tenderness, no intoxication, normal alertness, no focal deficit, no distracting injury → may clear.",
+          "Canadian C-Spine rule alternative for low-risk patients.",
           "Activate EMS; transport with hard collar.",
         ],
         treatment: [
           "Field: immobilize, transport to trauma center.",
-          "Helmet/shoulder pads off TOGETHER (current consensus) once at facility.",
-          "NEXUS / Canadian C-Spine rule for clearance imaging.",
+          "Helmet/shoulder pads off TOGETHER (current consensus) once at facility — never one without the other.",
+          "Face mask removal with cordless screwdriver to access airway while pads on.",
+        ],
+      },
+      {
+        name: "Cervical disc herniation / radiculopathy",
+        redFlags: ["bilateral UE symptoms", "myelopathy signs (Hoffmann, hyperreflexia, gait disturbance)", "bowel/bladder change"],
+        evaluation: [
+          "Spurling test (extension + ipsilateral side-bend + axial compression) reproduces radicular symptoms.",
+          "Distraction test relieves symptoms = +.",
+          "Upper-limb tension test (median bias) most sensitive.",
+          "Dermatomal sensory + myotomal MMT + DTR (biceps C5–6, brachioradialis C6, triceps C7).",
+        ],
+        treatment: [
+          "Conservative: cervical traction, postural retraining, deep neck flexor activation, neural mobilization.",
+          "Refer for myelopathy or persistent radiculopathy >6 wk.",
         ],
       },
       {
         name: "Brachial plexus stinger / burner",
         evaluation: ["Unilateral arm burning, weakness, NO neck pain.", "Resolves in seconds–minutes."],
-        treatment: ["Hold from contact until full strength + painless ROM.", "Bilateral sx → treat as c-spine until cleared."],
+        treatment: ["Hold from contact until full strength + painless ROM.", "Bilateral sx → treat as c-spine until cleared.", "Recurrent stingers → cervical roll / 'cowboy collar', neuromuscular control work."],
       },
     ],
     highYield: [
       "Bilateral upper-extremity sx after impact = c-spine until proven otherwise.",
+      "NEXUS low-risk criteria can clear c-spine without imaging — memorize all 5.",
+      "Helmet AND shoulder pads come off TOGETHER (current consensus) — equipment-laden athlete is in alignment.",
       "Catastrophic injury management is consistently tested on the BOC.",
     ],
     topicNames: ["Spine Evaluation", "Spinal Injury Management"],
@@ -166,24 +243,60 @@ export const bodyRegions: BodyRegion[] = [
     domain: "Critical Incident Management",
     shape: "rect", x: 78, y: 110, width: 44, height: 38,
     labelX: 14, labelY: 130, side: "front",
-    blurb: "Commotio cordis, pneumothorax, rib fracture, SCA.",
+    blurb: "Commotio cordis, SCA, pneumothorax, rib fx, exercise-induced bronchoconstriction.",
     injuries: [
       {
-        name: "Commotio cordis",
-        redFlags: ["sudden collapse after blunt chest impact", "pulseless"],
-        evaluation: ["Witnessed blunt impact during T-wave repolarization → immediate VF.", "Check responsiveness, breathing, pulse."],
-        treatment: ["Activate EMS, start CPR, AED ASAP — single most important predictor of survival is time to defibrillation.", "Continue until ROSC or EMS arrival."],
+        name: "Sudden cardiac arrest (SCA) / commotio cordis",
+        redFlags: ["sudden collapse, no purposeful movement", "agonal/absent breathing", "no carotid pulse", "history of HCM, long QT, Marfan, prior syncope"],
+        evaluation: [
+          "Commotio cordis: blunt chest impact during T-wave repolarization (10–30 ms window) → VF.",
+          "HCM is the leading cause of non-traumatic SCA in young athletes (US).",
+          "Check responsiveness, breathing, pulse — no more than 10 sec to assess.",
+        ],
+        treatment: [
+          "Activate EAP / EMS, start high-quality CPR (100–120/min, 2–2.4 in depth), attach AED ASAP.",
+          "Time to defibrillation is THE single biggest predictor of survival.",
+          "Continue compressions with minimal interruption until ROSC or EMS handoff.",
+        ],
       },
       {
         name: "Tension pneumothorax",
         redFlags: ["tracheal deviation AWAY from injury", "absent breath sounds", "JVD", "shock"],
         evaluation: ["Sudden dyspnea after blow / rib fx.", "Hyperresonance on percussion."],
-        treatment: ["EMS now — decompression by physician (2nd ICS midclavicular)."],
+        treatment: ["EMS now — needle decompression by physician (2nd ICS midclavicular or 5th ICS anterior axillary)."],
+      },
+      {
+        name: "Rib fracture / flail chest",
+        redFlags: ["paradoxical chest wall motion (flail segment)", "dyspnea, hypoxia", "first-rib fx (high-energy → vascular injury)", "lower rib fx + LUQ pain (spleen) or RUQ pain (liver)"],
+        evaluation: [
+          "Point tenderness, crepitus; AP and lateral compression reproduce pain.",
+          "Auscultate for decreased breath sounds (rule out pneumo/hemothorax).",
+        ],
+        treatment: [
+          "Pain control to allow deep breathing → prevent atelectasis / pneumonia.",
+          "Refer for chest imaging; flail chest → EMS, possible positive-pressure ventilation.",
+          "No taping that restricts chest expansion.",
+        ],
+      },
+      {
+        name: "Exercise-induced bronchoconstriction / asthma exacerbation",
+        redFlags: ["silent chest", "cyanosis", "tripod posture", "inability to speak in full sentences", "SpO₂ <92%"],
+        evaluation: [
+          "Wheezing, prolonged expiration, cough, chest tightness 5–15 min into exercise.",
+          "Peak flow drop ≥10–15% from baseline.",
+        ],
+        treatment: [
+          "Stop activity; SABA (albuterol) 2–4 puffs via spacer, repeat q20 min ×3 if needed.",
+          "Severe / no response → EMS.",
+          "Prevention: SABA 15 min pre-exercise, warm-up, avoid cold/dry air triggers.",
+        ],
       },
     ],
     highYield: [
       "AED < 3 min from collapse = >90% survival in commotio cordis.",
-      "Every venue EAP must define AED location and time-to-shock target.",
+      "HCM = #1 non-traumatic SCA cause in young US athletes; PPE history + auscultation are key.",
+      "Every venue EAP must define AED location, target time-to-shock <3 min, and rehearse annually.",
+      "Lower rib fx + LUQ pain = think spleen; + RUQ pain = think liver — image and refer.",
     ],
     topicNames: ["Cardiopulmonary Emergencies", "Emergency Action Plans"],
   },
@@ -193,16 +306,67 @@ export const bodyRegions: BodyRegion[] = [
     domain: "Critical Incident Management",
     shape: "rect", x: 80, y: 150, width: 40, height: 38,
     labelX: 14, labelY: 170, side: "front",
-    blurb: "Splenic / liver / kidney injury, hernia.",
+    blurb: "Splenic / liver / kidney injury, sports hernia, solar plexus contusion.",
     injuries: [
       {
         name: "Splenic rupture",
-        redFlags: ["LUQ pain", "Kehr sign (referred L shoulder)", "hypotension", "abdominal rigidity"],
-        evaluation: ["Mechanism: blunt LUQ trauma, esp. in mononucleosis-enlarged spleen.", "FAST exam at hospital."],
-        treatment: ["Activate EMS — surgical emergency.", "NPO, monitor vitals, prepare for shock."],
+        redFlags: ["LUQ pain", "Kehr sign (referred L shoulder)", "hypotension, tachycardia", "abdominal rigidity / rebound", "syncope on standing"],
+        evaluation: [
+          "Mechanism: blunt LUQ trauma, esp. in mononucleosis-enlarged spleen.",
+          "Most commonly injured solid abdominal organ in sport.",
+          "Serial vitals — bleeding can present hours after impact.",
+          "FAST exam / CT at hospital.",
+        ],
+        treatment: [
+          "Activate EMS — surgical emergency.",
+          "NPO, two large-bore IVs (in ED), monitor for shock.",
+          "Mononucleosis: NO contact ×3 wk from symptom onset minimum (≥4 wk for collision sport).",
+        ],
+      },
+      {
+        name: "Liver / kidney contusion or laceration",
+        redFlags: ["RUQ pain (liver) or flank pain (kidney)", "gross hematuria", "hypotension, tachycardia", "rigid abdomen"],
+        evaluation: [
+          "Liver: blunt RUQ trauma; referred R shoulder pain possible.",
+          "Kidney: flank tenderness, costovertebral angle pain, +/- gross hematuria.",
+          "Always urinalysis after significant flank/abdominal trauma.",
+        ],
+        treatment: [
+          "EMS / ED transport for imaging (CT with contrast).",
+          "NPO, bed rest, serial vitals; majority managed non-operatively if hemodynamically stable.",
+          "Solitary kidney → counsel on contact-sport risk; modified protective gear.",
+        ],
+      },
+      {
+        name: "Athletic pubalgia / sports hernia",
+        evaluation: [
+          "Insidious or acute lower abdominal / inguinal pain with cutting, kicking, sit-ups.",
+          "Tender pubic tubercle / conjoint tendon; pain with resisted sit-up + adduction.",
+          "MRI to confirm; rule out true inguinal hernia (palpable bulge with Valsalva).",
+        ],
+        treatment: [
+          "Conservative 6–8 wk: rest, core/adductor rehab, hip mobility.",
+          "Surgical repair (mesh or pelvic floor) if conservative fails.",
+        ],
+      },
+      {
+        name: "Solar plexus contusion ('wind knocked out')",
+        evaluation: [
+          "Direct blow to epigastrium → transient diaphragmatic spasm and apnea.",
+          "Self-limiting; rule out concurrent rib / spleen / liver injury.",
+        ],
+        treatment: [
+          "Reassure, loosen restrictive clothing, encourage slow controlled breathing.",
+          "Resolves within minutes; persistent symptoms → reassess for visceral injury.",
+        ],
       },
     ],
-    highYield: ["Mono → no contact for ≥3 wk from sx onset; spleen palpation unreliable, US imaging preferred."],
+    highYield: [
+      "Spleen = most commonly injured solid abdominal organ in sport.",
+      "Mono → no contact ×3 wk from symptom onset (≥4 wk for collision); palpation is unreliable, use ultrasound.",
+      "Kehr sign (referred L shoulder pain) = splenic rupture until proven otherwise.",
+      "Gross hematuria after flank trauma → urgent imaging and physician referral.",
+    ],
     topicNames: ["Cardiopulmonary Emergencies"],
   },
   {
@@ -278,21 +442,68 @@ export const bodyRegions: BodyRegion[] = [
     domain: "Therapeutic Intervention",
     shape: "rect", x: 80, y: 188, width: 40, height: 30,
     labelX: 14, labelY: 200, side: "back",
-    blurb: "Strain, spondylolysis, disc herniation.",
+    blurb: "Strain, spondylolysis/listhesis, disc herniation, facet syndrome.",
     injuries: [
       {
-        name: "Spondylolysis",
-        evaluation: ["Adolescent extension-based athletes.", "Stork (single-leg hyperextension) test.", "MRI > bone scan > CT for staging."],
-        treatment: ["Rest from extension activities 4–6 wk, anti-lordotic brace, core/glute strengthening."],
+        name: "Spondylolysis / spondylolisthesis",
+        redFlags: ["progressive neuro deficit", "high-grade slip with hamstring spasm and 'crouched gait'"],
+        evaluation: [
+          "Adolescent extension-based athletes (gymnasts, linemen, divers).",
+          "Stork (single-leg hyperextension) test reproduces pain.",
+          "MRI is first-line; SPECT/CT for active stress reaction; lateral X-ray ('Scotty dog' sign).",
+          "Meyerding grading I–V for slip severity.",
+        ],
+        treatment: [
+          "Rest from extension activities 4–6 wk (longer for active fracture), anti-lordotic brace if symptomatic.",
+          "Progressive core, glute, hamstring strengthening; avoid lumbar extension early.",
+          "Grade III+ slip or progressive neuro sx → surgical referral.",
+        ],
       },
       {
-        name: "Lumbar disc herniation",
-        redFlags: ["saddle anesthesia", "bowel/bladder dysfunction (cauda equina) — EMS"],
-        evaluation: ["SLR / slump test, dermatomal sensory and reflex testing."],
-        treatment: ["Conservative: McKenzie extension, neural mobilization, NSAIDs.", "Refer if neuro deficit or red flags."],
+        name: "Lumbar disc herniation / radiculopathy",
+        redFlags: ["saddle anesthesia, bowel/bladder dysfunction (cauda equina) — EMS NOW", "progressive motor weakness"],
+        evaluation: [
+          "SLR (sensitive) and crossed SLR (specific); slump test.",
+          "Dermatomal sensory: L4 medial leg, L5 dorsum of foot/great toe, S1 lateral foot.",
+          "Myotomes: L4 ant tib, L5 EHL/great toe ext, S1 peroneals/heel rise.",
+          "DTR: L4 patellar, S1 Achilles.",
+        ],
+        treatment: [
+          "Conservative: McKenzie extension protocol (centralization), neural mobilization, NSAIDs.",
+          "Activity modification — avoid prolonged sitting, axial loading.",
+          "Refer for persistent radiculopathy, progressive weakness, or red flags.",
+        ],
+      },
+      {
+        name: "Lumbar facet syndrome",
+        evaluation: [
+          "Lumbar facets oriented in sagittal plane → flex/ext but minimal rotation.",
+          "Pain with extension + ipsilateral side-bend (Kemp test); paraspinal tenderness.",
+          "Pain unilateral, worse with prolonged standing / extension, eases with flexion.",
+        ],
+        treatment: [
+          "Manual therapy (mobilization), flexion-biased exercise, core stabilization.",
+          "Avoid repeated extension positions until symptoms settle.",
+        ],
+      },
+      {
+        name: "Lumbar muscle strain",
+        evaluation: [
+          "Diffuse paraspinal pain after lifting / twisting; muscle guarding.",
+          "Negative neuro screen; no radicular symptoms.",
+        ],
+        treatment: [
+          "Acute: relative rest, ice 24–48 h, gentle ROM, NSAIDs short-term.",
+          "Progress to lumbopelvic stabilization, hip mobility, return to sport-specific loading.",
+        ],
       },
     ],
-    highYield: ["Cauda equina is a SURGICAL emergency — recognize and refer."],
+    highYield: [
+      "Cauda equina (saddle anesthesia + bowel/bladder dysfunction) is a SURGICAL emergency — EMS NOW.",
+      "Lumbar facets in the sagittal plane → flexion/extension yes, rotation NO (key vs thoracic).",
+      "Adolescent extension-based athlete with low back pain = spondylolysis until proven otherwise.",
+      "Centralization of pain with McKenzie extension = positive prognostic sign for disc.",
+    ],
     topicNames: ["Spine Evaluation", "Therapeutic Exercise"],
   },
   {
@@ -705,5 +916,142 @@ export const bodyRegions: BodyRegion[] = [
       "Eccentric loading (Alfredson) is the gold-standard tendinopathy protocol.",
     ],
     topicNames: ["Lower Extremity Special Tests", "Therapeutic Exercise"],
+  },
+
+  // ===== WHOLE-BODY: SKIN & SOFT TISSUE (Ch 28) =====
+  {
+    id: "skin",
+    name: "Skin & Soft Tissue",
+    domain: "Risk Reduction, Wellness & Health Literacy",
+    shape: "ellipse", cx: 178, cy: 205, rx: 12, ry: 14,
+    labelX: 186, labelY: 205, side: "both",
+    blurb: "Bacterial / fungal / viral / parasitic infections, environmental, wounds, melanoma screen.",
+    injuries: [
+      {
+        name: "Bacterial: MRSA / impetigo / furuncle",
+        redFlags: [
+          "rapidly spreading erythema with streaking (lymphangitis)",
+          "fever / systemic symptoms",
+          "purulent abscess >5 cm or refractory to oral abx",
+          "necrotizing soft-tissue infection signs (pain out of proportion, crepitus, bullae)",
+        ],
+        evaluation: [
+          "MRSA: warm, tender, fluctuant 'spider-bite' lesion; common in wrestlers, football, MMA.",
+          "Impetigo: honey-colored crusted lesions, highly contagious.",
+          "Furuncle / carbuncle: deep follicular abscess; check for cluster.",
+        ],
+        treatment: [
+          "I&D for fluctuant abscess + culture; oral abx per culture (TMP-SMX, doxycycline, clindamycin for MRSA).",
+          "NCAA / NFHS RTP: covered + on systemic abx ≥72 h, no new lesions ×48 h, no moist/draining lesions; lesion must be coverable.",
+          "Disinfect mats, equipment, towels; no shared bottles or razors.",
+        ],
+      },
+      {
+        name: "Fungal: tinea corporis ('ringworm') / pedis / cruris",
+        evaluation: [
+          "Annular scaly plaque with central clearing (corporis); maceration between toes (pedis); inguinal sparing of scrotum (cruris).",
+          "KOH prep confirms hyphae if uncertain.",
+        ],
+        treatment: [
+          "Topical antifungal (terbinafine, clotrimazole) ×2–4 wk; tinea capitis needs oral griseofulvin/terbinafine.",
+          "Wrestling RTP: ≥72 h topical (skin) or ≥14 d oral (scalp), lesion coverable with bio-occlusive dressing.",
+          "Keep skin dry; rotate footwear; no shared towels.",
+        ],
+      },
+      {
+        name: "Viral: herpes gladiatorum / molluscum / verruca",
+        redFlags: ["primary HSV with systemic symptoms", "ocular involvement (HSV keratitis) — ophthalmology"],
+        evaluation: [
+          "HSV gladiatorum: clustered vesicles on erythematous base, prodromal tingling; common on head/neck of wrestlers.",
+          "Molluscum: pearly umbilicated papules.",
+          "Verruca (HPV): plantar / common warts, thrombosed capillaries.",
+        ],
+        treatment: [
+          "HSV: oral acyclovir / valacyclovir (treatment AND prophylaxis during season).",
+          "RTP for HSV (NCAA): ≥120 h on antiviral, no new lesions ×72 h, all lesions crusted; NOT coverable — must clear.",
+          "Molluscum: curettage, cantharidin, cryotherapy; can compete if covered.",
+          "Verruca: salicylic acid, cryotherapy, duct tape; pad plantar lesions.",
+        ],
+      },
+      {
+        name: "Parasitic: scabies / pediculosis (lice)",
+        evaluation: [
+          "Scabies: intense nighttime itching, burrows in web spaces, wrists, axillae, waistline.",
+          "Pediculosis: nits cemented to hair shaft.",
+        ],
+        treatment: [
+          "Scabies: 5% permethrin head-to-toe ×8–14 h, repeat in 1 wk; treat all close contacts; wash linens hot.",
+          "Lice: 1% permethrin or pyrethrin to scalp; nit comb; treat shared headgear.",
+          "RTP after first treatment + lesions covered.",
+        ],
+      },
+      {
+        name: "Environmental: sunburn / frostbite / friction blister",
+        redFlags: [
+          "frostbite with hard waxy white skin or hemorrhagic bullae (deep / 3rd–4th degree)",
+          "sunburn with blistering >20% BSA, fever, dehydration → ED",
+        ],
+        evaluation: [
+          "Frostbite stages: frostnip (reversible), superficial (clear blisters), deep (hemorrhagic blisters, hard tissue).",
+          "Burn depth: 1st (erythema), 2nd (blisters, painful), 3rd (charred / painless).",
+          "Friction blister: shear injury at high-pressure points.",
+        ],
+        treatment: [
+          "Frostbite: rapid rewarming in 99–102 °F (37–39 °C) circulating water 15–30 min — ONLY if no risk of refreeze. No rubbing, no dry heat.",
+          "Sunburn: cool compresses, aloe, NSAIDs, hydration; avoid breaking blisters.",
+          "Friction blister: leave roof intact; if drained, sterile puncture at edge, antibiotic ointment, donut pad.",
+          "Prevention: SPF ≥30 broad-spectrum reapplied q2h, moisture-wicking socks, blister-prone area lubrication.",
+        ],
+      },
+      {
+        name: "Wounds: abrasion / laceration / puncture",
+        redFlags: ["wound through tendon / joint capsule", "high-pressure injection injury", "tetanus-prone wound + no booster ≥5 yr", "human/animal bite (high infection risk)"],
+        evaluation: [
+          "Assess depth, NV status distally, foreign body, contamination.",
+          "Lacerations >½ in or gaping → physician for closure within 6–8 h (face up to 24 h).",
+        ],
+        treatment: [
+          "Standard precautions: gloves, irrigate copiously with saline / potable water (≥250 mL).",
+          "Cleanse with mild soap; antibiotic ointment; non-adherent dressing.",
+          "Bloodborne pathogen exposure → OSHA reporting + post-exposure protocol per EAP.",
+          "Tetanus booster if last >5 yr (clean wound) or >10 yr (any wound).",
+        ],
+      },
+      {
+        name: "Suspicious mole / melanoma screen",
+        redFlags: ["any ABCDE-positive lesion", "rapid change in size, color, bleeding, or symptoms"],
+        evaluation: [
+          "ABCDEs: Asymmetry, Border irregularity, Color variation, Diameter >6 mm, Evolving.",
+          "Inspect skin during PPE / sport physicals; high UV exposure → higher risk.",
+          "Melanoma is the deadliest skin cancer; early detection drives survival.",
+        ],
+        treatment: [
+          "Refer ANY ABCDE-positive lesion to dermatology for biopsy.",
+          "Counsel sun protection: SPF ≥30, reapply q2h, hat / UPF clothing, avoid peak UV.",
+        ],
+      },
+      {
+        name: "Acute / chronic dermatitis (contact, eczema, miliaria)",
+        evaluation: [
+          "Contact: localized erythema / vesicles in pattern of exposure (tape, neoprene, latex, plant).",
+          "Atopic eczema: flexural dry pruritic plaques.",
+          "Miliaria ('heat rash'): tiny vesicles on occluded skin in heat.",
+        ],
+        treatment: [
+          "Identify and remove offending agent; barrier creams; hypoallergenic tape.",
+          "Topical steroids short-term; emollients for eczema.",
+          "Cool environment, breathable fabrics for miliaria.",
+        ],
+      },
+    ],
+    highYield: [
+      "ABCDEs of melanoma — any positive finding = dermatology referral.",
+      "MRSA RTP: covered + on abx ≥72 h, no new lesions ×48 h, no draining/moist lesions.",
+      "HSV gladiatorum RTP (NCAA wrestling): ≥120 h antiviral, no new lesions ×72 h, all lesions crusted; NOT coverable.",
+      "Frostbite: rapid rewarming 99–102 °F water; do NOT thaw if risk of refreeze (worse than staying frozen).",
+      "Honey-colored crust = impetigo (Strep / Staph); highly contagious.",
+      "Standard precautions assume ALL body fluids are infectious — gloves + irrigation + dressing for every wound.",
+    ],
+    topicNames: ["Pharmacology", "Professional Standards"],
   },
 ];
