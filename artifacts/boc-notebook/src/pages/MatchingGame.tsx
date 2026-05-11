@@ -3,7 +3,8 @@ import { Link, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Check, RotateCw, Sparkles, Trophy, X } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Check, RotateCw, Sparkles, Trophy, X, ZoomIn } from "lucide-react";
 import games from "@/data/games.json";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +37,7 @@ export default function MatchingGame() {
   const [score, setScore] = useState(0);
   const [misses, setMisses] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [zoomed, setZoomed] = useState<Pair | null>(null);
 
   useEffect(() => {
     if (!game) return;
@@ -138,6 +140,23 @@ export default function MatchingGame() {
                             <Check className="h-8 w-8 text-white drop-shadow" />
                           </div>
                         )}
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Enlarge picture"
+                          data-testid={`zoom-${p.label}`}
+                          onClick={(e) => { e.stopPropagation(); setZoomed(p); }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setZoomed(p);
+                            }
+                          }}
+                          className="absolute top-1.5 right-1.5 inline-flex items-center justify-center h-7 w-7 rounded-md bg-background/85 backdrop-blur-sm border shadow-sm opacity-90 hover:opacity-100 hover:bg-background cursor-pointer"
+                        >
+                          <ZoomIn className="h-4 w-4" />
+                        </span>
                       </button>
                     );
                   })}
@@ -175,6 +194,21 @@ export default function MatchingGame() {
           )}
         </div>
       </div>
+
+      <Dialog open={!!zoomed} onOpenChange={(o) => { if (!o) setZoomed(null); }}>
+        <DialogContent className="max-w-4xl p-2 sm:p-3" data-testid="dialog-zoom-image">
+          <DialogTitle className="sr-only">Enlarged picture</DialogTitle>
+          {zoomed && (
+            <div className="flex items-center justify-center bg-muted rounded-md overflow-hidden">
+              <img
+                src={zoomed.image}
+                alt={zoomed.label}
+                className="max-h-[80vh] w-auto object-contain"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
