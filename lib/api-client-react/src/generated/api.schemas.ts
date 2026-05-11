@@ -440,6 +440,8 @@ export interface MockExamResult {
 export interface RecentAttempt {
   correct: boolean;
   answeredAt: string;
+  /** Quiz attempt ID this answer belonged to. */
+  quizId: number;
 }
 
 export interface TopicMasteryEntry {

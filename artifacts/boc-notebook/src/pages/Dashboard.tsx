@@ -258,7 +258,7 @@ export default function Dashboard() {
     const byDomain = new Map<
       number,
       {
-        merged: { correct: boolean; answeredAt: string; topicId: number }[];
+        merged: { correct: boolean; answeredAt: string; topicId: number; quizId: number }[];
         totalAttempts: number;
         topicsWithAttempts: Set<number>;
       }
@@ -289,7 +289,7 @@ export default function Dashboard() {
         contributingTopics: number;
         totalTopics: number;
         latest: string | null;
-        attempts: { correct: boolean; answeredAt: string; topicName: string }[];
+        attempts: { correct: boolean; answeredAt: string; topicName: string; quizId: number }[];
       }
     >();
     for (const [dId, b] of byDomain) {
@@ -301,6 +301,7 @@ export default function Dashboard() {
         correct: a.correct,
         answeredAt: a.answeredAt,
         topicName: topicNameById.get(a.topicId) ?? "Unknown topic",
+        quizId: a.quizId,
       }));
       out.set(dId, {
         trend,

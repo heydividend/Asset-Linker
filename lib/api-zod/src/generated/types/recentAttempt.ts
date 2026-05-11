@@ -9,4 +9,6 @@
 export interface RecentAttempt {
   correct: boolean;
   answeredAt: Date;
+  /** Quiz attempt ID this answer belonged to. */
+  quizId: number;
 }

@@ -967,6 +967,9 @@ export const GetDashboardTopicMasteryResponseItem = zod.object({
       zod.object({
         correct: zod.boolean(),
         answeredAt: zod.coerce.date(),
+        quizId: zod
+          .number()
+          .describe("Quiz attempt ID this answer belonged to."),
       }),
     )
     .describe("Up to the last 5 quiz answers for this topic, oldest first."),
@@ -992,6 +995,9 @@ export const GetDashboardTopicHistoryResponseItem = zod.object({
       zod.object({
         correct: zod.boolean(),
         answeredAt: zod.coerce.date(),
+        quizId: zod
+          .number()
+          .describe("Quiz attempt ID this answer belonged to."),
       }),
     )
     .describe("All quiz answers for this topic, oldest first."),

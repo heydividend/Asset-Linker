@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle } from "lucide-react";
+import { useLocation } from "wouter";
+import { TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle, ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export type TrendDirection = "up" | "down" | "flat";
@@ -42,6 +43,8 @@ export interface SparklineAttempt {
   answeredAt: string;
   correct: boolean;
   topicName?: string;
+  /** When provided, the row becomes a link that opens this quiz attempt's review. */
+  quizId?: number;
 }
 
 interface MasterySparklineProps {
@@ -189,6 +192,7 @@ function InteractiveSparkline({
   children,
 }: InteractiveSparklineProps) {
   const [open, setOpen] = useState(false);
+  const [, navigate] = useLocation();
   const sorted = [...attempts].sort((a, b) =>
     b.answeredAt.localeCompare(a.answeredAt),
   );
@@ -221,32 +225,63 @@ function InteractiveSparkline({
               className="space-y-1.5"
               data-testid={popoverTestId ? `${popoverTestId}-list` : undefined}
             >
-              {sorted.map((a, i) => (
-                <li
-                  key={`${a.answeredAt}-${i}`}
-                  className="flex items-start gap-2 text-xs"
-                  data-testid={
-                    popoverTestId ? `${popoverTestId}-item-${i}` : undefined
-                  }
-                >
-                  {a.correct ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                  ) : (
-                    <XCircle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate" title={a.topicName ?? ""}>
-                      {a.topicName ?? "Unknown topic"}
-                    </p>
-                    <p className="text-muted-foreground tabular-nums">
-                      {formatAttemptDate(a.answeredAt)}
-                      <span className="ml-1.5">
-                        · {a.correct ? "Correct" : "Incorrect"}
-                      </span>
-                    </p>
-                  </div>
-                </li>
-              ))}
+              {sorted.map((a, i) => {
+                const itemTestId = popoverTestId
+                  ? `${popoverTestId}-item-${i}`
+                  : undefined;
+                const inside = (
+                  <>
+                    {a.correct ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                    ) : (
+                      <XCircle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="font-medium truncate" title={a.topicName ?? ""}>
+                        {a.topicName ?? "Unknown topic"}
+                      </p>
+                      <p className="text-muted-foreground tabular-nums">
+                        {formatAttemptDate(a.answeredAt)}
+                        <span className="ml-1.5">
+                          · {a.correct ? "Correct" : "Incorrect"}
+                        </span>
+                      </p>
+                    </div>
+                    {a.quizId != null && (
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                    )}
+                  </>
+                );
+                if (a.quizId != null) {
+                  const qid = a.quizId;
+                  return (
+                    <li key={`${a.answeredAt}-${i}`}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpen(false);
+                          navigate(`/quiz/${qid}`);
+                        }}
+                        className="w-full flex items-start gap-2 text-xs rounded-sm px-1.5 py-1 -mx-1.5 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        data-testid={itemTestId}
+                        title={`Open quiz attempt #${qid}`}
+                        aria-label={`Open quiz attempt for ${a.topicName ?? "this question"} on ${formatAttemptDate(a.answeredAt)}`}
+                      >
+                        {inside}
+                      </button>
+                    </li>
+                  );
+                }
+                return (
+                  <li
+                    key={`${a.answeredAt}-${i}`}
+                    className="flex items-start gap-2 text-xs"
+                    data-testid={itemTestId}
+                  >
+                    {inside}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </PopoverContent>
