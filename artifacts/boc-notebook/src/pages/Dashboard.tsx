@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   useGetDashboardSummary,
@@ -88,8 +88,39 @@ export default function Dashboard() {
   const startQuiz = useStartQuiz();
 
   const [openTopicId, setOpenTopicId] = useState<number | null>(null);
-  const [countByTopicId, setCountByTopicId] = useState<Record<number, number>>({});
   const QUIZ_COUNT_OPTIONS = [5, 10, 20] as const;
+  const QUIZ_COUNT_STORAGE_KEY = "boc:weakTopicQuizCountByTopicId";
+  const [countByTopicId, setCountByTopicId] = useState<Record<number, number>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = window.localStorage.getItem(QUIZ_COUNT_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw) as unknown;
+      if (!parsed || typeof parsed !== "object") return {};
+      const out: Record<number, number> = {};
+      for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+        const id = Number(k);
+        if (
+          Number.isFinite(id) &&
+          typeof v === "number" &&
+          (QUIZ_COUNT_OPTIONS as readonly number[]).includes(v)
+        ) {
+          out[id] = v;
+        }
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(QUIZ_COUNT_STORAGE_KEY, JSON.stringify(countByTopicId));
+    } catch {
+      // ignore quota / privacy errors
+    }
+  }, [countByTopicId]);
 
   const onQuizTopic = (topicId: number, topicName: string, count: number) => {
     startQuiz.mutate(
