@@ -1964,6 +1964,180 @@
           "image": "/games/ch22-shoulder/fig_14_05.jpg"
         }
       ]
+    },
+    {
+      "id": "ch27-thorax",
+      "title": "Ch 27: The Thorax & Abdomen",
+      "description": "Match each thorax/abdomen condition or assessment to its name.",
+      "pairs": [
+        {
+          "label": "Body positions after thoracoabdominal injury",
+          "image": "/games/ch27-thorax/fig_05_00.jpg"
+        },
+        {
+          "label": "Chest-wall asymmetry assessment",
+          "image": "/games/ch27-thorax/fig_05_01.jpg"
+        },
+        {
+          "label": "Rib / costochondral injury palpation",
+          "image": "/games/ch27-thorax/fig_05_02.jpg"
+        },
+        {
+          "label": "Abdominal palpation (guarding / rigidity)",
+          "image": "/games/ch27-thorax/fig_06_00.jpg"
+        },
+        {
+          "label": "Heart sounds auscultation",
+          "image": "/games/ch27-thorax/fig_06_01.jpg"
+        },
+        {
+          "label": "Breath sounds auscultation",
+          "image": "/games/ch27-thorax/fig_06_02.jpg"
+        },
+        {
+          "label": "Bowel sounds auscultation",
+          "image": "/games/ch27-thorax/fig_06_03.jpg"
+        },
+        {
+          "label": "Abdominal percussion",
+          "image": "/games/ch27-thorax/fig_06_04.jpg"
+        },
+        {
+          "label": "Commercial rib brace",
+          "image": "/games/ch27-thorax/fig_07_00.jpg"
+        },
+        {
+          "label": "Rib fracture (X-ray)",
+          "image": "/games/ch27-thorax/fig_07_01.jpg"
+        },
+        {
+          "label": "Costochondral separation",
+          "image": "/games/ch27-thorax/fig_07_02.jpg"
+        },
+        {
+          "label": "Inguinal hernia",
+          "image": "/games/ch27-thorax/fig_13_00.jpg"
+        },
+        {
+          "label": "Inguinal / femoral hernia anatomy",
+          "image": "/games/ch27-thorax/fig_13_01.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ch25-spine",
+      "title": "Ch 25: The Spine",
+      "description": "Match each spine condition, test, or technique to its name.",
+      "pairs": [
+        {
+          "label": "Gaenslen's test (SI joint)",
+          "image": "/games/ch25-spine/fig_10_05.jpg"
+        },
+        {
+          "label": "Knees-to-chest test (lumbar)",
+          "image": "/games/ch25-spine/fig_10_06.jpg"
+        },
+        {
+          "label": "Sacral compression test",
+          "image": "/games/ch25-spine/fig_11_00.jpg"
+        },
+        {
+          "label": "Sacral distraction test",
+          "image": "/games/ch25-spine/fig_11_01.jpg"
+        },
+        {
+          "label": "Posterior pelvic tilt test",
+          "image": "/games/ch25-spine/fig_11_02.jpg"
+        },
+        {
+          "label": "Thigh thrust test (SI joint)",
+          "image": "/games/ch25-spine/fig_11_03.jpg"
+        },
+        {
+          "label": "Sacral thrust test",
+          "image": "/games/ch25-spine/fig_11_04.jpg"
+        },
+        {
+          "label": "Spring test (lumbar PA)",
+          "image": "/games/ch25-spine/fig_11_07.jpg"
+        },
+        {
+          "label": "Prone instability test",
+          "image": "/games/ch25-spine/fig_12_01.jpg"
+        },
+        {
+          "label": "ITB stretch test",
+          "image": "/games/ch25-spine/fig_12_03.jpg"
+        },
+        {
+          "label": "Quadratus lumborum stretch test",
+          "image": "/games/ch25-spine/fig_12_04.jpg"
+        },
+        {
+          "label": "Piriformis muscle test",
+          "image": "/games/ch25-spine/fig_12_05.jpg"
+        },
+        {
+          "label": "Femoral nerve traction test",
+          "image": "/games/ch25-spine/fig_12_06.jpg"
+        },
+        {
+          "label": "Cervical injury mechanisms",
+          "image": "/games/ch25-spine/fig_14_00.jpg"
+        },
+        {
+          "label": "C7 fracture (X-ray)",
+          "image": "/games/ch25-spine/fig_14_01.jpg"
+        },
+        {
+          "label": "Cervical dislocation (X-ray)",
+          "image": "/games/ch25-spine/fig_14_02.jpg"
+        },
+        {
+          "label": "Whiplash mechanism",
+          "image": "/games/ch25-spine/fig_15_00.jpg"
+        },
+        {
+          "label": "Soft cervical collar",
+          "image": "/games/ch25-spine/fig_15_01.jpg"
+        },
+        {
+          "label": "Cervical stenosis (MRI)",
+          "image": "/games/ch25-spine/fig_16_00.jpg"
+        },
+        {
+          "label": "Brachial plexus neuropraxia (burner/stinger)",
+          "image": "/games/ch25-spine/fig_16_01.jpg"
+        },
+        {
+          "label": "Herniated cervical disk",
+          "image": "/games/ch25-spine/fig_17_00.jpg"
+        },
+        {
+          "label": "Cervical spine MRI",
+          "image": "/games/ch25-spine/fig_17_01.jpg"
+        },
+        {
+          "label": "Lumbar compression fracture (X-ray)",
+          "image": "/games/ch25-spine/fig_18_00.jpg"
+        },
+        {
+          "label": "Lumbosacral brace",
+          "image": "/games/ch25-spine/fig_18_01.jpg"
+        },
+        {
+          "label": "Herniated lumbar disk",
+          "image": "/games/ch25-spine/fig_19_00.jpg"
+        },
+        {
+          "label": "Lumbar disk herniation (MRI)",
+          "image": "/games/ch25-spine/fig_19_02.jpg"
+        },
+        {
+          "label": "Spondylolisthesis (X-ray)",
+          "image": "/games/ch25-spine/fig_20_00.jpg"
+        }
+      ]
     }
   ]
 }
