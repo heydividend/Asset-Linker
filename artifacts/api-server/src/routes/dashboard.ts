@@ -22,10 +22,33 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
     .from(quizAnswers)
     .where(eq(quizAnswers.correct, true));
 
+  const now = new Date();
   const [{ due }] = await db
     .select({ due: sql<number>`cast(count(*) as int)` })
     .from(flashcards)
-    .where(lte(flashcards.dueAt, new Date()));
+    .where(lte(flashcards.dueAt, now));
+
+  // Per-domain flashcard counts (total + how many are due right now), grouped
+  // via the topic each card is tagged with. Cards with no topic (or a topic
+  // not linked to a domain) are excluded — those wouldn't show up in the
+  // Domain Mastery deep-link review either.
+  const flashcardCountRows = (await db.execute(sql`
+    SELECT t.domain_id AS domain_id,
+           CAST(COUNT(*) AS int) AS total,
+           CAST(SUM(CASE WHEN f.due_at <= ${now} THEN 1 ELSE 0 END) AS int) AS due
+    FROM flashcards f
+    JOIN topics t ON t.id = f.topic_id
+    GROUP BY t.domain_id
+  `)) as unknown as {
+    rows: Array<{ domain_id: number; total: number; due: number }>;
+  };
+  const flashcardCountByDomain = new Map<number, { total: number; due: number }>();
+  for (const row of flashcardCountRows.rows) {
+    flashcardCountByDomain.set(row.domain_id, {
+      total: Number(row.total) || 0,
+      due: Number(row.due) || 0,
+    });
+  }
 
   const recentQuizzes = await db
     .select()
@@ -101,6 +124,10 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
     }),
     weakTopics,
     domainMastery,
+    domainFlashcardCounts: dRows.map((d) => {
+      const c = flashcardCountByDomain.get(d.id);
+      return { domainId: d.id, total: c?.total ?? 0, due: c?.due ?? 0 };
+    }),
   });
 });
 

@@ -658,6 +658,11 @@ export default function Dashboard() {
                         const rel = formatRelativeAttempt(stats.latest);
                         if (rel) tooltipParts.push(`latest ${rel}`);
                       }
+                      const cardCounts = summary?.domainFlashcardCounts?.find(
+                        (c) => c.domainId === domain.domainId,
+                      );
+                      const cardTotal = cardCounts?.total ?? 0;
+                      const cardDue = cardCounts?.due ?? 0;
                       const isStartingThis =
                         startQuiz.isPending &&
                         startQuiz.variables?.data?.mode === "domain" &&
@@ -684,6 +689,19 @@ export default function Dashboard() {
                               ) : (
                                 <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 shrink-0 transition-opacity" />
                               )}
+                              <span
+                                className="text-muted-foreground shrink-0 tabular-nums text-[10px]"
+                                data-testid={`domain-mastery-card-count-${domain.domainId}`}
+                                title={
+                                  cardTotal === 0
+                                    ? "No flashcards linked to this domain yet"
+                                    : `${cardTotal} flashcard${cardTotal === 1 ? "" : "s"} in this domain · ${cardDue} due now`
+                                }
+                              >
+                                {cardTotal === 0
+                                  ? "no cards"
+                                  : `${cardTotal} card${cardTotal === 1 ? "" : "s"} · ${cardDue} due`}
+                              </span>
                               <span className="text-muted-foreground shrink-0 tabular-nums">{percent}%</span>
                             </div>
                             <Progress value={percent} className="h-1.5" />

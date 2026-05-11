@@ -14,6 +14,7 @@ export * from "./audioOverviewInputVoice";
 export * from "./audioOverviewStatus";
 export * from "./dashboardSummary";
 export * from "./domain";
+export * from "./domainFlashcardCount";
 export * from "./domainScore";
 export * from "./flashcard";
 export * from "./flashcardGenInput";

@@ -578,6 +578,12 @@ export interface ScrapeJobInput {
   url: string;
 }
 
+export interface DomainFlashcardCount {
+  domainId: number;
+  total: number;
+  due: number;
+}
+
 export interface DashboardSummary {
   /** 0-100 estimate of BOC readiness */
   readinessScore: number;
@@ -591,6 +597,8 @@ export interface DashboardSummary {
   recentQuizzes: QuizSummary[];
   weakTopics: TopicScore[];
   domainMastery: DomainScore[];
+  /** Flashcard totals (and how many are due now) for each domain, by domain id. */
+  domainFlashcardCounts: DomainFlashcardCount[];
 }
 
 export type StudyPlanItemKind =

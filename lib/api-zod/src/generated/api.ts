@@ -929,6 +929,17 @@ export const GetDashboardSummaryResponse = zod.object({
       total: zod.number(),
     }),
   ),
+  domainFlashcardCounts: zod
+    .array(
+      zod.object({
+        domainId: zod.number(),
+        total: zod.number(),
+        due: zod.number(),
+      }),
+    )
+    .describe(
+      "Flashcard totals (and how many are due now) for each domain, by domain id.",
+    ),
 });
 
 export const GetDashboardTopicMasteryResponseItem = zod.object({

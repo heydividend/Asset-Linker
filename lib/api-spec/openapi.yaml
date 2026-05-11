@@ -1322,7 +1322,7 @@ components:
 
     DashboardSummary:
       type: object
-      required: [readinessScore, lastUpdated, totalQuestionsAnswered, totalCorrect, streakDays, dueFlashcards, recentQuizzes, weakTopics, domainMastery]
+      required: [readinessScore, lastUpdated, totalQuestionsAnswered, totalCorrect, streakDays, dueFlashcards, recentQuizzes, weakTopics, domainMastery, domainFlashcardCounts]
       properties:
         readinessScore: { type: number, description: "0-100 estimate of BOC readiness" }
         lastUpdated: { type: string, format: date-time }
@@ -1340,6 +1340,17 @@ components:
         domainMastery:
           type: array
           items: { $ref: "#/components/schemas/DomainScore" }
+        domainFlashcardCounts:
+          type: array
+          description: "Flashcard totals (and how many are due now) for each domain, by domain id."
+          items: { $ref: "#/components/schemas/DomainFlashcardCount" }
+    DomainFlashcardCount:
+      type: object
+      required: [domainId, total, due]
+      properties:
+        domainId: { type: integer }
+        total: { type: integer }
+        due: { type: integer }
 
     StudyPlan:
       type: object

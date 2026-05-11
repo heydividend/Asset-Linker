@@ -5,6 +5,7 @@
  * BOC Study Notebook API
  * OpenAPI spec version: 0.1.0
  */
+import type { DomainFlashcardCount } from "./domainFlashcardCount";
 import type { DomainScore } from "./domainScore";
 import type { QuizSummary } from "./quizSummary";
 import type { TopicScore } from "./topicScore";
@@ -22,4 +23,6 @@ export interface DashboardSummary {
   recentQuizzes: QuizSummary[];
   weakTopics: TopicScore[];
   domainMastery: DomainScore[];
+  /** Flashcard totals (and how many are due now) for each domain, by domain id. */
+  domainFlashcardCounts: DomainFlashcardCount[];
 }
