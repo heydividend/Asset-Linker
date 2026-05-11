@@ -15,6 +15,7 @@ import { AskAiButton } from "@/components/AskAiButton";
 import { useToast } from "@/hooks/use-toast";
 import { Brain, Eye, RotateCcw, Sparkles, CheckCheck, Target, X, Play } from "lucide-react";
 import { Link, useSearch, useLocation } from "wouter";
+import { rememberFixItQuizId } from "@/lib/fixItPlan";
 
 export default function FlashcardsReview() {
   const review = useReviewFlashcard();
@@ -26,7 +27,7 @@ export default function FlashcardsReview() {
   const [revealed, setRevealed] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
 
-  const { focusTopicIdsParam, focusTopicIds, focusRegion, thenQuiz, quizCount } = useMemo(() => {
+  const { focusTopicIdsParam, focusTopicIds, focusRegion, thenQuiz, quizCount, fixIt } = useMemo(() => {
     const params = new URLSearchParams(search);
     const raw = params.get("topicIds") ?? "";
     const ids = raw
@@ -40,6 +41,7 @@ export default function FlashcardsReview() {
       focusRegion: params.get("region"),
       thenQuiz: params.get("thenQuiz") === "1",
       quizCount: Number.isFinite(cnt) && cnt > 0 ? Math.min(50, cnt) : 10,
+      fixIt: params.get("fixIt") === "1",
     };
   }, [search]);
 
@@ -62,6 +64,7 @@ export default function FlashcardsReview() {
       { data: { mode: "region", count: quizCount, topicIds: focusTopicIds } },
       {
         onSuccess: (q) => {
+          if (fixIt) rememberFixItQuizId(q.id);
           qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
           navigate(`/quiz/${q.id}`);
         },

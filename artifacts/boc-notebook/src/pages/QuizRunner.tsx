@@ -1,5 +1,6 @@
 import { useParams, Link } from "wouter";
 import { useState } from "react";
+import { forgetFixItQuizId, isTodayFixItQuiz, markCompletedToday } from "@/lib/fixItPlan";
 import {
   useGetQuiz,
   useAnswerQuizQuestion,
@@ -43,10 +44,15 @@ export default function QuizRunner() {
   };
 
   const onFinish = () => {
+    const wasFixItToday = isTodayFixItQuiz(quiz.id);
     finish.mutate(
       { id: quiz.id },
       {
         onSuccess: () => {
+          if (wasFixItToday) {
+            markCompletedToday();
+            forgetFixItQuizId(quiz.id);
+          }
           qc.invalidateQueries({ queryKey: getGetQuizQueryKey(id) });
           qc.invalidateQueries({ queryKey: getGetDashboardTopicMasteryQueryKey() });
           qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });

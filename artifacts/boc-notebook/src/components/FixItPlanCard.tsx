@@ -9,10 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, Target, X, ArrowRight, Shuffle } from "lucide-react";
+import { Sparkles, Target, X, ArrowRight, Shuffle, CheckCircle2, Flame } from "lucide-react";
 import { bodyRegions } from "@/data/bodyRegions";
+import {
+  computeStreak,
+  getCompletedDates,
+  isCompletedToday,
+  todayStr,
+} from "@/lib/fixItPlan";
 
-const todayStr = () => new Date().toISOString().slice(0, 10);
 const DISMISS_KEY = "boc.fixItPlan.dismissedDate";
 const SNAPSHOT_KEY_PREFIX = "boc.fixItPlan.snapshot.";
 
@@ -39,6 +44,25 @@ export function FixItPlanCard() {
   });
 
   const dismissed = dismissedDate === today;
+
+  const [completedDates, setCompletedDates] = useState<string[]>(() =>
+    getCompletedDates(),
+  );
+  const completedToday = isCompletedToday();
+  const streak = useMemo(() => computeStreak(completedDates), [completedDates]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const refresh = () => setCompletedDates(getCompletedDates());
+    window.addEventListener("boc:fixItPlan:completed", refresh);
+    window.addEventListener("storage", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("boc:fixItPlan:completed", refresh);
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
 
   // Full pool of eligible weak regions (mastery < 60%, ≥ 1 attempt), deduped
   // and sorted weakest-first. The displayed plan is a slice; the rest serve
@@ -209,8 +233,52 @@ export function FixItPlanCard() {
     params.set("regionLabel", "Fix-it plan");
     params.set("thenQuiz", "1");
     params.set("quizCount", "10");
+    params.set("fixIt", "1");
     navigate(`/flashcards?${params.toString()}`);
   };
+
+  const streakBadge = streak > 0 ? (
+    <Badge
+      variant="secondary"
+      className="text-[11px] tabular-nums flex items-center gap-1"
+      data-testid="fix-it-plan-streak"
+    >
+      <Flame className="h-3 w-3 text-orange-500" />
+      {streak}-day streak
+    </Badge>
+  ) : null;
+
+  if (completedToday) {
+    return (
+      <Card
+        className="border-primary/40 bg-gradient-to-br from-primary/10 to-transparent"
+        data-testid="fix-it-plan-card"
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="h-4 w-4 text-primary" /> Today's fix-it plan
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Nice work — come back tomorrow for a fresh plan.
+              </p>
+            </div>
+            {streakBadge}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div
+            className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-3 py-3 text-sm font-medium text-primary"
+            data-testid="fix-it-plan-done"
+          >
+            <CheckCircle2 className="h-5 w-5" />
+            Done for today
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card
@@ -229,16 +297,19 @@ export function FixItPlanCard() {
               {currentPlan.length === 1 ? "" : "s"}.
             </p>
           </div>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 -mt-1 -mr-1 text-muted-foreground"
-            onClick={onDismiss}
-            data-testid="fix-it-plan-dismiss"
-            title="Dismiss for today"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {streakBadge}
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 -mt-1 -mr-1 text-muted-foreground"
+              onClick={onDismiss}
+              data-testid="fix-it-plan-dismiss"
+              title="Dismiss for today"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
