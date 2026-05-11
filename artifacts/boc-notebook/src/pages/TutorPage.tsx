@@ -154,10 +154,16 @@ export default function TutorPage() {
           try {
             const json = JSON.parse(line.slice(6));
             if (json.done) {
+              // Visible answer is complete — release the UI immediately
+              // even though follow-up suggestions may still be on the way.
               qc.invalidateQueries({ queryKey: getListOpenaiMessagesQueryKey(activeId) });
               setStreaming("");
               setBusy(false);
-              return;
+              continue;
+            }
+            if (Array.isArray(json.followups)) {
+              qc.invalidateQueries({ queryKey: getListOpenaiMessagesQueryKey(activeId) });
+              continue;
             }
             if (json.error) {
               toast({ title: "AI error", description: json.error, variant: "destructive" });

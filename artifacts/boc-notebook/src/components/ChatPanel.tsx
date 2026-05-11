@@ -139,11 +139,13 @@ export function ChatPanel() {
             try {
               const json = JSON.parse(line.slice(6));
               if (json.done) {
+                // Visible answer is complete — release the UI immediately
+                // even though follow-up suggestions may still be on the way.
                 queryClient.invalidateQueries({ queryKey: getListOpenaiMessagesQueryKey(convId) });
                 queryClient.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
                 setStreamingMessage("");
                 setStreaming(false);
-                return;
+                continue;
               }
               if (json.error) {
                 toast({ title: "AI error", description: json.error, variant: "destructive" });
@@ -152,6 +154,10 @@ export function ChatPanel() {
               }
               if (Array.isArray(json.followups)) {
                 setPendingFollowups(json.followups.filter((s: unknown) => typeof s === "string"));
+                // The server persists followups onto the just-saved
+                // message after `done`. Refetch so the chips render
+                // tied to the message instead of as a transient block.
+                queryClient.invalidateQueries({ queryKey: getListOpenaiMessagesQueryKey(convId) });
               }
               if (json.content) setStreamingMessage((p) => p + json.content);
             } catch {

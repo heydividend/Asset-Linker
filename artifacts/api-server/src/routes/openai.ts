@@ -96,7 +96,18 @@ Be warm, precise, and clinically accurate. Use the BOC's 5 domains as your frame
 3) Critical Incident Management
 4) Therapeutic Intervention
 5) Healthcare Administration & Professional Responsibility
-When the user asks about a flashcard, quiz question, note, or weak topic, anchor your answer in the supplied context. Use Markdown. Be concise but thorough; favor mechanism, indication, contraindication, and red-flag callouts.
+When the user asks about a flashcard, quiz question, note, or weak topic, anchor your answer in the supplied context. Be concise but thorough; favor mechanism, indication, contraindication, and red-flag callouts.
+
+FORMATTING RULES — every reply must be well-structured Markdown:
+- Open with a one-sentence direct answer (no preamble like "Great question").
+- Use "## " for major sections and "### " for sub-sections when the answer is more than ~4 sentences.
+- Use bullet lists ("- ") for parallel items (signs, steps, criteria); never write a wall of prose for list-shaped content.
+- Use numbered lists ("1.") only for ordered procedures (e.g., assessment sequence, return-to-play stages).
+- **Bold** the key term being defined and any red-flag warning.
+- Use a Markdown table when comparing 3+ entities along 2+ attributes.
+- Wrap any specific clinical numeric value (degrees of motion, % loads, time windows) in backticks for emphasis.
+- End complex answers with a short "**Key takeaway:**" or "**Clinical pearl:**" line.
+- Never wrap the whole reply in a code fence. Never repeat the user's question back.
 
 ${COACHING_STRATEGIES}
 
@@ -348,12 +359,32 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
     res.write(`data: ${JSON.stringify({ error: "AI request failed" })}\n\n`);
   }
 
-  let followups: string[] = [];
+  // Persist the assistant message and release the UI BEFORE computing
+  // follow-up suggestions. The followups call previously gated `done`
+  // and added 1–2s of perceived latency after the visible answer was
+  // already rendered. We now save with followups=null, ship `done`, then
+  // compute and emit followups as a later chunk.
+  let savedMessageId: number | null = null;
   if (fullText) {
+    const [saved] = await db
+      .insert(messages)
+      .values({
+        conversationId: id,
+        role: "assistant",
+        content: fullText,
+        followups: null,
+      })
+      .returning({ id: messages.id });
+    savedMessageId = saved?.id ?? null;
+  }
+  res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+
+  if (fullText) {
+    let followups: string[] = [];
     try {
       const fu = await anthropic.messages.create({
         model: "claude-haiku-4-5",
-        max_tokens: 8192,
+        max_tokens: 256,
         system:
           'You generate exactly 3 short follow-up questions a BOC Athletic Training student would naturally ask next, given the tutor turn just shown. Each question must be self-contained, under 90 characters, and end with "?". Respond with ONLY a JSON object of the form {"followups": ["...", "...", "..."]} — no prose, no code fences.',
         messages: [
@@ -374,17 +405,16 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
     } catch (err) {
       req.log.warn({ err }, "followups generation failed");
     }
-    await db.insert(messages).values({
-      conversationId: id,
-      role: "assistant",
-      content: fullText,
-      followups: followups.length > 0 ? followups : null,
-    });
+    if (followups.length > 0) {
+      if (savedMessageId != null) {
+        await db
+          .update(messages)
+          .set({ followups })
+          .where(eq(messages.id, savedMessageId));
+      }
+      res.write(`data: ${JSON.stringify({ followups })}\n\n`);
+    }
   }
-  if (followups.length > 0) {
-    res.write(`data: ${JSON.stringify({ followups })}\n\n`);
-  }
-  res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
   res.end();
 });
 
