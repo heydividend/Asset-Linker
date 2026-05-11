@@ -34,7 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AskAiButton } from "@/components/AskAiButton";
 import { MasterySparkline, formatRelativeAttempt } from "@/components/MasterySparkline";
 import {
-  AlertTriangle, Activity, Heart, Stethoscope, Eye, EyeOff, RotateCcw, Play, Brain,
+  AlertTriangle, Activity, Heart, Stethoscope, Eye, EyeOff, RotateCcw, Play, Brain, TrendingUp,
 } from "lucide-react";
 import skinImg from "@/assets/anatomy/layer-skin.png";
 import muscleImg from "@/assets/anatomy/layer-muscle.png";
@@ -127,13 +127,14 @@ export default function BodyMapPage() {
         contributingTopics: number;
         totalTopics: number;
         latest: string | null;
+        recentAttempts: { correct: boolean; answeredAt: string; topicName: string }[];
       }
     >();
     for (const r of bodyRegions) {
       let totalAttempts = 0;
       let totalCorrect = 0;
       let contributingTopics = 0;
-      const merged: { correct: boolean; answeredAt: string }[] = [];
+      const merged: { correct: boolean; answeredAt: string; topicName: string }[] = [];
       for (const name of r.topicNames) {
         const m = masteryByName.get(name);
         if (!m) continue;
@@ -142,7 +143,7 @@ export default function BodyMapPage() {
           totalCorrect += m.mastery * m.attempts;
           contributingTopics += 1;
         }
-        for (const a of m.recent) merged.push(a);
+        for (const a of m.recent) merged.push({ ...a, topicName: name });
       }
       // Most recent 5 across all the region's topics, then chronological for the spark.
       merged.sort((a, b) => b.answeredAt.localeCompare(a.answeredAt));
@@ -157,6 +158,7 @@ export default function BodyMapPage() {
         contributingTopics,
         totalTopics: r.topicNames.length,
         latest,
+        recentAttempts: slice,
       });
     }
     return out;
@@ -418,7 +420,17 @@ export default function BodyMapPage() {
                 borderRadius = "0.4rem";
               }
 
-              const rm = regionMastery.get(r.id) ?? { pct: null, attempts: 0, trend: [] as boolean[] };
+              const rm =
+                regionMastery.get(r.id) ?? {
+                  pct: null,
+                  attempts: 0,
+                  trend: [] as boolean[],
+                  shown: 0,
+                  contributingTopics: 0,
+                  totalTopics: r.topicNames.length,
+                  latest: null,
+                  recentAttempts: [] as { correct: boolean; answeredAt: string; topicName: string }[],
+                };
               const tone = masteryTone(rm.pct);
               return (
                 <HoverCard key={r.id} openDelay={120} closeDelay={50}>
@@ -473,6 +485,9 @@ export default function BodyMapPage() {
                           testId={`hover-spark-${r.id}`}
                           {...trendMeta(rm)}
                           captionTestId={`hover-spark-caption-${r.id}`}
+                          attempts={rm.recentAttempts}
+                          popoverTitle={`Recent attempts · ${r.name}`}
+                          popoverTestId={`hover-spark-popover-${r.id}`}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">{r.blurb}</p>
@@ -527,7 +542,17 @@ export default function BodyMapPage() {
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
               {visible.map((r) => {
-                const rm = regionMastery.get(r.id) ?? { pct: null, attempts: 0, trend: [] as boolean[] };
+                const rm =
+                  regionMastery.get(r.id) ?? {
+                    pct: null,
+                    attempts: 0,
+                    trend: [] as boolean[],
+                    shown: 0,
+                    contributingTopics: 0,
+                    totalTopics: r.topicNames.length,
+                    latest: null,
+                    recentAttempts: [] as { correct: boolean; answeredAt: string; topicName: string }[],
+                  };
                 const tone = masteryTone(rm.pct);
                 const isWeak = rm.pct != null && rm.pct < 60;
                 return (
@@ -545,11 +570,6 @@ export default function BodyMapPage() {
                     >
                       <span className="truncate">{r.name}</span>
                       <span className="flex items-center gap-2 shrink-0">
-                        <MasterySparkline
-                          trend={rm.trend}
-                          testId={`region-trend-${r.id}`}
-                          tooltipExtra={trendMeta(rm).tooltipExtra}
-                        />
                         <Badge
                           variant="outline"
                           className={`text-[10px] tabular-nums ${tone.cls}`}
@@ -560,6 +580,18 @@ export default function BodyMapPage() {
                         <Badge variant="outline" className="text-[10px]">{r.injuries.length}</Badge>
                       </span>
                     </button>
+                    {rm.trend.length > 0 && (
+                      <div className="px-3 pb-1 -mt-0.5 flex justify-end">
+                        <MasterySparkline
+                          trend={rm.trend}
+                          testId={`region-trend-${r.id}`}
+                          tooltipExtra={trendMeta(rm).tooltipExtra}
+                          attempts={rm.recentAttempts}
+                          popoverTitle={`Recent attempts · ${r.name}`}
+                          popoverTestId={`region-trend-popover-${r.id}`}
+                        />
+                      </div>
+                    )}
                     {isWeak && (
                       <button
                         type="button"

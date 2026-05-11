@@ -190,6 +190,14 @@ export default function Dashboard() {
     return m;
   }, [topicsList]);
 
+  // topicId → human-readable name, used to label each entry in the Domain
+  // Mastery sparkline popover so learners can see which topic each tick was on.
+  const topicNameById = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const t of topicsList) m.set(t.id, t.name);
+    return m;
+  }, [topicsList]);
+
   // domainId → sorted list of topic IDs in that domain, used to deep-link
   // the Domain Mastery rows into a focused flashcard review.
   const topicIdsByDomainId = useMemo(() => {
@@ -265,6 +273,7 @@ export default function Dashboard() {
         contributingTopics: number;
         totalTopics: number;
         latest: string | null;
+        attempts: { correct: boolean; answeredAt: string; topicName: string }[];
       }
     >();
     for (const [dId, b] of byDomain) {
@@ -272,6 +281,11 @@ export default function Dashboard() {
       const slice = b.merged.slice(0, 5);
       const latest = slice[0]?.answeredAt ?? null;
       const trend = slice.slice().reverse().map((a) => a.correct);
+      const attempts = slice.map((a) => ({
+        correct: a.correct,
+        answeredAt: a.answeredAt,
+        topicName: topicNameById.get(a.topicId) ?? "Unknown topic",
+      }));
       out.set(dId, {
         trend,
         shown: slice.length,
@@ -279,10 +293,11 @@ export default function Dashboard() {
         contributingTopics: b.topicsWithAttempts.size,
         totalTopics: topicCountByDomain.get(dId) ?? b.topicsWithAttempts.size,
         latest,
+        attempts,
       });
     }
     return out;
-  }, [topicMasteryRows, domainIdByTopicId, topicCountByDomain]);
+  }, [topicMasteryRows, domainIdByTopicId, topicCountByDomain, topicNameById]);
 
   return (
     <div className="flex flex-col h-full">
@@ -679,7 +694,7 @@ export default function Dashboard() {
                       return (
                         <div
                           key={domain.domainId}
-                          className="relative group min-w-0"
+                          className="relative group min-w-0 space-y-1"
                           data-testid={`domain-mastery-${domain.domainId}`}
                         >
                           <Popover
@@ -720,15 +735,6 @@ export default function Dashboard() {
                                   <span className="text-muted-foreground shrink-0 tabular-nums">{percent}%</span>
                                 </div>
                                 <Progress value={percent} className="h-1.5" />
-                                <div className="text-muted-foreground">
-                                  <MasterySparkline
-                                    trend={trend}
-                                    testId={`domain-trend-${domain.domainId}`}
-                                    caption={caption}
-                                    captionTestId={`domain-trend-caption-${domain.domainId}`}
-                                    tooltipExtra={tooltipParts.join(" · ") || undefined}
-                                  />
-                                </div>
                               </button>
                             </PopoverTrigger>
                             <PopoverContent
@@ -781,6 +787,18 @@ export default function Dashboard() {
                               </Button>
                             </PopoverContent>
                           </Popover>
+                          <div className="text-muted-foreground pr-9">
+                            <MasterySparkline
+                              trend={trend}
+                              testId={`domain-trend-${domain.domainId}`}
+                              caption={caption}
+                              captionTestId={`domain-trend-caption-${domain.domainId}`}
+                              tooltipExtra={tooltipParts.join(" · ") || undefined}
+                              attempts={stats?.attempts}
+                              popoverTitle={`Recent attempts · ${domain.name}`}
+                              popoverTestId={`domain-trend-popover-${domain.domainId}`}
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => onReviewDomain(domain.domainId, domain.name)}

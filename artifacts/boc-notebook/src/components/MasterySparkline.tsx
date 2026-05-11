@@ -1,4 +1,6 @@
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useState } from "react";
+import { TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export type TrendDirection = "up" | "down" | "flat";
 
@@ -28,6 +30,20 @@ export function formatRelativeAttempt(iso: string | null | undefined): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function formatAttemptDate(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const date = d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return `${date} · ${time}`;
+}
+
+export interface SparklineAttempt {
+  answeredAt: string;
+  correct: boolean;
+  topicName?: string;
+}
+
 interface MasterySparklineProps {
   trend: boolean[];
   testId?: string;
@@ -40,6 +56,15 @@ interface MasterySparklineProps {
   tooltipExtra?: string;
   /** Optional test id for the caption span (so tests can assert on it). */
   captionTestId?: string;
+  /**
+   * When provided (and non-empty), the spark renders as a clickable button
+   * that opens a popover listing each attempt's date, topic, and result.
+   */
+  attempts?: SparklineAttempt[];
+  /** Heading shown at the top of the attempts popover. */
+  popoverTitle?: string;
+  /** Test id for the attempts popover content (and its `${id}-list` ul). */
+  popoverTestId?: string;
 }
 
 export function MasterySparkline({
@@ -51,6 +76,9 @@ export function MasterySparkline({
   caption,
   tooltipExtra,
   captionTestId,
+  attempts,
+  popoverTitle,
+  popoverTestId,
 }: MasterySparklineProps) {
   if (trend.length === 0) {
     return (
@@ -77,12 +105,9 @@ export function MasterySparkline({
     .map((c) => (c ? "✓" : "✗"))
     .join(" ")}${dir !== "flat" ? ` (${delta > 0 ? "+" : ""}${delta}%)` : ""}`;
   const fullTitle = tooltipExtra ? `${baseTitle} — ${tooltipExtra}` : baseTitle;
-  return (
-    <span
-      className="inline-flex items-center gap-1"
-      data-testid={testId}
-      title={fullTitle}
-    >
+
+  const inner = (
+    <>
       <svg
         width={w}
         height={h}
@@ -116,6 +141,115 @@ export function MasterySparkline({
           {caption}
         </span>
       ) : null}
+    </>
+  );
+
+  const interactive = attempts && attempts.length > 0;
+
+  if (interactive) {
+    return (
+      <InteractiveSparkline
+        attempts={attempts!}
+        popoverTitle={popoverTitle}
+        popoverTestId={popoverTestId}
+        testId={testId}
+        fullTitle={fullTitle}
+      >
+        {inner}
+      </InteractiveSparkline>
+    );
+  }
+
+  return (
+    <span
+      className="inline-flex items-center gap-1"
+      data-testid={testId}
+      title={fullTitle}
+    >
+      {inner}
     </span>
+  );
+}
+
+interface InteractiveSparklineProps {
+  attempts: SparklineAttempt[];
+  popoverTitle?: string;
+  popoverTestId?: string;
+  testId?: string;
+  fullTitle: string;
+  children: React.ReactNode;
+}
+
+function InteractiveSparkline({
+  attempts,
+  popoverTitle,
+  popoverTestId,
+  testId,
+  fullTitle,
+  children,
+}: InteractiveSparklineProps) {
+  const [open, setOpen] = useState(false);
+  const sorted = [...attempts].sort((a, b) =>
+    b.answeredAt.localeCompare(a.answeredAt),
+  );
+  const heading =
+    popoverTitle ?? `Last ${sorted.length} attempt${sorted.length === 1 ? "" : "s"}`;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-sm px-1 -mx-1 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          data-testid={testId}
+          title={fullTitle}
+          aria-label={`Show details of recent ${sorted.length} attempt${sorted.length === 1 ? "" : "s"}`}
+          onFocus={() => setOpen(true)}
+        >
+          {children}
+        </button>
+      </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          side="top"
+          className="w-72 p-3"
+          data-testid={popoverTestId}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="space-y-2">
+            <p className="text-xs font-semibold leading-snug">{heading}</p>
+            <ul
+              className="space-y-1.5"
+              data-testid={popoverTestId ? `${popoverTestId}-list` : undefined}
+            >
+              {sorted.map((a, i) => (
+                <li
+                  key={`${a.answeredAt}-${i}`}
+                  className="flex items-start gap-2 text-xs"
+                  data-testid={
+                    popoverTestId ? `${popoverTestId}-item-${i}` : undefined
+                  }
+                >
+                  {a.correct ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                  ) : (
+                    <XCircle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate" title={a.topicName ?? ""}>
+                      {a.topicName ?? "Unknown topic"}
+                    </p>
+                    <p className="text-muted-foreground tabular-nums">
+                      {formatAttemptDate(a.answeredAt)}
+                      <span className="ml-1.5">
+                        · {a.correct ? "Correct" : "Incorrect"}
+                      </span>
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </PopoverContent>
+      </Popover>
   );
 }
