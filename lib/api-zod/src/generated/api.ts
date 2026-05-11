@@ -1007,7 +1007,21 @@ export const GetScraperAllowlistResponse = zod.array(
 );
 
 export const GetDashboardSummaryResponse = zod.object({
-  readinessScore: zod.number().describe("0-100 estimate of BOC readiness"),
+  readinessScore: zod
+    .number()
+    .describe(
+      "0-100 estimate of BOC readiness (includes 7-day activity bonus)",
+    ),
+  readinessBaseScore: zod
+    .number()
+    .describe(
+      "Readiness from mastery + last mock exam, before activity bonus.",
+    ),
+  readinessBonus: zod
+    .number()
+    .describe(
+      "Bonus points (0-10) for guides\/podcasts\/games in the last 7 days.",
+    ),
   lastUpdated: zod.coerce.date(),
   totalQuestionsAnswered: zod.number(),
   totalCorrect: zod.number(),
@@ -1049,6 +1063,40 @@ export const GetDashboardSummaryResponse = zod.object({
     )
     .describe(
       "Flashcard totals (and how many are due now) for each domain, by domain id.",
+    ),
+  studyGuides: zod.object({
+    total: zod.number().describe("Lifetime number of generated study guides."),
+    withPodcast: zod
+      .number()
+      .describe("Study guides that have at least one ready podcast."),
+    recent7d: zod.number().describe("Study guides created in the last 7 days."),
+  }),
+  games: zod.object({
+    lifetime: zod.number().describe("All-time game sessions for this user."),
+    today: zod.number().describe("Game sessions completed today."),
+    recent7d: zod
+      .number()
+      .describe("Game sessions completed in the last 7 days."),
+  }),
+  continueLearning: zod
+    .array(
+      zod.object({
+        kind: zod.enum(["note", "study_guide", "podcast", "game"]),
+        title: zod.string(),
+        subtitle: zod
+          .string()
+          .nullish()
+          .describe("Optional context, e.g. notebook title or game id."),
+        link: zod
+          .string()
+          .describe(
+            "App-relative path to deep-link the user back into the activity.",
+          ),
+        lastTouchedAt: zod.coerce.date(),
+      }),
+    )
+    .describe(
+      "Most recently touched learning items across notes, study guides, podcasts, and games.",
     ),
 });
 
@@ -1303,6 +1351,21 @@ export const GetGamesSummaryResponseItem = zod.object({
   lastPlayedAt: zod.coerce.date(),
 });
 export const GetGamesSummaryResponse = zod.array(GetGamesSummaryResponseItem);
+
+/**
+ * @summary Generate a 5-minute podcast on a single topic for the Weak Topics quick-action.
+ */
+export const GenerateTopicPodcastParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const generateTopicPodcastBodyVoiceDefault = `nova`;
+
+export const GenerateTopicPodcastBody = zod.object({
+  voice: zod
+    .enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"])
+    .default(generateTopicPodcastBodyVoiceDefault),
+});
 
 /**
  * @summary Returns the user's fix-it plan completion dates and current streak

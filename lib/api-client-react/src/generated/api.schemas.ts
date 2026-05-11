@@ -274,6 +274,22 @@ export interface AudioOverviewInput {
   focus?: string;
 }
 
+export type TopicPodcastInputVoice =
+  (typeof TopicPodcastInputVoice)[keyof typeof TopicPodcastInputVoice];
+
+export const TopicPodcastInputVoice = {
+  alloy: "alloy",
+  echo: "echo",
+  fable: "fable",
+  onyx: "onyx",
+  nova: "nova",
+  shimmer: "shimmer",
+} as const;
+
+export interface TopicPodcastInput {
+  voice?: TopicPodcastInputVoice;
+}
+
 export type StudyGuideAudioInputVoice =
   (typeof StudyGuideAudioInputVoice)[keyof typeof StudyGuideAudioInputVoice];
 
@@ -646,9 +662,54 @@ export interface DomainFlashcardCount {
   due: number;
 }
 
+export interface StudyGuidesSummary {
+  /** Lifetime number of generated study guides. */
+  total: number;
+  /** Study guides that have at least one ready podcast. */
+  withPodcast: number;
+  /** Study guides created in the last 7 days. */
+  recent7d: number;
+}
+
+export interface GamesActivitySummary {
+  /** All-time game sessions for this user. */
+  lifetime: number;
+  /** Game sessions completed today. */
+  today: number;
+  /** Game sessions completed in the last 7 days. */
+  recent7d: number;
+}
+
+export type ContinueLearningItemKind =
+  (typeof ContinueLearningItemKind)[keyof typeof ContinueLearningItemKind];
+
+export const ContinueLearningItemKind = {
+  note: "note",
+  study_guide: "study_guide",
+  podcast: "podcast",
+  game: "game",
+} as const;
+
+export interface ContinueLearningItem {
+  kind: ContinueLearningItemKind;
+  title: string;
+  /**
+   * Optional context, e.g. notebook title or game id.
+   * @nullable
+   */
+  subtitle?: string | null;
+  /** App-relative path to deep-link the user back into the activity. */
+  link: string;
+  lastTouchedAt: string;
+}
+
 export interface DashboardSummary {
-  /** 0-100 estimate of BOC readiness */
+  /** 0-100 estimate of BOC readiness (includes 7-day activity bonus) */
   readinessScore: number;
+  /** Readiness from mastery + last mock exam, before activity bonus. */
+  readinessBaseScore: number;
+  /** Bonus points (0-10) for guides/podcasts/games in the last 7 days. */
+  readinessBonus: number;
   lastUpdated: string;
   totalQuestionsAnswered: number;
   totalCorrect: number;
@@ -661,6 +722,10 @@ export interface DashboardSummary {
   domainMastery: DomainScore[];
   /** Flashcard totals (and how many are due now) for each domain, by domain id. */
   domainFlashcardCounts: DomainFlashcardCount[];
+  studyGuides: StudyGuidesSummary;
+  games: GamesActivitySummary;
+  /** Most recently touched learning items across notes, study guides, podcasts, and games. */
+  continueLearning: ContinueLearningItem[];
 }
 
 export type StudyPlanItemKind =

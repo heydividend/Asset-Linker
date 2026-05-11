@@ -32,6 +32,8 @@ export function planItemKey(item: PlanItem): string {
       return "resource:any";
     case "rest":
       return "rest:any";
+    default:
+      return `${(item as PlanItem).kind}:unknown`;
   }
 }
 

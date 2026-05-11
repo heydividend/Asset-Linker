@@ -14,6 +14,7 @@ import planRouter from "./plan";
 import fixItPlanRouter from "./fixItPlan";
 import gameSessionsRouter from "./gameSessions";
 import planCompletionsRouter from "./planCompletions";
+import topicPodcastsRouter from "./topicPodcasts";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(planRouter);
 router.use(fixItPlanRouter);
 router.use(gameSessionsRouter);
 router.use(planCompletionsRouter);
+router.use(topicPodcastsRouter);
 
 export default router;

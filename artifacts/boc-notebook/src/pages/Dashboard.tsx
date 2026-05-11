@@ -6,11 +6,16 @@ import {
   useGetDashboardTopicMastery,
   useStartQuiz,
   useMarkPlanItemComplete,
+  useGenerateTopicPodcast,
   getListQuizAttemptsQueryKey,
   getGetDashboardTopicMasteryQueryKey,
   getGetStudyPlanTodayQueryKey,
+  getGetDashboardSummaryQueryKey,
   useListTopics,
+  type StudyPlanItemKind,
+  type ContinueLearningItem,
 } from "@workspace/api-client-react";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -43,6 +48,15 @@ import {
   CheckCircle2,
   Circle,
   Star,
+  FileText,
+  Headphones,
+  Gamepad2,
+  Image as ImageIcon,
+  RotateCw,
+  Coffee,
+  TrendingUp,
+  StickyNote,
+  type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +77,43 @@ interface Schedule {
   daysRemaining: number;
   today: string;
   days: ScheduleDay[];
+}
+
+const PLAN_KIND_META: Record<
+  StudyPlanItemKind,
+  { label: string; icon: LucideIcon; tone: string }
+> = {
+  quiz: { label: "Quiz", icon: BrainCircuit, tone: "bg-violet-500/10 text-violet-700 border-violet-500/30 dark:text-violet-300" },
+  flashcards: { label: "Flashcards", icon: BookOpen, tone: "bg-sky-500/10 text-sky-700 border-sky-500/30 dark:text-sky-300" },
+  review: { label: "Review", icon: RotateCw, tone: "bg-slate-500/10 text-slate-700 border-slate-500/30 dark:text-slate-300" },
+  audio: { label: "Podcast", icon: Headphones, tone: "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-300" },
+  study_guide: { label: "Study guide", icon: FileText, tone: "bg-indigo-500/10 text-indigo-700 border-indigo-500/30 dark:text-indigo-300" },
+  resource: { label: "Resource", icon: BookOpen, tone: "bg-teal-500/10 text-teal-700 border-teal-500/30 dark:text-teal-300" },
+  game: { label: "Game", icon: Gamepad2, tone: "bg-fuchsia-500/10 text-fuchsia-700 border-fuchsia-500/30 dark:text-fuchsia-300" },
+  mock_exam: { label: "Mock exam", icon: GraduationCap, tone: "bg-primary/10 text-primary border-primary/30" },
+  rest: { label: "Rest", icon: Coffee, tone: "bg-muted text-muted-foreground border-border" },
+};
+
+const CONTINUE_KIND_META: Record<
+  ContinueLearningItem["kind"],
+  { label: string; icon: LucideIcon }
+> = {
+  note: { label: "Note", icon: StickyNote },
+  study_guide: { label: "Study guide", icon: FileText },
+  podcast: { label: "Podcast", icon: Headphones },
+  game: { label: "Game", icon: Gamepad2 },
+};
+
+function formatRelative(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "just now";
+  const m = Math.round(ms / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.round(h / 24);
+  return `${d}d ago`;
 }
 
 const phaseStyles: Record<string, { label: string; className: string }> = {
@@ -119,6 +170,40 @@ export default function Dashboard() {
   const { toast } = useToast();
   const startQuiz = useStartQuiz();
   const markComplete = useMarkPlanItemComplete();
+  const generateTopicPodcast = useGenerateTopicPodcast();
+  const [pendingPodcastTopicId, setPendingPodcastTopicId] = useState<number | null>(null);
+
+  const onTopicPodcast = (topicId: number, topicName: string) => {
+    setPendingPodcastTopicId(topicId);
+    generateTopicPodcast.mutate(
+      { id: topicId, data: {} },
+      {
+        onSuccess: (overview) => {
+          qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+          toast({
+            title: `Podcast queued for ${topicName}`,
+            description:
+              overview.status === "ready"
+                ? "Ready to listen — open the notebook to play it."
+                : "Generating a 5-minute episode. It'll appear in Continue learning when ready.",
+            action: overview.notebookId ? (
+              <Link href={`/notebooks/${overview.notebookId}`}>
+                <Button size="sm" variant="secondary">Open</Button>
+              </Link>
+            ) : undefined,
+          });
+        },
+        onError: (e) => {
+          toast({
+            title: `Couldn't generate podcast for ${topicName}`,
+            description: e instanceof Error ? e.message : "Try again in a moment.",
+            variant: "destructive",
+          });
+        },
+        onSettled: () => setPendingPodcastTopicId(null),
+      },
+    );
+  };
 
   const [openTopicId, setOpenTopicId] = useState<number | null>(null);
   const QUIZ_COUNT_OPTIONS = [5, 10, 20] as const;
@@ -436,7 +521,7 @@ export default function Dashboard() {
           </Card>
         ) : null}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           <Card className="bg-primary text-primary-foreground border-none" data-tour="dashboard-readiness">
             <CardContent className="p-4 min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">
@@ -446,10 +531,29 @@ export default function Dashboard() {
               {loadingSummary ? (
                 <Skeleton className="h-8 w-20 mt-1.5 bg-primary-foreground/20" />
               ) : (
-                <div className="mt-1.5 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-bold">{summary?.readinessScore ?? 0}</span>
-                  <span className="text-xs opacity-90">/ 100</span>
-                </div>
+                <>
+                  <div className="mt-1.5 flex items-baseline gap-1.5">
+                    <span className="text-2xl font-bold" data-testid="readiness-score">
+                      {summary?.readinessScore ?? 0}
+                    </span>
+                    <span className="text-xs opacity-90">/ 100</span>
+                    {(summary?.readinessBonus ?? 0) > 0 && (
+                      <Badge
+                        variant="outline"
+                        className="ml-auto text-[10px] border-primary-foreground/40 text-primary-foreground bg-primary-foreground/10 gap-1"
+                        title="7-day activity bonus from study guides, podcasts, and games"
+                        data-testid="readiness-bonus"
+                      >
+                        <TrendingUp className="h-3 w-3" /> +{summary?.readinessBonus}
+                      </Badge>
+                    )}
+                  </div>
+                  {(summary?.readinessBonus ?? 0) > 0 && (
+                    <p className="text-[10px] opacity-80 mt-1 truncate">
+                      Base {summary?.readinessBaseScore} + {summary?.readinessBonus} activity bonus
+                    </p>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -508,6 +612,68 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+
+          <Card data-testid="tile-study-guides">
+            <CardContent className="p-4 min-w-0">
+              <div className="flex items-center justify-between gap-2 text-muted-foreground min-w-0">
+                <p className="text-xs font-medium truncate">Study Guides</p>
+                <FileText className="h-3.5 w-3.5 shrink-0" />
+              </div>
+              {loadingSummary ? (
+                <Skeleton className="h-8 w-20 mt-1.5" />
+              ) : (
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <div className="flex items-baseline gap-1.5 min-w-0">
+                    <span className="text-2xl font-bold" data-testid="study-guides-total">
+                      {summary?.studyGuides?.total ?? 0}
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate">
+                      total · {summary?.studyGuides?.withPodcast ?? 0} w/ podcast
+                    </span>
+                  </div>
+                  <Link href="/study-guides" className="text-xs font-medium text-primary hover:underline flex items-center shrink-0">
+                    Open <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </div>
+              )}
+              {!loadingSummary && (summary?.studyGuides?.recent7d ?? 0) > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  +{summary?.studyGuides?.recent7d} this week
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card data-testid="tile-games">
+            <CardContent className="p-4 min-w-0">
+              <div className="flex items-center justify-between gap-2 text-muted-foreground min-w-0">
+                <p className="text-xs font-medium truncate">Games Played</p>
+                <Gamepad2 className="h-3.5 w-3.5 shrink-0" />
+              </div>
+              {loadingSummary ? (
+                <Skeleton className="h-8 w-20 mt-1.5" />
+              ) : (
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <div className="flex items-baseline gap-1.5 min-w-0">
+                    <span className="text-2xl font-bold" data-testid="games-lifetime">
+                      {summary?.games?.lifetime ?? 0}
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate">
+                      total · {summary?.games?.today ?? 0} today
+                    </span>
+                  </div>
+                  <Link href="/games" className="text-xs font-medium text-primary hover:underline flex items-center shrink-0">
+                    Play <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </div>
+              )}
+              {!loadingSummary && (summary?.games?.recent7d ?? 0) > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  +{summary?.games?.recent7d} this week
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -554,10 +720,15 @@ export default function Dashboard() {
                   </div>
                 ) : plan?.items?.length ? (
                   <div className="space-y-3">
-                    {plan.items.map((item, i) => (
+                    {plan.items.map((item, i) => {
+                      const meta = PLAN_KIND_META[item.kind] ?? PLAN_KIND_META.review;
+                      const KindIcon = meta.icon;
+                      return (
                       <div
                         key={item.key ?? i}
                         data-testid={`plan-item-${item.key ?? i}`}
+                        data-kind={item.kind}
+                        data-completed={item.completed ? "true" : "false"}
                         className={`flex items-start gap-3 p-3 border rounded-lg transition-all min-w-0 ${
                           item.completed
                             ? "bg-emerald-500/5 border-emerald-500/30"
@@ -573,8 +744,10 @@ export default function Dashboard() {
                               markComplete.mutate(
                                 { data: { itemKey: item.key } },
                                 {
-                                  onSuccess: () =>
-                                    qc.invalidateQueries({ queryKey: getGetStudyPlanTodayQueryKey() }),
+                                  onSuccess: () => {
+                                    qc.invalidateQueries({ queryKey: getGetStudyPlanTodayQueryKey() });
+                                    qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+                                  },
                                 },
                               );
                             }
@@ -594,10 +767,22 @@ export default function Dashboard() {
                         </button>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className="uppercase text-[10px] tracking-wider px-1.5 py-0">{item.kind.replace('_', ' ')}</Badge>
+                            <Badge
+                              variant="outline"
+                              className={`uppercase text-[10px] tracking-wider px-1.5 py-0 gap-1 ${meta.tone}`}
+                              data-testid={`plan-item-kind-${item.key ?? i}`}
+                            >
+                              <KindIcon className="h-3 w-3" />
+                              {meta.label}
+                            </Badge>
                             {item.mandatory && (
                               <Badge className="bg-primary/10 text-primary border-primary/30 text-[10px] tracking-wider px-1.5 py-0 uppercase" data-testid={`plan-item-mandatory-${item.key}`}>
                                 Required
+                              </Badge>
+                            )}
+                            {item.completed && (
+                              <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[10px] tracking-wider px-1.5 py-0 uppercase gap-1" data-testid={`plan-item-done-${item.key}`}>
+                                <Check className="h-3 w-3" /> Done
                               </Badge>
                             )}
                             <h4
@@ -608,7 +793,11 @@ export default function Dashboard() {
                               {item.title}
                             </h4>
                           </div>
-                          {item.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>}
+                          {item.description && (
+                            <div className="text-xs text-muted-foreground mt-1 line-clamp-3 [&_p]:m-0 [&_p+p]:mt-1">
+                              <MarkdownMessage content={item.description} />
+                            </div>
+                          )}
                           <div className="mt-1.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
                             <Clock className="h-3 w-3" /> ~{item.estMinutes} mins
                           </div>
@@ -616,12 +805,13 @@ export default function Dashboard() {
                         {item.link && (
                           <Link href={item.link}>
                             <Button size="sm" variant={item.completed ? "ghost" : "secondary"} className="h-7 px-2.5 text-xs shrink-0">
-                              {item.completed ? <><Check className="h-3 w-3 mr-1" />Done</> : "Start"}
+                              {item.completed ? <><Check className="h-3 w-3 mr-1" />Open</> : "Start"}
                             </Button>
                           </Link>
                         )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-6 text-sm text-muted-foreground">
@@ -633,6 +823,60 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-4 min-w-0">
+            <Card data-testid="continue-learning-card">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <RotateCw className="h-4 w-4 text-primary" /> Continue learning
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                {loadingSummary ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-10 w-full" />
+                    ))}
+                  </div>
+                ) : (summary?.continueLearning?.length ?? 0) > 0 ? (
+                  <ul className="space-y-1.5" data-testid="continue-learning-list">
+                    {summary?.continueLearning?.map((item, idx) => {
+                      const meta = CONTINUE_KIND_META[item.kind];
+                      const Icon = meta.icon;
+                      return (
+                        <li key={`${item.kind}-${item.link}-${idx}`}>
+                          <Link href={item.link}>
+                            <button
+                              type="button"
+                              data-testid={`continue-learning-item-${idx}`}
+                              data-kind={item.kind}
+                              className="w-full text-left rounded-md border bg-secondary/40 hover-elevate active-elevate-2 transition-colors px-2.5 py-2 flex items-center gap-2 min-w-0"
+                            >
+                              <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate" title={item.title}>
+                                  {item.title}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground truncate">
+                                  {meta.label}
+                                  {item.subtitle ? ` · ${item.subtitle}` : ""}
+                                  {" · "}
+                                  {formatRelative(item.lastTouchedAt)}
+                                </p>
+                              </div>
+                              <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                            </button>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Nothing to pick back up yet. Add a note, generate a guide, or play a game and it'll appear here.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-base">Weak Topics</CardTitle>
@@ -767,7 +1011,26 @@ export default function Dashboard() {
                             />
                             <span className="text-xs tabular-nums">{masteryPct}% mastery</span>
                           </div>
-                          <div className="absolute top-1 right-1">
+                          <div className="absolute top-1 right-1 flex items-center gap-0.5">
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6 hover:bg-background/50 rounded-md shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onTopicPodcast(topic.topicId, topic.name);
+                              }}
+                              disabled={
+                                generateTopicPodcast.isPending &&
+                                pendingPodcastTopicId === topic.topicId
+                              }
+                              title={`Listen to a 5-min podcast on ${topic.name}`}
+                              aria-label={`Generate a 5-minute podcast on ${topic.name}`}
+                              data-testid={`weak-topic-podcast-${topic.topicId}`}
+                            >
+                              <Headphones className="h-3 w-3" />
+                            </Button>
                             <AskAiButton
                               context={`I am weak in the topic: ${topic.name}. Can you explain the core concepts I need to know for the BOC exam?`}
                               size="icon"

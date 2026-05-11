@@ -22,6 +22,7 @@ tags:
   - name: plan
   - name: scraper
   - name: catalog
+  - name: topics
 paths:
   /healthz:
     get:
@@ -986,6 +987,24 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/GameSummaryEntry" }
+  /topics/{id}/podcasts:
+    post:
+      operationId: generateTopicPodcast
+      tags: [topics, audio]
+      summary: Generate a 5-minute podcast on a single topic for the Weak Topics quick-action.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TopicPodcastInput" }
+      responses:
+        "202":
+          description: Accepted; generation started in the background.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AudioOverview" }
   /plan/fix-it/streak:
     get:
       operationId: getFixItStreak
@@ -1226,6 +1245,13 @@ components:
           enum: [lecture, podcast, quickrecap]
           default: lecture
         focus: { type: string }
+    TopicPodcastInput:
+      type: object
+      properties:
+        voice:
+          type: string
+          enum: [alloy, echo, fable, onyx, nova, shimmer]
+          default: nova
     StudyGuideAudioInput:
       type: object
       properties:
@@ -1529,9 +1555,11 @@ components:
 
     DashboardSummary:
       type: object
-      required: [readinessScore, lastUpdated, totalQuestionsAnswered, totalCorrect, streakDays, dueFlashcards, recentQuizzes, weakTopics, domainMastery, domainFlashcardCounts]
+      required: [readinessScore, readinessBaseScore, readinessBonus, lastUpdated, totalQuestionsAnswered, totalCorrect, streakDays, dueFlashcards, recentQuizzes, weakTopics, domainMastery, domainFlashcardCounts, studyGuides, games, continueLearning]
       properties:
-        readinessScore: { type: number, description: "0-100 estimate of BOC readiness" }
+        readinessScore: { type: number, description: "0-100 estimate of BOC readiness (includes 7-day activity bonus)" }
+        readinessBaseScore: { type: number, description: "Readiness from mastery + last mock exam, before activity bonus." }
+        readinessBonus: { type: number, description: "Bonus points (0-10) for guides/podcasts/games in the last 7 days." }
         lastUpdated: { type: string, format: date-time }
         totalQuestionsAnswered: { type: integer }
         totalCorrect: { type: integer }
@@ -1551,6 +1579,37 @@ components:
           type: array
           description: "Flashcard totals (and how many are due now) for each domain, by domain id."
           items: { $ref: "#/components/schemas/DomainFlashcardCount" }
+        studyGuides: { $ref: "#/components/schemas/StudyGuidesSummary" }
+        games: { $ref: "#/components/schemas/GamesActivitySummary" }
+        continueLearning:
+          type: array
+          description: "Most recently touched learning items across notes, study guides, podcasts, and games."
+          items: { $ref: "#/components/schemas/ContinueLearningItem" }
+    StudyGuidesSummary:
+      type: object
+      required: [total, withPodcast, recent7d]
+      properties:
+        total: { type: integer, description: "Lifetime number of generated study guides." }
+        withPodcast: { type: integer, description: "Study guides that have at least one ready podcast." }
+        recent7d: { type: integer, description: "Study guides created in the last 7 days." }
+    GamesActivitySummary:
+      type: object
+      required: [lifetime, today, recent7d]
+      properties:
+        lifetime: { type: integer, description: "All-time game sessions for this user." }
+        today: { type: integer, description: "Game sessions completed today." }
+        recent7d: { type: integer, description: "Game sessions completed in the last 7 days." }
+    ContinueLearningItem:
+      type: object
+      required: [kind, title, link, lastTouchedAt]
+      properties:
+        kind:
+          type: string
+          enum: [note, study_guide, podcast, game]
+        title: { type: string }
+        subtitle: { type: ["string", "null"], description: "Optional context, e.g. notebook title or game id." }
+        link: { type: string, description: "App-relative path to deep-link the user back into the activity." }
+        lastTouchedAt: { type: string, format: date-time }
     DomainFlashcardCount:
       type: object
       required: [domainId, total, due]

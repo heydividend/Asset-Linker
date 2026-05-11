@@ -77,6 +77,7 @@ import type {
   Topic,
   TopicHistoryEntry,
   TopicMasteryEntry,
+  TopicPodcastInput,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -5763,6 +5764,93 @@ export function useGetGamesSummary<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Generate a 5-minute podcast on a single topic for the Weak Topics quick-action.
+ */
+export const getGenerateTopicPodcastUrl = (id: number) => {
+  return `/api/topics/${id}/podcasts`;
+};
+
+export const generateTopicPodcast = async (
+  id: number,
+  topicPodcastInput?: TopicPodcastInput,
+  options?: RequestInit,
+): Promise<AudioOverview> => {
+  return customFetch<AudioOverview>(getGenerateTopicPodcastUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(topicPodcastInput),
+  });
+};
+
+export const getGenerateTopicPodcastMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateTopicPodcast>>,
+    TError,
+    { id: number; data: BodyType<TopicPodcastInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateTopicPodcast>>,
+  TError,
+  { id: number; data: BodyType<TopicPodcastInput> },
+  TContext
+> => {
+  const mutationKey = ["generateTopicPodcast"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateTopicPodcast>>,
+    { id: number; data: BodyType<TopicPodcastInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateTopicPodcast(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateTopicPodcastMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateTopicPodcast>>
+>;
+export type GenerateTopicPodcastMutationBody = BodyType<TopicPodcastInput>;
+export type GenerateTopicPodcastMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate a 5-minute podcast on a single topic for the Weak Topics quick-action.
+ */
+export const useGenerateTopicPodcast = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateTopicPodcast>>,
+    TError,
+    { id: number; data: BodyType<TopicPodcastInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateTopicPodcast>>,
+  TError,
+  { id: number; data: BodyType<TopicPodcastInput> },
+  TContext
+> => {
+  return useMutation(getGenerateTopicPodcastMutationOptions(options));
+};
 
 /**
  * @summary Returns the user's fix-it plan completion dates and current streak

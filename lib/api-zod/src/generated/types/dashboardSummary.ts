@@ -5,14 +5,21 @@
  * BOC Study Notebook API
  * OpenAPI spec version: 0.1.0
  */
+import type { ContinueLearningItem } from "./continueLearningItem";
 import type { DomainFlashcardCount } from "./domainFlashcardCount";
 import type { DomainScore } from "./domainScore";
+import type { GamesActivitySummary } from "./gamesActivitySummary";
 import type { QuizSummary } from "./quizSummary";
+import type { StudyGuidesSummary } from "./studyGuidesSummary";
 import type { TopicScore } from "./topicScore";
 
 export interface DashboardSummary {
-  /** 0-100 estimate of BOC readiness */
+  /** 0-100 estimate of BOC readiness (includes 7-day activity bonus) */
   readinessScore: number;
+  /** Readiness from mastery + last mock exam, before activity bonus. */
+  readinessBaseScore: number;
+  /** Bonus points (0-10) for guides/podcasts/games in the last 7 days. */
+  readinessBonus: number;
   lastUpdated: Date;
   totalQuestionsAnswered: number;
   totalCorrect: number;
@@ -25,4 +32,8 @@ export interface DashboardSummary {
   domainMastery: DomainScore[];
   /** Flashcard totals (and how many are due now) for each domain, by domain id. */
   domainFlashcardCounts: DomainFlashcardCount[];
+  studyGuides: StudyGuidesSummary;
+  games: GamesActivitySummary;
+  /** Most recently touched learning items across notes, study guides, podcasts, and games. */
+  continueLearning: ContinueLearningItem[];
 }

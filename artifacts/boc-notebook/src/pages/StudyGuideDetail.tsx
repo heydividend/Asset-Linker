@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, BookOpen } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { ListenAsPodcastButton, PodcastList } from "@/components/PodcastPlayer";
 
 export default function StudyGuideDetail() {
@@ -47,8 +47,8 @@ export default function StudyGuideDetail() {
       </header>
 
       <div className="flex-1 grid lg:grid-cols-[1fr_360px] gap-6 p-6 max-w-6xl mx-auto w-full">
-        <article className="prose prose-sm dark:prose-invert max-w-none">
-          <ReactMarkdown>{guide.content}</ReactMarkdown>
+        <article className="max-w-none" data-testid="text-guide-content">
+          <MarkdownMessage content={guide.content} />
         </article>
         <aside className="space-y-3">
           <Card>

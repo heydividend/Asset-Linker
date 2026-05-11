@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, eq, sql, lte } from "drizzle-orm";
+import { desc, eq, sql, lte, gte, and } from "drizzle-orm";
 import {
   db,
   flashcards,
@@ -9,11 +9,24 @@ import {
   topics,
   domains,
   mockExams,
+  studyGuides,
+  audioOverviews,
+  gameSessions,
+  notes,
+  notebooks,
 } from "@workspace/db";
+import { getOrCreateSessionId } from "../lib/sessionId";
 
 const router: IRouter = Router();
 
-router.get("/dashboard/summary", async (_req, res): Promise<void> => {
+function startOfTodayUtc(): Date {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+router.get("/dashboard/summary", async (req, res): Promise<void> => {
+  const sessionId = getOrCreateSessionId(req, res);
   const [{ totalAns }] = await db
     .select({ totalAns: sql<number>`cast(count(*) as int)` })
     .from(quizAnswers);
@@ -99,12 +112,148 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
   const masteryReadiness =
     totalAttAll === 0 ? 0 : (totalCorrAll / totalAttAll) * 100;
   const lastMock = recentMocks[0]?.scorePercent;
-  const readinessScore = Math.round(
+  const readinessBaseScore = Math.round(
     lastMock != null ? masteryReadiness * 0.4 + lastMock * 0.6 : masteryReadiness,
   );
 
+  // 7-day learning-activity bonus (capped at +10): study guides, ready
+  // podcasts, and game sessions in the last week each contribute up to a
+  // small share so just-started users still get visible progress.
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const todayStart = startOfTodayUtc();
+  const [{ guidesAll }] = await db
+    .select({ guidesAll: sql<number>`cast(count(*) as int)` })
+    .from(studyGuides);
+  const [{ guides7d }] = await db
+    .select({ guides7d: sql<number>`cast(count(*) as int)` })
+    .from(studyGuides)
+    .where(gte(studyGuides.createdAt, sevenDaysAgo));
+  const guidesWithPodcastRes = (await db.execute(sql`
+    SELECT CAST(COUNT(DISTINCT sg.id) AS int) AS "guidesWithPodcast"
+    FROM study_guides sg
+    JOIN audio_overviews ao ON ao.study_guide_id = sg.id
+    WHERE ao.status = 'ready'
+  `)) as unknown as { rows: Array<{ guidesWithPodcast: number }> };
+  const guidesWithPodcast = Number(guidesWithPodcastRes.rows[0]?.guidesWithPodcast ?? 0);
+  const [{ podcasts7d }] = await db
+    .select({ podcasts7d: sql<number>`cast(count(*) as int)` })
+    .from(audioOverviews)
+    .where(and(eq(audioOverviews.status, "ready"), gte(audioOverviews.createdAt, sevenDaysAgo)));
+  const [{ gamesAll }] = await db
+    .select({ gamesAll: sql<number>`cast(count(*) as int)` })
+    .from(gameSessions)
+    .where(eq(gameSessions.sessionId, sessionId));
+  const [{ gamesToday }] = await db
+    .select({ gamesToday: sql<number>`cast(count(*) as int)` })
+    .from(gameSessions)
+    .where(and(eq(gameSessions.sessionId, sessionId), gte(gameSessions.completedAt, todayStart)));
+  const [{ games7d }] = await db
+    .select({ games7d: sql<number>`cast(count(*) as int)` })
+    .from(gameSessions)
+    .where(and(eq(gameSessions.sessionId, sessionId), gte(gameSessions.completedAt, sevenDaysAgo)));
+
+  const guidesPts = Math.min(5, Number(guides7d) || 0);
+  const podcastsPts = Math.min(3, Number(podcasts7d) || 0);
+  const gamesPts = Math.min(2, Math.floor((Number(games7d) || 0) / 2));
+  const readinessBonus = Math.min(10, guidesPts + podcastsPts + gamesPts);
+  const readinessScore = Math.min(100, readinessBaseScore + readinessBonus);
+
+  // Continue learning: latest 5 touched items across notes / guides / ready
+  // podcasts / game sessions, deduped per kind+id and sorted newest-first.
+  const recentNotes = await db
+    .select({
+      id: notes.id,
+      title: notes.title,
+      notebookId: notes.notebookId,
+      notebookTitle: notebooks.title,
+      createdAt: notes.createdAt,
+    })
+    .from(notes)
+    .innerJoin(notebooks, eq(notebooks.id, notes.notebookId))
+    .orderBy(desc(notes.createdAt))
+    .limit(5);
+  const recentGuides = await db
+    .select({
+      id: studyGuides.id,
+      title: studyGuides.title,
+      notebookId: studyGuides.notebookId,
+      notebookTitle: notebooks.title,
+      createdAt: studyGuides.createdAt,
+    })
+    .from(studyGuides)
+    .innerJoin(notebooks, eq(notebooks.id, studyGuides.notebookId))
+    .orderBy(desc(studyGuides.createdAt))
+    .limit(5);
+  const recentPodcasts = await db
+    .select({
+      id: audioOverviews.id,
+      title: audioOverviews.title,
+      notebookId: audioOverviews.notebookId,
+      studyGuideId: audioOverviews.studyGuideId,
+      createdAt: audioOverviews.createdAt,
+    })
+    .from(audioOverviews)
+    .where(eq(audioOverviews.status, "ready"))
+    .orderBy(desc(audioOverviews.createdAt))
+    .limit(5);
+  const recentGames = await db
+    .select({
+      gameId: gameSessions.gameId,
+      score: gameSessions.score,
+      totalPairs: gameSessions.totalPairs,
+      completedAt: gameSessions.completedAt,
+    })
+    .from(gameSessions)
+    .where(eq(gameSessions.sessionId, sessionId))
+    .orderBy(desc(gameSessions.completedAt))
+    .limit(5);
+
+  type CL = {
+    kind: "note" | "study_guide" | "podcast" | "game";
+    title: string;
+    subtitle: string | null;
+    link: string;
+    lastTouchedAt: string;
+  };
+  const continueLearning: CL[] = [
+    ...recentNotes.map((n) => ({
+      kind: "note" as const,
+      title: n.title,
+      subtitle: n.notebookTitle,
+      link: `/notebooks/${n.notebookId}`,
+      lastTouchedAt: n.createdAt.toISOString(),
+    })),
+    ...recentGuides.map((g) => ({
+      kind: "study_guide" as const,
+      title: g.title,
+      subtitle: g.notebookTitle,
+      link: `/study-guides/${g.id}`,
+      lastTouchedAt: g.createdAt.toISOString(),
+    })),
+    ...recentPodcasts.map((p) => ({
+      kind: "podcast" as const,
+      title: p.title,
+      subtitle: p.studyGuideId ? "Podcast" : "Audio overview",
+      link: p.studyGuideId
+        ? `/study-guides/${p.studyGuideId}`
+        : `/notebooks/${p.notebookId}`,
+      lastTouchedAt: p.createdAt.toISOString(),
+    })),
+    ...recentGames.map((g) => ({
+      kind: "game" as const,
+      title: `Game: ${g.gameId}`,
+      subtitle: `Score ${g.score}/${g.totalPairs}`,
+      link: `/games/${g.gameId}`,
+      lastTouchedAt: g.completedAt.toISOString(),
+    })),
+  ]
+    .sort((a, b) => b.lastTouchedAt.localeCompare(a.lastTouchedAt))
+    .slice(0, 5);
+
   res.json({
     readinessScore,
+    readinessBaseScore,
+    readinessBonus,
     lastUpdated: new Date().toISOString(),
     totalQuestionsAnswered: totalAns,
     totalCorrect: totalCorr,
@@ -128,6 +277,17 @@ router.get("/dashboard/summary", async (_req, res): Promise<void> => {
       const c = flashcardCountByDomain.get(d.id);
       return { domainId: d.id, total: c?.total ?? 0, due: c?.due ?? 0 };
     }),
+    studyGuides: {
+      total: Number(guidesAll) || 0,
+      withPodcast: Number(guidesWithPodcast) || 0,
+      recent7d: Number(guides7d) || 0,
+    },
+    games: {
+      lifetime: Number(gamesAll) || 0,
+      today: Number(gamesToday) || 0,
+      recent7d: Number(games7d) || 0,
+    },
+    continueLearning,
   });
 });
 

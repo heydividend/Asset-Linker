@@ -31,7 +31,7 @@ import { AskAiButton } from "@/components/AskAiButton";
 import { ListenAsPodcastButton, PodcastList } from "@/components/PodcastPlayer";
 import { useToast } from "@/hooks/use-toast";
 import { Bot, FileText, Headphones, Plus, Trash2, BookOpen, Sparkles, Brain, Loader2, ChevronLeft, PanelLeftOpen } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
 
 export default function NotebookDetail() {
   const params = useParams();
@@ -454,8 +454,8 @@ export default function NotebookDetail() {
                         </Button>
                       </div>
                     </div>
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown>{g.content}</ReactMarkdown>
+                    <div className="max-w-none">
+                      <MarkdownMessage content={g.content} />
                     </div>
                     <div className="border-t pt-2">
                       <PodcastList studyGuideId={g.id} />
