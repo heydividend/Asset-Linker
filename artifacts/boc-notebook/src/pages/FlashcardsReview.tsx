@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useListDueFlashcards,
   useListAllFlashcards,
@@ -28,6 +28,12 @@ import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, Che
 import { Link, useSearch, useLocation } from "wouter";
 import { rememberFixItQuizId } from "@/lib/fixItPlan";
 
+const TOUR_SAMPLE_CARD = {
+  id: -1,
+  front: "Which manual muscle test grade indicates full ROM against gravity with maximal resistance?",
+  back: "**Grade 5 (Normal)** — Patient completes full available range of motion against gravity while holding against **maximal manual resistance**. Grade 4 (Good) holds against moderate resistance; Grade 3 (Fair) clears full ROM against gravity with no added resistance.",
+};
+
 export default function FlashcardsReview() {
   const review = useReviewFlashcard();
   const startQuiz = useStartQuiz();
@@ -43,6 +49,27 @@ export default function FlashcardsReview() {
   const [browseIdx, setBrowseIdx] = useState(0);
   const [genOpen, setGenOpen] = useState(false);
   const [genForm, setGenForm] = useState({ notebookId: "", count: "10", focus: "" });
+  const [tourPreview, setTourPreview] = useState<{ active: boolean; revealed: boolean } | null>(null);
+
+  useEffect(() => {
+    const onPreview = (e: Event) => {
+      const detail = (e as CustomEvent<{ revealed?: boolean }>).detail;
+      setTourPreview({ active: true, revealed: !!detail?.revealed });
+    };
+    const onReveal = (e: Event) => {
+      const detail = (e as CustomEvent<{ revealed?: boolean }>).detail;
+      setTourPreview((p) => ({ active: p?.active ?? true, revealed: !!detail?.revealed }));
+    };
+    const onEnd = () => setTourPreview(null);
+    window.addEventListener("boc:tour:flashcards:preview", onPreview as EventListener);
+    window.addEventListener("boc:tour:flashcards:reveal", onReveal as EventListener);
+    window.addEventListener("boc:tour:flashcards:end", onEnd);
+    return () => {
+      window.removeEventListener("boc:tour:flashcards:preview", onPreview as EventListener);
+      window.removeEventListener("boc:tour:flashcards:reveal", onReveal as EventListener);
+      window.removeEventListener("boc:tour:flashcards:end", onEnd);
+    };
+  }, []);
 
   const onGenerate = () => {
     const nbId = Number(genForm.notebookId);
@@ -171,7 +198,23 @@ export default function FlashcardsReview() {
     query: { queryKey: getListAllFlashcardsQueryKey(), enabled: mode === "browse" },
   });
 
-  const card = cards[0];
+  const liveCard = cards[0];
+  const card = tourPreview?.active ? TOUR_SAMPLE_CARD : liveCard;
+  const effectiveRevealed = tourPreview?.active ? tourPreview.revealed : revealed;
+  const handleReveal = () => {
+    if (tourPreview?.active) {
+      setTourPreview({ active: true, revealed: true });
+    } else {
+      setRevealed(true);
+    }
+  };
+  const handleRate = (quality: number) => {
+    if (tourPreview?.active) {
+      setTourPreview({ active: true, revealed: false });
+      return;
+    }
+    submit(quality);
+  };
   // Only treat as focused when we actually have topic IDs constraining the
   // server query — a stray `region` param alone would otherwise show focused
   // UI while loading every due card.
@@ -236,7 +279,7 @@ export default function FlashcardsReview() {
     );
   }
 
-  if (isLoading) return <div className="p-6">Loading flashcards…</div>;
+  if (isLoading && !tourPreview?.active) return <div className="p-6">Loading flashcards…</div>;
 
   if (!card) {
     return (
@@ -391,7 +434,8 @@ export default function FlashcardsReview() {
           <CardContent className="flex-1 flex flex-col p-8">
             <div className="flex items-center justify-between mb-4">
               <Badge variant="secondary" className="uppercase tracking-wide text-xs">
-                {revealed ? "Answer" : "Front"}
+                {effectiveRevealed ? "Answer" : "Front"}
+                {tourPreview?.active && <span className="ml-1 normal-case opacity-70">· tour preview</span>}
               </Badge>
               <AskAiButton
                 context={`I'm reviewing a flashcard${focusRegion ? ` focused on ${focusRegion}` : ""}. Front: ${card.front}\nBack: ${card.back}\nExplain it deeply with clinical context.`}
@@ -400,7 +444,7 @@ export default function FlashcardsReview() {
               />
             </div>
             <div className="flex-1 flex items-center justify-center text-center">
-              {revealed ? (
+              {effectiveRevealed ? (
                 <div className="w-full text-left" data-testid="flashcard-content">
                   <MarkdownMessage content={card.back} className="prose-base" />
                 </div>
@@ -411,18 +455,18 @@ export default function FlashcardsReview() {
               )}
             </div>
             <div className="mt-6">
-              {!revealed ? (
-                <Button className="w-full" size="lg" onClick={() => setRevealed(true)} data-testid="button-reveal">
+              {!effectiveRevealed ? (
+                <Button className="w-full" size="lg" onClick={handleReveal} data-testid="button-reveal">
                   <Eye className="h-4 w-4 mr-2" /> Reveal answer
                 </Button>
               ) : (
                 <div className="grid grid-cols-4 gap-2">
-                  <Button variant="destructive" onClick={() => submit(1)} data-testid="button-rate-again">
+                  <Button variant="destructive" onClick={() => handleRate(1)} data-testid="button-rate-again">
                     <RotateCcw className="h-4 w-4 mr-1" /> Again
                   </Button>
-                  <Button variant="outline" onClick={() => submit(3)} data-testid="button-rate-hard">Hard</Button>
-                  <Button variant="secondary" onClick={() => submit(4)} data-testid="button-rate-good">Good</Button>
-                  <Button onClick={() => submit(5)} data-testid="button-rate-easy">
+                  <Button variant="outline" onClick={() => handleRate(3)} data-testid="button-rate-hard">Hard</Button>
+                  <Button variant="secondary" onClick={() => handleRate(4)} data-testid="button-rate-good">Good</Button>
+                  <Button onClick={() => handleRate(5)} data-testid="button-rate-easy">
                     <Sparkles className="h-4 w-4 mr-1" /> Easy
                   </Button>
                 </div>

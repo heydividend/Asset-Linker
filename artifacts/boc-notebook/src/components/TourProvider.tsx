@@ -130,6 +130,11 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       const built = def.steps();
       const resolved = await resolveSteps(built);
       if (resolved.length === 0) {
+        try {
+          def.cleanup?.();
+        } catch {
+          /* ignore */
+        }
         advanceQueue();
         return;
       }
@@ -153,6 +158,11 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         },
         onDestroyed: () => {
           driverRef.current = null;
+          try {
+            def.cleanup?.();
+          } catch {
+            /* ignore */
+          }
           advanceQueue();
         },
       });
@@ -198,6 +208,11 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
               },
               onDestroyed: () => {
                 driverRef.current = null;
+                try {
+                  def.cleanup?.();
+                } catch {
+                  /* ignore */
+                }
                 advanceQueue();
               },
             });

@@ -30,6 +30,9 @@ export interface PageDef {
   prepare?: () => Promise<{ skip?: boolean; reason?: string; navigateTo?: string }>;
   steps: () => BocStep[];
   readyDelayMs?: number;
+  /** Run when this page's tour finishes (success, skip, or close). Use it to
+   *  tear down any tour-only UI state, e.g. preview cards seeded for the tour. */
+  cleanup?: () => void;
 }
 
 const baseSidePopover = (title: string, description: string): DriveStep["popover"] => ({
@@ -216,29 +219,61 @@ function notebookDetailSteps(): BocStep[] {
   ];
 }
 
+function activateFlashcardPreview(revealed: boolean): void {
+  window.dispatchEvent(
+    new CustomEvent("boc:tour:flashcards:preview", { detail: { revealed } }),
+  );
+}
+
+function setFlashcardPreviewRevealed(revealed: boolean): void {
+  window.dispatchEvent(
+    new CustomEvent("boc:tour:flashcards:reveal", { detail: { revealed } }),
+  );
+}
+
 function flashcardsSteps(): BocStep[] {
   return [
     {
       popover: centerPopover(
         "Flashcards",
-        "Spaced-repetition flashcards built from your notebooks. Cards become due on a smart schedule based on how well you've remembered them.",
+        "Spaced-repetition flashcards built from your notebooks. Cards become due on a smart schedule based on how well you've remembered them.<br/><br/><em>For this walkthrough we're showing a sample card — your real deck isn't affected.</em>",
       ),
+      ensureVisible: async () => {
+        activateFlashcardPreview(false);
+        await waitFor('[data-testid="badge-due-count"]', 1500);
+      },
     },
     {
       element: '[data-testid="badge-due-count"]',
       popover: { title: "Cards due today", description: "How many cards are scheduled for review right now. The number drops as you rate cards." },
+      ensureVisible: async () => {
+        activateFlashcardPreview(false);
+        await waitFor('[data-testid="badge-due-count"]', 1500);
+      },
     },
     {
       element: '[data-testid="button-generate-flashcards"]',
       popover: { title: "Generate AI flashcards", description: "Pick a notebook and let the AI create exam-ready cards with topic tags. Optionally focus on a topic like 'concussion management'." },
+      ensureVisible: async () => {
+        activateFlashcardPreview(false);
+        await waitFor('[data-testid="button-generate-flashcards"]', 1500);
+      },
     },
     {
       element: '[data-testid="button-browse-all"]',
       popover: { title: "Browse all", description: "Flip through every card in your deck (no SRS scoring). Great for a quick refresher before bed." },
+      ensureVisible: async () => {
+        activateFlashcardPreview(false);
+        await waitFor('[data-testid="button-browse-all"]', 1500);
+      },
     },
     {
       element: '[data-testid="button-reveal"]',
       popover: { title: "Reveal the answer", description: "Read the front, think through your answer, then click Reveal to flip the card.", side: "top" },
+      ensureVisible: async () => {
+        setFlashcardPreviewRevealed(false);
+        await waitFor('[data-testid="button-reveal"]', 1500);
+      },
     },
     {
       element: '[data-testid="button-ask-ai"]',
@@ -252,13 +287,15 @@ function flashcardsSteps(): BocStep[] {
         side: "top",
       },
       ensureVisible: async () => {
-        if (document.querySelector('[data-testid="button-rate-good"]')) return;
-        const reveal = document.querySelector<HTMLButtonElement>('[data-testid="button-reveal"]');
-        reveal?.click();
+        setFlashcardPreviewRevealed(true);
         await waitFor('[data-testid="button-rate-good"]', 1500);
       },
     },
   ];
+}
+
+function flashcardsCleanup(): void {
+  window.dispatchEvent(new Event("boc:tour:flashcards:end"));
 }
 
 function quizSteps(): BocStep[] {
@@ -515,6 +552,7 @@ export const PAGES: Record<PageKey, PageDef> = {
     match: (loc) => loc.startsWith("/flashcards"),
     defaultPath: "/flashcards",
     steps: flashcardsSteps,
+    cleanup: flashcardsCleanup,
   },
   quiz: {
     key: "quiz",
