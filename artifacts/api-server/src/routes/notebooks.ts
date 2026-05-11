@@ -64,6 +64,7 @@ router.get("/notebooks/:id", async (req, res): Promise<void> => {
       .select({
         id: audioOverviews.id,
         notebookId: audioOverviews.notebookId,
+        studyGuideId: audioOverviews.studyGuideId,
         title: audioOverviews.title,
         status: audioOverviews.status,
         voice: audioOverviews.voice,

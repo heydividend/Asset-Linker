@@ -107,6 +107,7 @@ export const GetNotebookResponse = zod.object({
     zod.object({
       id: zod.number(),
       notebookId: zod.number(),
+      studyGuideId: zod.number().nullish(),
       title: zod.string(),
       status: zod.enum(["pending", "ready", "failed"]),
       voice: zod.string(),
@@ -397,6 +398,27 @@ export const GenerateStudyGuideBody = zod.object({
   focus: zod.string().optional(),
 });
 
+/**
+ * @summary List every study guide across notebooks (with notebook title)
+ */
+export const ListAllStudyGuidesQueryParams = zod.object({
+  notebookId: zod.coerce.number().optional(),
+  format: zod.enum(["outline", "summary", "qa", "mindmap"]).optional(),
+});
+
+export const ListAllStudyGuidesResponseItem = zod.object({
+  id: zod.number(),
+  notebookId: zod.number(),
+  notebookTitle: zod.string(),
+  title: zod.string(),
+  format: zod.enum(["outline", "summary", "qa", "mindmap"]),
+  content: zod.string().describe("Markdown"),
+  createdAt: zod.coerce.date(),
+});
+export const ListAllStudyGuidesResponse = zod.array(
+  ListAllStudyGuidesResponseItem,
+);
+
 export const GetStudyGuideParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -404,6 +426,7 @@ export const GetStudyGuideParams = zod.object({
 export const GetStudyGuideResponse = zod.object({
   id: zod.number(),
   notebookId: zod.number(),
+  notebookTitle: zod.string(),
   title: zod.string(),
   format: zod.enum(["outline", "summary", "qa", "mindmap"]),
   content: zod.string().describe("Markdown"),
@@ -414,6 +437,41 @@ export const DeleteStudyGuideParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const ListStudyGuideAudioOverviewsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListStudyGuideAudioOverviewsResponseItem = zod.object({
+  id: zod.number(),
+  notebookId: zod.number(),
+  studyGuideId: zod.number().nullish(),
+  title: zod.string(),
+  status: zod.enum(["pending", "ready", "failed"]),
+  voice: zod.string(),
+  durationSec: zod.number().nullish(),
+  transcript: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListStudyGuideAudioOverviewsResponse = zod.array(
+  ListStudyGuideAudioOverviewsResponseItem,
+);
+
+/**
+ * @summary AI-generate a two-host podcast audio narration of a study guide
+ */
+export const GenerateStudyGuideAudioOverviewParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const generateStudyGuideAudioOverviewBodyVoiceDefault = `nova`;
+
+export const GenerateStudyGuideAudioOverviewBody = zod.object({
+  voice: zod
+    .enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"])
+    .default(generateStudyGuideAudioOverviewBodyVoiceDefault),
+  focus: zod.string().optional(),
+});
+
 export const ListAudioOverviewsParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -421,6 +479,7 @@ export const ListAudioOverviewsParams = zod.object({
 export const ListAudioOverviewsResponseItem = zod.object({
   id: zod.number(),
   notebookId: zod.number(),
+  studyGuideId: zod.number().nullish(),
   title: zod.string(),
   status: zod.enum(["pending", "ready", "failed"]),
   voice: zod.string(),
@@ -459,6 +518,7 @@ export const GetAudioOverviewParams = zod.object({
 export const GetAudioOverviewResponse = zod.object({
   id: zod.number(),
   notebookId: zod.number(),
+  studyGuideId: zod.number().nullish(),
   title: zod.string(),
   status: zod.enum(["pending", "ready", "failed"]),
   voice: zod.string(),

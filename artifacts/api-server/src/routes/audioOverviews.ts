@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { desc, eq } from "drizzle-orm";
-import { db, audioOverviews, notes } from "@workspace/db";
+import { db, audioOverviews, notes, studyGuides } from "@workspace/db";
 import { textToSpeech } from "@workspace/integrations-openai-ai-server/audio";
 import { parseId } from "../lib/parseId";
 import { chatText, truncate } from "../lib/openaiHelpers";
@@ -39,6 +39,85 @@ function chunkForTts(text: string, maxChars = MAX_TTS_CHARS): string[] {
   return chunks;
 }
 
+const AUDIO_SELECT = {
+  id: audioOverviews.id,
+  notebookId: audioOverviews.notebookId,
+  studyGuideId: audioOverviews.studyGuideId,
+  title: audioOverviews.title,
+  status: audioOverviews.status,
+  voice: audioOverviews.voice,
+  durationSec: audioOverviews.durationSec,
+  transcript: audioOverviews.transcript,
+  createdAt: audioOverviews.createdAt,
+} as const;
+
+const STYLE_PROMPTS: Record<string, string> = {
+  lecture:
+    "Write a focused 4-6 minute spoken lecture script for an Athletic Training student preparing for the BOC exam.",
+  podcast:
+    "Write a friendly 5-7 minute podcast-style script for two co-hosts (alternating, label A: and B:) discussing the material for a BOC student.",
+  quickrecap: "Write a tight 2-3 minute spoken recap of the key BOC-relevant concepts.",
+  podcast2host:
+    "Write a friendly 5-7 minute two-host podcast script for an Athletic Training BOC student. " +
+    "Open with a brief intro that names the topic and welcomes the listener. " +
+    "Then alternate strictly between two hosts, labeled `HOST A:` and `HOST B:`, who chat in plain conversational language, " +
+    "explain ideas to each other with concrete examples and clinical pearls, ask each other questions, and react to each other's points. " +
+    "Close with a short outro that recaps the 3-5 highest-yield takeaways and a friendly sign-off.",
+};
+
+async function startGeneration(opts: {
+  overviewId: number;
+  voice: TtsVoice;
+  style: string;
+  focus?: string;
+  source: string;
+}): Promise<void> {
+  const { overviewId, voice, style, focus, source } = opts;
+  try {
+    const promptHeader = STYLE_PROMPTS[style] ?? STYLE_PROMPTS.lecture;
+    logger.info({ overviewId, style, voice }, "audio-overview: generating transcript");
+    const transcript = await chatText(
+      `${promptHeader}${focus ? ` Focus on: ${focus}.` : ""} Material:\n\n${source}\n\nWrite ONLY the spoken script — no stage directions, no markdown, no headings. For two-host scripts keep the speaker labels (HOST A: / HOST B: or A: / B:) on each line.`,
+      "You are a clinical educator writing natural spoken audio for a study app.",
+    );
+    if (!transcript || transcript.trim().length === 0) {
+      throw new Error("Transcript generation returned empty text");
+    }
+    const chunks = chunkForTts(transcript);
+    logger.info({ overviewId, chars: transcript.length, chunks: chunks.length }, "audio-overview: synthesizing speech");
+    const audioParts: Buffer[] = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const t0 = Date.now();
+      const part = await textToSpeech(chunks[i], voice, "mp3");
+      if (!part || part.length === 0) {
+        throw new Error(`TTS chunk ${i + 1}/${chunks.length} returned empty audio buffer`);
+      }
+      audioParts.push(part);
+      logger.info(
+        { overviewId, chunk: i + 1, total: chunks.length, ms: Date.now() - t0, bytes: part.length },
+        "audio-overview: chunk synthesized",
+      );
+    }
+    const buf = Buffer.concat(audioParts);
+    await db
+      .update(audioOverviews)
+      .set({
+        status: "ready",
+        transcript,
+        audioData: buf,
+        durationSec: Math.round(transcript.length / 15),
+      })
+      .where(eq(audioOverviews.id, overviewId));
+    logger.info({ overviewId, audioBytes: buf.length }, "audio-overview: ready");
+  } catch (err) {
+    logger.error({ err, overviewId }, "audio-overview: generation failed");
+    await db
+      .update(audioOverviews)
+      .set({ status: "failed" })
+      .where(eq(audioOverviews.id, overviewId));
+  }
+}
+
 const router: IRouter = Router();
 
 router.get("/notebooks/:id/audio-overviews", async (req, res): Promise<void> => {
@@ -48,16 +127,7 @@ router.get("/notebooks/:id/audio-overviews", async (req, res): Promise<void> => 
     return;
   }
   const rows = await db
-    .select({
-      id: audioOverviews.id,
-      notebookId: audioOverviews.notebookId,
-      title: audioOverviews.title,
-      status: audioOverviews.status,
-      voice: audioOverviews.voice,
-      durationSec: audioOverviews.durationSec,
-      transcript: audioOverviews.transcript,
-      createdAt: audioOverviews.createdAt,
-    })
+    .select(AUDIO_SELECT)
     .from(audioOverviews)
     .where(eq(audioOverviews.notebookId, id))
     .orderBy(desc(audioOverviews.createdAt));
@@ -89,61 +159,66 @@ router.post("/notebooks/:id/audio-overviews", async (req, res): Promise<void> =>
     })
     .returning();
 
-  // Generate transcript + TTS in background
-  (async () => {
-    try {
-      const sourceText = truncate(sourceNotes.map((n) => `## ${n.title}\n${n.content}`).join("\n\n"), 8000);
-      const stylePrompts: Record<string, string> = {
-        lecture: "Write a focused 4-6 minute spoken lecture script for an Athletic Training student preparing for the BOC exam.",
-        podcast: "Write a friendly 5-7 minute podcast-style script for two co-hosts (alternating, label A: and B:) discussing the material for a BOC student.",
-        quickrecap: "Write a tight 2-3 minute spoken recap of the key BOC-relevant concepts.",
-      };
-      logger.info({ overviewId: pending.id, style, voice }, "audio-overview: generating transcript");
-      const transcript = await chatText(
-        `${stylePrompts[style] ?? stylePrompts.lecture}${focus ? ` Focus on: ${focus}.` : ""} Material:\n\n${sourceText}\n\nWrite ONLY the spoken script — no stage directions, no headings, no markdown.`,
-        "You are a clinical educator writing natural spoken audio for a study app.",
-      );
-      if (!transcript || transcript.trim().length === 0) {
-        throw new Error("Transcript generation returned empty text");
-      }
-      const chunks = chunkForTts(transcript);
-      logger.info({ overviewId: pending.id, chars: transcript.length, chunks: chunks.length }, "audio-overview: synthesizing speech");
-      const audioParts: Buffer[] = [];
-      for (let i = 0; i < chunks.length; i++) {
-        const t0 = Date.now();
-        const part = await textToSpeech(chunks[i], voice, "mp3");
-        if (!part || part.length === 0) {
-          throw new Error(`TTS chunk ${i + 1}/${chunks.length} returned empty audio buffer`);
-        }
-        audioParts.push(part);
-        logger.info(
-          { overviewId: pending.id, chunk: i + 1, total: chunks.length, ms: Date.now() - t0, bytes: part.length },
-          "audio-overview: chunk synthesized",
-        );
-      }
-      const buf = Buffer.concat(audioParts);
-      await db
-        .update(audioOverviews)
-        .set({
-          status: "ready",
-          transcript,
-          audioData: buf,
-          durationSec: Math.round(transcript.length / 15),
-        })
-        .where(eq(audioOverviews.id, pending.id));
-      logger.info({ overviewId: pending.id, audioBytes: buf.length }, "audio-overview: ready");
-    } catch (err) {
-      logger.error({ err, overviewId: pending.id }, "audio-overview: generation failed");
-      await db
-        .update(audioOverviews)
-        .set({ status: "failed" })
-        .where(eq(audioOverviews.id, pending.id));
-    }
-  })();
+  const source = truncate(sourceNotes.map((n) => `## ${n.title}\n${n.content}`).join("\n\n"), 8000);
+  void startGeneration({ overviewId: pending.id, voice, style, focus, source });
 
   res.status(202).json({
     id: pending.id,
     notebookId: pending.notebookId,
+    studyGuideId: pending.studyGuideId,
+    title: pending.title,
+    status: pending.status,
+    voice: pending.voice,
+    durationSec: pending.durationSec,
+    transcript: pending.transcript,
+    createdAt: pending.createdAt,
+  });
+});
+
+router.get("/study-guides/:id/audio-overviews", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const rows = await db
+    .select(AUDIO_SELECT)
+    .from(audioOverviews)
+    .where(eq(audioOverviews.studyGuideId, id))
+    .orderBy(desc(audioOverviews.createdAt));
+  res.json(rows);
+});
+
+router.post("/study-guides/:id/audio-overviews", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const voice = normalizeVoice((req.body ?? {}).voice);
+  const { focus } = req.body ?? {};
+  const [guide] = await db.select().from(studyGuides).where(eq(studyGuides.id, id));
+  if (!guide) {
+    res.status(404).json({ error: "Study guide not found" });
+    return;
+  }
+  const source = truncate(`# ${guide.title}\n\n${guide.content}`, 8000);
+  const [pending] = await db
+    .insert(audioOverviews)
+    .values({
+      notebookId: guide.notebookId,
+      studyGuideId: guide.id,
+      title: `Podcast: ${guide.title}`,
+      status: "pending",
+      voice,
+      style: "podcast2host",
+    })
+    .returning();
+  void startGeneration({ overviewId: pending.id, voice, style: "podcast2host", focus, source });
+  res.status(202).json({
+    id: pending.id,
+    notebookId: pending.notebookId,
+    studyGuideId: pending.studyGuideId,
     title: pending.title,
     status: pending.status,
     voice: pending.voice,
@@ -160,16 +235,7 @@ router.get("/audio-overviews/:id", async (req, res): Promise<void> => {
     return;
   }
   const [row] = await db
-    .select({
-      id: audioOverviews.id,
-      notebookId: audioOverviews.notebookId,
-      title: audioOverviews.title,
-      status: audioOverviews.status,
-      voice: audioOverviews.voice,
-      durationSec: audioOverviews.durationSec,
-      transcript: audioOverviews.transcript,
-      createdAt: audioOverviews.createdAt,
-    })
+    .select(AUDIO_SELECT)
     .from(audioOverviews)
     .where(eq(audioOverviews.id, id));
   if (!row) {

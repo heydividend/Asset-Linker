@@ -111,6 +111,8 @@ export const AudioOverviewStatus = {
 export interface AudioOverview {
   id: number;
   notebookId: number;
+  /** @nullable */
+  studyGuideId?: number | null;
   title: string;
   status: AudioOverviewStatus;
   voice: string;
@@ -209,6 +211,27 @@ export interface FlashcardReviewInput {
   quality: number;
 }
 
+export type StudyGuideListItemFormat =
+  (typeof StudyGuideListItemFormat)[keyof typeof StudyGuideListItemFormat];
+
+export const StudyGuideListItemFormat = {
+  outline: "outline",
+  summary: "summary",
+  qa: "qa",
+  mindmap: "mindmap",
+} as const;
+
+export interface StudyGuideListItem {
+  id: number;
+  notebookId: number;
+  notebookTitle: string;
+  title: string;
+  format: StudyGuideListItemFormat;
+  /** Markdown */
+  content: string;
+  createdAt: string;
+}
+
 export type StudyGuideInputFormat =
   (typeof StudyGuideInputFormat)[keyof typeof StudyGuideInputFormat];
 
@@ -248,6 +271,23 @@ export const AudioOverviewInputStyle = {
 export interface AudioOverviewInput {
   voice?: AudioOverviewInputVoice;
   style?: AudioOverviewInputStyle;
+  focus?: string;
+}
+
+export type StudyGuideAudioInputVoice =
+  (typeof StudyGuideAudioInputVoice)[keyof typeof StudyGuideAudioInputVoice];
+
+export const StudyGuideAudioInputVoice = {
+  alloy: "alloy",
+  echo: "echo",
+  fable: "fable",
+  onyx: "onyx",
+  nova: "nova",
+  shimmer: "shimmer",
+} as const;
+
+export interface StudyGuideAudioInput {
+  voice?: StudyGuideAudioInputVoice;
   focus?: string;
 }
 
@@ -676,6 +716,21 @@ export type ListDueFlashcardsParams = {
    */
   topicIds?: string;
 };
+
+export type ListAllStudyGuidesParams = {
+  notebookId?: number;
+  format?: ListAllStudyGuidesFormat;
+};
+
+export type ListAllStudyGuidesFormat =
+  (typeof ListAllStudyGuidesFormat)[keyof typeof ListAllStudyGuidesFormat];
+
+export const ListAllStudyGuidesFormat = {
+  outline: "outline",
+  summary: "summary",
+  qa: "qa",
+  mindmap: "mindmap",
+} as const;
 
 export type ListQuizAttemptsParams = {
   limit?: number;

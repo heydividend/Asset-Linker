@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AskAiButton } from "@/components/AskAiButton";
+import { ListenAsPodcastButton, PodcastList } from "@/components/PodcastPlayer";
 import { useChatStore } from "@/hooks/use-chat";
 import { useToast } from "@/hooks/use-toast";
 import { Bot, FileText, Headphones, Plus, Trash2, BookOpen, Sparkles, Brain, Loader2 } from "lucide-react";
@@ -406,12 +407,13 @@ export default function NotebookDetail() {
               {(notebook.studyGuides ?? []).map((g) => (
                 <Card key={g.id} data-testid={`card-guide-${g.id}`}>
                   <CardContent className="p-4 space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">{g.title}</h3>
                         <Badge variant="outline">{g.format}</Badge>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
+                        <ListenAsPodcastButton studyGuideId={g.id} />
                         <AskAiButton notebookId={id} context={`Quiz me on this study guide:\n\n${g.content.slice(0, 4000)}`} size="sm" />
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteGuide.mutate({ id: g.id }, { onSuccess: invalidate })} data-testid={`button-delete-guide-${g.id}`}>
                           <Trash2 className="h-3 w-3" />
@@ -420,6 +422,9 @@ export default function NotebookDetail() {
                     </div>
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                       <ReactMarkdown>{g.content}</ReactMarkdown>
+                    </div>
+                    <div className="border-t pt-2">
+                      <PodcastList studyGuideId={g.id} />
                     </div>
                   </CardContent>
                 </Card>

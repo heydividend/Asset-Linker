@@ -30,6 +30,7 @@ import type {
   GetDashboardTopicHistoryParams,
   GetDashboardTopicMasteryParams,
   HealthStatus,
+  ListAllStudyGuidesParams,
   ListDueFlashcardsParams,
   ListQuizAttemptsParams,
   ListResourcesParams,
@@ -63,7 +64,9 @@ import type {
   ScrapeJob,
   ScrapeJobInput,
   StudyGuide,
+  StudyGuideAudioInput,
   StudyGuideInput,
+  StudyGuideListItem,
   StudyPlan,
   Topic,
   TopicHistoryEntry,
@@ -1929,6 +1932,103 @@ export const useGenerateStudyGuide = <
   return useMutation(getGenerateStudyGuideMutationOptions(options));
 };
 
+/**
+ * @summary List every study guide across notebooks (with notebook title)
+ */
+export const getListAllStudyGuidesUrl = (params?: ListAllStudyGuidesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/study-guides?${stringifiedParams}`
+    : `/api/study-guides`;
+};
+
+export const listAllStudyGuides = async (
+  params?: ListAllStudyGuidesParams,
+  options?: RequestInit,
+): Promise<StudyGuideListItem[]> => {
+  return customFetch<StudyGuideListItem[]>(getListAllStudyGuidesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAllStudyGuidesQueryKey = (
+  params?: ListAllStudyGuidesParams,
+) => {
+  return [`/api/study-guides`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAllStudyGuidesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAllStudyGuides>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAllStudyGuidesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAllStudyGuides>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAllStudyGuidesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAllStudyGuides>>
+  > = ({ signal }) => listAllStudyGuides(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAllStudyGuides>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAllStudyGuidesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllStudyGuides>>
+>;
+export type ListAllStudyGuidesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List every study guide across notebooks (with notebook title)
+ */
+
+export function useListAllStudyGuides<
+  TData = Awaited<ReturnType<typeof listAllStudyGuides>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAllStudyGuidesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAllStudyGuides>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAllStudyGuidesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
 export const getGetStudyGuideUrl = (id: number) => {
   return `/api/study-guides/${id}`;
 };
@@ -1936,8 +2036,8 @@ export const getGetStudyGuideUrl = (id: number) => {
 export const getStudyGuide = async (
   id: number,
   options?: RequestInit,
-): Promise<StudyGuide> => {
-  return customFetch<StudyGuide>(getGetStudyGuideUrl(id), {
+): Promise<StudyGuideListItem> => {
+  return customFetch<StudyGuideListItem>(getGetStudyGuideUrl(id), {
     ...options,
     method: "GET",
   });
@@ -2085,6 +2185,178 @@ export const useDeleteStudyGuide = <
   TContext
 > => {
   return useMutation(getDeleteStudyGuideMutationOptions(options));
+};
+
+export const getListStudyGuideAudioOverviewsUrl = (id: number) => {
+  return `/api/study-guides/${id}/audio-overviews`;
+};
+
+export const listStudyGuideAudioOverviews = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AudioOverview[]> => {
+  return customFetch<AudioOverview[]>(getListStudyGuideAudioOverviewsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStudyGuideAudioOverviewsQueryKey = (id: number) => {
+  return [`/api/study-guides/${id}/audio-overviews`] as const;
+};
+
+export const getListStudyGuideAudioOverviewsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStudyGuideAudioOverviews>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStudyGuideAudioOverviews>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListStudyGuideAudioOverviewsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listStudyGuideAudioOverviews>>
+  > = ({ signal }) =>
+    listStudyGuideAudioOverviews(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStudyGuideAudioOverviews>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListStudyGuideAudioOverviewsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStudyGuideAudioOverviews>>
+>;
+export type ListStudyGuideAudioOverviewsQueryError = ErrorType<unknown>;
+
+export function useListStudyGuideAudioOverviews<
+  TData = Awaited<ReturnType<typeof listStudyGuideAudioOverviews>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStudyGuideAudioOverviews>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStudyGuideAudioOverviewsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary AI-generate a two-host podcast audio narration of a study guide
+ */
+export const getGenerateStudyGuideAudioOverviewUrl = (id: number) => {
+  return `/api/study-guides/${id}/audio-overviews`;
+};
+
+export const generateStudyGuideAudioOverview = async (
+  id: number,
+  studyGuideAudioInput: StudyGuideAudioInput,
+  options?: RequestInit,
+): Promise<AudioOverview> => {
+  return customFetch<AudioOverview>(getGenerateStudyGuideAudioOverviewUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(studyGuideAudioInput),
+  });
+};
+
+export const getGenerateStudyGuideAudioOverviewMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateStudyGuideAudioOverview>>,
+    TError,
+    { id: number; data: BodyType<StudyGuideAudioInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateStudyGuideAudioOverview>>,
+  TError,
+  { id: number; data: BodyType<StudyGuideAudioInput> },
+  TContext
+> => {
+  const mutationKey = ["generateStudyGuideAudioOverview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateStudyGuideAudioOverview>>,
+    { id: number; data: BodyType<StudyGuideAudioInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateStudyGuideAudioOverview(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateStudyGuideAudioOverviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateStudyGuideAudioOverview>>
+>;
+export type GenerateStudyGuideAudioOverviewMutationBody =
+  BodyType<StudyGuideAudioInput>;
+export type GenerateStudyGuideAudioOverviewMutationError = ErrorType<unknown>;
+
+/**
+ * @summary AI-generate a two-host podcast audio narration of a study guide
+ */
+export const useGenerateStudyGuideAudioOverview = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateStudyGuideAudioOverview>>,
+    TError,
+    { id: number; data: BodyType<StudyGuideAudioInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateStudyGuideAudioOverview>>,
+  TError,
+  { id: number; data: BodyType<StudyGuideAudioInput> },
+  TContext
+> => {
+  return useMutation(
+    getGenerateStudyGuideAudioOverviewMutationOptions(options),
+  );
 };
 
 export const getListAudioOverviewsUrl = (id: number) => {

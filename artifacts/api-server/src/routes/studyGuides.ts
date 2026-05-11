@@ -1,10 +1,41 @@
 import { Router, type IRouter } from "express";
-import { desc, eq } from "drizzle-orm";
-import { db, studyGuides, notes } from "@workspace/db";
+import { and, desc, eq, type SQL } from "drizzle-orm";
+import { db, notebooks, studyGuides, notes } from "@workspace/db";
 import { parseId } from "../lib/parseId";
 import { chatText, truncate } from "../lib/openaiHelpers";
 
 const router: IRouter = Router();
+
+const VALID_FORMATS = ["outline", "summary", "qa", "mindmap"] as const;
+
+router.get("/study-guides", async (req, res): Promise<void> => {
+  const filters: SQL[] = [];
+  const notebookIdRaw = req.query.notebookId;
+  if (typeof notebookIdRaw === "string" && notebookIdRaw.length > 0) {
+    const n = Number(notebookIdRaw);
+    if (Number.isFinite(n)) filters.push(eq(studyGuides.notebookId, n));
+  }
+  const formatRaw = req.query.format;
+  if (typeof formatRaw === "string" && (VALID_FORMATS as readonly string[]).includes(formatRaw)) {
+    filters.push(eq(studyGuides.format, formatRaw));
+  }
+  const baseQuery = db
+    .select({
+      id: studyGuides.id,
+      notebookId: studyGuides.notebookId,
+      notebookTitle: notebooks.title,
+      title: studyGuides.title,
+      format: studyGuides.format,
+      content: studyGuides.content,
+      createdAt: studyGuides.createdAt,
+    })
+    .from(studyGuides)
+    .innerJoin(notebooks, eq(notebooks.id, studyGuides.notebookId));
+  const rows = await (filters.length > 0
+    ? baseQuery.where(and(...filters)).orderBy(desc(studyGuides.createdAt))
+    : baseQuery.orderBy(desc(studyGuides.createdAt)));
+  res.json(rows);
+});
 
 router.get("/notebooks/:id/study-guides", async (req, res): Promise<void> => {
   const id = parseId(req);
@@ -27,7 +58,7 @@ router.post("/notebooks/:id/study-guides", async (req, res): Promise<void> => {
     return;
   }
   const { format, focus } = req.body ?? {};
-  if (!["outline", "summary", "qa", "mindmap"].includes(format)) {
+  if (!(VALID_FORMATS as readonly string[]).includes(format)) {
     res.status(400).json({ error: "invalid format" });
     return;
   }
@@ -74,7 +105,19 @@ router.get("/study-guides/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  const [g] = await db.select().from(studyGuides).where(eq(studyGuides.id, id));
+  const [g] = await db
+    .select({
+      id: studyGuides.id,
+      notebookId: studyGuides.notebookId,
+      notebookTitle: notebooks.title,
+      title: studyGuides.title,
+      format: studyGuides.format,
+      content: studyGuides.content,
+      createdAt: studyGuides.createdAt,
+    })
+    .from(studyGuides)
+    .innerJoin(notebooks, eq(notebooks.id, studyGuides.notebookId))
+    .where(eq(studyGuides.id, id));
   if (!g) {
     res.status(404).json({ error: "Not found" });
     return;

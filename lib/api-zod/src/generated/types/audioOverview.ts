@@ -10,6 +10,8 @@ import type { AudioOverviewStatus } from "./audioOverviewStatus";
 export interface AudioOverview {
   id: number;
   notebookId: number;
+  /** @nullable */
+  studyGuideId?: number | null;
   title: string;
   status: AudioOverviewStatus;
   voice: string;

@@ -18,6 +18,8 @@ import GamesHub from "@/pages/GamesHub";
 import MatchingGame from "@/pages/MatchingGame";
 import SchedulePage from "@/pages/SchedulePage";
 import BodyMapPage from "@/pages/BodyMapPage";
+import StudyGuidesPage from "@/pages/StudyGuidesPage";
+import StudyGuideDetail from "@/pages/StudyGuideDetail";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,8 @@ function Router() {
         <Route path="/games/:id" component={MatchingGame} />
         <Route path="/schedule" component={SchedulePage} />
         <Route path="/body-map" component={BodyMapPage} />
+        <Route path="/study-guides" component={StudyGuidesPage} />
+        <Route path="/study-guides/:id" component={StudyGuideDetail} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

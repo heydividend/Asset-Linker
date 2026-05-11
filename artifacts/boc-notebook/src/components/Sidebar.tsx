@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2 } from "lucide-react";
+import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ResizeHandle } from "./ResizeHandle";
@@ -9,6 +9,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/schedule", label: "Schedule", icon: CalendarDays },
   { href: "/notebooks", label: "Notebooks", icon: BookText },
+  { href: "/study-guides", label: "Study Guides", icon: Headphones },
   { href: "/flashcards", label: "Flashcards", icon: Brain },
   { href: "/quiz", label: "Practice Quizzes", icon: ClipboardList },
   { href: "/mock-exam", label: "Mock Exam", icon: Stethoscope },

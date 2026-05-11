@@ -356,6 +356,22 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/StudyGuide" }
+  /study-guides:
+    get:
+      operationId: listAllStudyGuides
+      tags: [studyguides]
+      summary: List every study guide across notebooks (with notebook title)
+      parameters:
+        - { name: notebookId, in: query, required: false, schema: { type: integer } }
+        - { name: format, in: query, required: false, schema: { type: string, enum: [outline, summary, qa, mindmap] } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StudyGuideListItem" }
   /study-guides/{id}:
     get:
       operationId: getStudyGuide
@@ -367,7 +383,7 @@ paths:
           description: OK
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/StudyGuide" }
+              schema: { $ref: "#/components/schemas/StudyGuideListItem" }
         "404": { $ref: "#/components/responses/NotFound" }
     delete:
       operationId: deleteStudyGuide
@@ -376,6 +392,37 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "204": { description: Deleted }
+  /study-guides/{id}/audio-overviews:
+    get:
+      operationId: listStudyGuideAudioOverviews
+      tags: [audio]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AudioOverview" }
+    post:
+      operationId: generateStudyGuideAudioOverview
+      tags: [audio]
+      summary: AI-generate a two-host podcast audio narration of a study guide
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudyGuideAudioInput" }
+      responses:
+        "202":
+          description: Accepted; generation started
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AudioOverview" }
 
   # ---- Audio Overviews (TTS) ----
   /notebooks/{id}/audio-overviews:
@@ -1060,6 +1107,19 @@ components:
           enum: [outline, summary, qa, mindmap]
         content: { type: string, description: "Markdown" }
         createdAt: { type: string, format: date-time }
+    StudyGuideListItem:
+      type: object
+      required: [id, notebookId, notebookTitle, title, format, content, createdAt]
+      properties:
+        id: { type: integer }
+        notebookId: { type: integer }
+        notebookTitle: { type: string }
+        title: { type: string }
+        format:
+          type: string
+          enum: [outline, summary, qa, mindmap]
+        content: { type: string, description: "Markdown" }
+        createdAt: { type: string, format: date-time }
     StudyGuideInput:
       type: object
       required: [format]
@@ -1075,6 +1135,7 @@ components:
       properties:
         id: { type: integer }
         notebookId: { type: integer }
+        studyGuideId: { type: ["integer", "null"] }
         title: { type: string }
         status:
           type: string
@@ -1094,6 +1155,14 @@ components:
           type: string
           enum: [lecture, podcast, quickrecap]
           default: lecture
+        focus: { type: string }
+    StudyGuideAudioInput:
+      type: object
+      properties:
+        voice:
+          type: string
+          enum: [alloy, echo, fable, onyx, nova, shimmer]
+          default: nova
         focus: { type: string }
 
     QuizSummary:
