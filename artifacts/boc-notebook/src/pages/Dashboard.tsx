@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   useGetDashboardSummary,
   useGetStudyPlanToday,
@@ -13,13 +14,64 @@ import { FixItPlanCard } from "@/components/FixItPlanCard";
 import { MasterySparkline } from "@/components/MasterySparkline";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { BrainCircuit, BookOpen, Clock, Activity, ArrowRight } from "lucide-react";
+import {
+  BrainCircuit,
+  BookOpen,
+  Clock,
+  Activity,
+  ArrowRight,
+  CalendarDays,
+  Flame,
+  Sparkles,
+  GraduationCap,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+interface ScheduleDay {
+  date: string;
+  phase: string;
+  title: string;
+  totalMinutes: number;
+  items: { title: string }[];
+}
+interface Schedule {
+  startDate: string;
+  examDate: string;
+  examName: string;
+  totalDays: number;
+  daysCompleted: number;
+  daysRemaining: number;
+  today: string;
+  days: ScheduleDay[];
+}
+
+const phaseStyles: Record<string, { label: string; className: string }> = {
+  foundation: { label: "Foundation", className: "bg-chart-1/10 text-chart-1 border-chart-1/30" },
+  deep_study: { label: "Deep Study", className: "bg-chart-2/10 text-chart-2 border-chart-2/30" },
+  integration: { label: "Integration", className: "bg-chart-3/10 text-chart-3 border-chart-3/30" },
+  final_review: { label: "Final Review", className: "bg-chart-4/10 text-chart-4 border-chart-4/30" },
+  mock_exam: { label: "Mock Exam", className: "bg-primary/10 text-primary border-primary/30" },
+  rest: { label: "Light / Rest", className: "bg-muted text-muted-foreground" },
+  exam_day: { label: "Exam Day", className: "bg-destructive/10 text-destructive border-destructive/40" },
+};
 
 export default function Dashboard() {
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: plan, isLoading: loadingPlan } = useGetStudyPlanToday();
   const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery();
+  const { data: schedule, isLoading: loadingSchedule } = useQuery<Schedule>({
+    queryKey: ["plan-schedule"],
+    queryFn: () => fetch("/api/plan/schedule").then((r) => r.json()),
+  });
+
+  const upcomingDays = useMemo(() => {
+    if (!schedule) return [];
+    const todayIdx = schedule.days.findIndex((d) => d.date === schedule.today);
+    const start = todayIdx >= 0 ? todayIdx : 0;
+    return schedule.days.slice(start, start + 5);
+  }, [schedule]);
+  const scheduleProgress =
+    schedule && schedule.totalDays > 0 ? Math.round((schedule.daysCompleted / schedule.totalDays) * 100) : 0;
 
   // topicId → chronological correctness of last ≤5 attempts, for the sparkline.
   const trendByTopicId = useMemo(() => {
@@ -41,6 +93,87 @@ export default function Dashboard() {
       </header>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {loadingSchedule ? (
+          <Skeleton className="h-24 w-full" />
+        ) : schedule ? (
+          <Card className="bg-primary text-primary-foreground border-none">
+            <CardContent className="p-4 flex items-center gap-4 flex-wrap">
+              <CalendarDays className="h-6 w-6 opacity-90 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs opacity-90 truncate">{schedule.examName}</p>
+                <p className="text-2xl font-bold leading-tight">
+                  {schedule.daysRemaining}{" "}
+                  <span className="text-sm font-normal opacity-90">days until exam</span>
+                </p>
+                <p className="text-[11px] opacity-80 mt-0.5 truncate">
+                  {schedule.startDate} → {schedule.examDate} · day {schedule.daysCompleted + 1} of{" "}
+                  {schedule.totalDays}
+                </p>
+              </div>
+              <div className="w-40 space-y-1.5 shrink-0">
+                <Progress value={scheduleProgress} className="h-1.5 bg-primary-foreground/20" />
+                <p className="text-[11px] opacity-90 text-right">{scheduleProgress}% through</p>
+              </div>
+              <Link href="/schedule">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="shrink-0"
+                  data-testid="button-open-schedule"
+                >
+                  Full schedule <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </Link>
+            </CardContent>
+            {upcomingDays.length > 0 && (
+              <CardContent className="px-4 pb-4 pt-0">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                  {upcomingDays.map((d) => {
+                    const isToday = d.date === schedule.today;
+                    const phase = phaseStyles[d.phase] ?? phaseStyles.foundation;
+                    const dt = new Date(d.date + "T00:00:00");
+                    return (
+                      <Link key={d.date} href="/schedule">
+                        <button
+                          className={`w-full text-left rounded-md p-2 bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors ${
+                            isToday ? "ring-2 ring-primary-foreground/60" : ""
+                          }`}
+                          data-testid={`dash-day-${d.date}`}
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[11px] font-semibold uppercase opacity-90">
+                              {dt.toLocaleDateString(undefined, { weekday: "short" })}
+                            </span>
+                            {isToday && <Flame className="h-3 w-3" />}
+                          </div>
+                          <p className="text-xs font-medium truncate mt-0.5" title={d.title}>
+                            {d.title}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className={`mt-1 text-[10px] py-0 px-1 border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground`}
+                          >
+                            {d.phase === "exam_day" ? (
+                              <GraduationCap className="h-2.5 w-2.5 mr-1" />
+                            ) : (
+                              <Sparkles className="h-2.5 w-2.5 mr-1" />
+                            )}
+                            {phase.label}
+                          </Badge>
+                          <p className="text-[10px] opacity-80 mt-1 flex items-center gap-1">
+                            <Clock className="h-2.5 w-2.5" /> {d.totalMinutes}m · {d.items.length} item
+                            {d.items.length === 1 ? "" : "s"}
+                          </p>
+                        </button>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        ) : null}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           <Card className="bg-primary text-primary-foreground border-none">
             <CardContent className="p-4 min-w-0">
