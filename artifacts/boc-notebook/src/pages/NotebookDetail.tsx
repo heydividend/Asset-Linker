@@ -4,11 +4,6 @@ import {
   useGetNotebook,
   useCreateNote,
   useDeleteNote,
-  useGenerateFlashcards,
-  useCreateFlashcard,
-  useDeleteFlashcard,
-  useListTopics,
-  getListTopicsQueryKey,
   useGenerateStudyGuide,
   useDeleteStudyGuide,
   useGenerateAudioOverview,
@@ -42,11 +37,6 @@ export default function NotebookDetail() {
   const { data: notebook, isLoading } = useGetNotebook(id, { query: { enabled: !!id, queryKey: getGetNotebookQueryKey(id) } });
   const createNote = useCreateNote();
   const deleteNote = useDeleteNote();
-  const genCards = useGenerateFlashcards();
-  const createCard = useCreateFlashcard();
-  const deleteCard = useDeleteFlashcard();
-  const { data: topics = [] } = useListTopics(undefined, { query: { queryKey: getListTopicsQueryKey() } });
-  const topicsById = new Map(topics.map((t) => [t.id, t]));
   const genGuide = useGenerateStudyGuide();
   const deleteGuide = useDeleteStudyGuide();
   const genAudio = useGenerateAudioOverview();
@@ -64,14 +54,10 @@ export default function NotebookDetail() {
   }, [requestedNoteId]);
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteForm, setNoteForm] = useState({ title: "", content: "", sourceKind: "text" as "text" | "paste" | "url", sourceUrl: "" });
-  const [cardOpen, setCardOpen] = useState(false);
-  const [cardForm, setCardForm] = useState({ count: "10", focus: "", topicId: "" });
-  const [manualOpen, setManualOpen] = useState(false);
-  const [manualForm, setManualForm] = useState({ front: "", back: "", topicId: "" });
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideForm, setGuideForm] = useState({ format: "outline" as "outline" | "summary" | "qa" | "mindmap", focus: "" });
   const [audioOpen, setAudioOpen] = useState(false);
-  const [audioForm, setAudioForm] = useState({ voice: "nova" as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer", style: "lecture" as "lecture" | "podcast" | "quickrecap", focus: "" });
+  const [audioForm, setAudioForm] = useState({ voice: "nova" as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer", focus: "" });
   const [sourcesCollapsed, setSourcesCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("boc:notebook-sources-collapsed") === "1";
@@ -104,49 +90,6 @@ export default function NotebookDetail() {
     });
   };
 
-  const onGenerateCards = () => {
-    genCards.mutate(
-      {
-        id,
-        data: {
-          count: Number(cardForm.count),
-          focus: cardForm.focus || undefined,
-          topicId: cardForm.topicId ? Number(cardForm.topicId) : undefined,
-        },
-      },
-      {
-        onSuccess: () => {
-          setCardOpen(false);
-          invalidate();
-          toast({ title: "Flashcards generated" });
-        },
-        onError: () => toast({ title: "Failed", variant: "destructive" }),
-      },
-    );
-  };
-
-  const onCreateCard = () => {
-    if (!manualForm.front || !manualForm.back) return;
-    createCard.mutate(
-      {
-        id,
-        data: {
-          front: manualForm.front,
-          back: manualForm.back,
-          topicId: manualForm.topicId ? Number(manualForm.topicId) : undefined,
-        },
-      },
-      {
-        onSuccess: () => {
-          setManualOpen(false);
-          setManualForm({ front: "", back: "", topicId: "" });
-          invalidate();
-          toast({ title: "Flashcard added" });
-        },
-      },
-    );
-  };
-
   const onGenerateGuide = () => {
     genGuide.mutate({ id, data: { format: guideForm.format, focus: guideForm.focus || undefined } }, {
       onSuccess: () => {
@@ -158,11 +101,11 @@ export default function NotebookDetail() {
   };
 
   const onGenerateAudio = () => {
-    genAudio.mutate({ id, data: { voice: audioForm.voice, style: audioForm.style, focus: audioForm.focus || undefined } }, {
+    genAudio.mutate({ id, data: { voice: audioForm.voice, style: "podcast", focus: audioForm.focus || undefined } }, {
       onSuccess: () => {
         setAudioOpen(false);
         invalidate();
-        toast({ title: "Audio overview queued", description: "It will be ready in a few seconds." });
+        toast({ title: "Podcast queued", description: "It will be ready in a few seconds." });
       },
     });
   };
@@ -257,6 +200,16 @@ export default function NotebookDetail() {
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <header className="h-14 border-b flex items-center justify-between gap-2 px-4">
           <div className="flex items-center gap-2 min-w-0">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 shrink-0"
+              onClick={() => navigate("/notebooks")}
+              data-testid="button-back-to-notebooks"
+              title="Back to all notebooks"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" /> Notebooks
+            </Button>
             {sourcesCollapsed && (
               <Button
                 size="sm"
@@ -282,9 +235,8 @@ export default function NotebookDetail() {
         <Tabs defaultValue="notes" className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="mx-4 mt-2 self-start" data-tour="notebook-tabs">
             <TabsTrigger value="notes" data-testid="tab-notes">Notes</TabsTrigger>
-            <TabsTrigger value="flashcards" data-testid="tab-flashcards">Flashcards ({notebook.flashcards?.length ?? 0})</TabsTrigger>
             <TabsTrigger value="guides" data-testid="tab-guides">Study guides ({notebook.studyGuides?.length ?? 0})</TabsTrigger>
-            <TabsTrigger value="audio" data-testid="tab-audio">Audio ({notebook.audioOverviews?.length ?? 0})</TabsTrigger>
+            <TabsTrigger value="audio" data-testid="tab-audio">Podcasts ({notebook.audioOverviews?.length ?? 0})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="notes" className="flex-1 overflow-y-auto p-6">
@@ -305,112 +257,6 @@ export default function NotebookDetail() {
             ) : (
               <p className="text-muted-foreground text-center py-8">Add or select a note to view it.</p>
             )}
-          </TabsContent>
-
-          <TabsContent value="flashcards" className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-3xl mx-auto space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <Dialog open={cardOpen} onOpenChange={setCardOpen}>
-                  <DialogTrigger asChild>
-                    <Button data-testid="button-generate-flashcards"><Sparkles className="h-4 w-4 mr-1" /> Generate flashcards</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>Generate flashcards from this notebook</DialogTitle></DialogHeader>
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">How many?</label>
-                        <Input type="number" min={1} max={30} value={cardForm.count} onChange={(e) => setCardForm({ ...cardForm, count: e.target.value })} data-testid="input-card-count" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Focus (optional)</label>
-                        <Input placeholder="e.g. concussion return-to-play" value={cardForm.focus} onChange={(e) => setCardForm({ ...cardForm, focus: e.target.value })} data-testid="input-card-focus" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Tag to topic</label>
-                        <Select
-                          value={cardForm.topicId || "auto"}
-                          onValueChange={(v) => setCardForm({ ...cardForm, topicId: v === "auto" ? "" : v })}
-                        >
-                          <SelectTrigger data-testid="select-card-topic"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="auto">Auto-tag each card</SelectItem>
-                            {topics.map((t) => (
-                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">Tagging cards lets focused review (e.g. body-map regions) surface them.</p>
-                      </div>
-                      <Button onClick={onGenerateCards} disabled={genCards.isPending} data-testid="button-confirm-generate-cards">
-                        {genCards.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Generate
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <Dialog open={manualOpen} onOpenChange={setManualOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" data-testid="button-add-flashcard"><Plus className="h-4 w-4 mr-1" /> Add card</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>Add a flashcard</DialogTitle></DialogHeader>
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Front</label>
-                        <Textarea rows={3} value={manualForm.front} onChange={(e) => setManualForm({ ...manualForm, front: e.target.value })} data-testid="input-card-front" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Back</label>
-                        <Textarea rows={3} value={manualForm.back} onChange={(e) => setManualForm({ ...manualForm, back: e.target.value })} data-testid="input-card-back" />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Topic</label>
-                        <Select
-                          value={manualForm.topicId || "none"}
-                          onValueChange={(v) => setManualForm({ ...manualForm, topicId: v === "none" ? "" : v })}
-                        >
-                          <SelectTrigger data-testid="select-manual-card-topic"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No topic</SelectItem>
-                            {topics.map((t) => (
-                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button onClick={onCreateCard} disabled={createCard.isPending || !manualForm.front || !manualForm.back} data-testid="button-confirm-add-card">
-                        {createCard.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Add card
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <div className="grid md:grid-cols-2 gap-3">
-                {(notebook.flashcards ?? []).map((c) => (
-                  <Card key={c.id} data-testid={`card-flashcard-${c.id}`}>
-                    <CardContent className="p-4 space-y-2">
-                      <p className="font-medium">{c.front}</p>
-                      <p className="text-sm text-muted-foreground border-t pt-2">{c.back}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <Badge variant="outline" className="text-xs">due {new Date(c.dueAt).toLocaleDateString()}</Badge>
-                          {c.topicId && topicsById.get(c.topicId) && (
-                            <Badge variant="secondary" className="text-xs" data-testid={`badge-card-topic-${c.id}`}>
-                              {topicsById.get(c.topicId)!.name}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <AskAiButton notebookId={id} context={`Explain this flashcard in depth.\nFront: ${c.front}\nBack: ${c.back}`} size="icon" variant="ghost" className="h-7 w-7" />
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteCard.mutate({ id: c.id }, { onSuccess: invalidate })} data-testid={`button-delete-card-${c.id}`}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
           </TabsContent>
 
           <TabsContent value="guides" className="flex-1 overflow-y-auto p-6">
@@ -470,36 +316,26 @@ export default function NotebookDetail() {
             <div className="max-w-3xl mx-auto space-y-3">
               <Dialog open={audioOpen} onOpenChange={setAudioOpen}>
                 <DialogTrigger asChild>
-                  <Button data-testid="button-generate-audio"><Headphones className="h-4 w-4 mr-1" /> Generate audio overview</Button>
+                  <Button data-testid="button-generate-audio"><Headphones className="h-4 w-4 mr-1" /> Generate podcast</Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>Generate audio overview</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>Generate a podcast from these notes</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Voice</label>
-                        <Select value={audioForm.voice} onValueChange={(v) => setAudioForm({ ...audioForm, voice: v as typeof audioForm.voice })}>
-                          <SelectTrigger data-testid="select-audio-voice"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {["nova", "alloy", "echo", "fable", "onyx", "shimmer"].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Style</label>
-                        <Select value={audioForm.style} onValueChange={(v) => setAudioForm({ ...audioForm, style: v as typeof audioForm.style })}>
-                          <SelectTrigger data-testid="select-audio-style"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="lecture">Lecture</SelectItem>
-                            <SelectItem value="podcast">Podcast</SelectItem>
-                            <SelectItem value="quickrecap">Quick recap</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <p className="text-sm text-muted-foreground">
+                      Turns the notes in this notebook into a conversational podcast you can listen to.
+                    </p>
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium">Voice</label>
+                      <Select value={audioForm.voice} onValueChange={(v) => setAudioForm({ ...audioForm, voice: v as typeof audioForm.voice })}>
+                        <SelectTrigger data-testid="select-audio-voice"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["nova", "alloy", "echo", "fable", "onyx", "shimmer"].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Input placeholder="Focus (optional)" value={audioForm.focus} onChange={(e) => setAudioForm({ ...audioForm, focus: e.target.value })} data-testid="input-audio-focus" />
+                    <Input placeholder="Focus (optional) — e.g. concussion return-to-play" value={audioForm.focus} onChange={(e) => setAudioForm({ ...audioForm, focus: e.target.value })} data-testid="input-audio-focus" />
                     <Button onClick={onGenerateAudio} disabled={genAudio.isPending} data-testid="button-confirm-generate-audio">
-                      {genAudio.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Generate
+                      {genAudio.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Generate podcast
                     </Button>
                   </div>
                 </DialogContent>

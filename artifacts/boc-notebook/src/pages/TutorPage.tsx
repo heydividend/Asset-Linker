@@ -38,9 +38,9 @@ export default function TutorPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!activeId && convs[0]) setActiveId(convs[0].id);
-  }, [convs, activeId]);
+  // Intentionally do NOT auto-select a conversation. The AI Tutor page should
+  // open clean — previous chats live in the sidebar as recents and the user
+  // can pick one or start a new chat.
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
