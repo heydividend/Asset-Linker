@@ -186,6 +186,19 @@ export default function Dashboard() {
     return m;
   }, [topicMasteryRows]);
 
+  // topicId → recent attempts (with timestamps) so the Weak Topic sparkline
+  // can open the same date/result popover used elsewhere.
+  const recentAttemptsByTopicId = useMemo(() => {
+    const m = new Map<number, { correct: boolean; answeredAt: string }[]>();
+    for (const row of topicMasteryRows) {
+      m.set(row.topicId, (row.recentAttempts ?? []).map((a) => ({
+        correct: a.correct,
+        answeredAt: a.answeredAt,
+      })));
+    }
+    return m;
+  }, [topicMasteryRows]);
+
   // topicId → domainId, so we can group recent attempts up to the domain level.
   const domainIdByTopicId = useMemo(() => {
     const m = new Map<number, number>();
@@ -524,6 +537,12 @@ export default function Dashboard() {
                   <ul className="flex flex-col gap-1.5" data-testid="weak-topics-list">
                     {summary.weakTopics.map(topic => {
                       const trend = trendByTopicId.get(topic.topicId) ?? [];
+                      const recentAttempts = recentAttemptsByTopicId.get(topic.topicId) ?? [];
+                      const attemptsForPopover = recentAttempts.map((a) => ({
+                        correct: a.correct,
+                        answeredAt: a.answeredAt,
+                        topicName: topic.name,
+                      }));
                       const masteryPct = Math.round((topic.mastery ?? 0) * 100);
                       const isStartingThis =
                         startQuiz.isPending &&
@@ -533,7 +552,7 @@ export default function Dashboard() {
                       return (
                         <li
                           key={topic.topicId}
-                          className="bg-secondary text-secondary-foreground rounded-md text-xs min-w-0 relative group focus-within:ring-2 focus-within:ring-ring"
+                          className="bg-secondary text-secondary-foreground rounded-md text-xs min-w-0 relative group focus-within:ring-2 focus-within:ring-ring px-2.5 py-1 space-y-1"
                           data-testid={`weak-topic-${topic.topicId}`}
                         >
                           <Popover
@@ -547,7 +566,7 @@ export default function Dashboard() {
                                 title={`Start a focused quiz on ${topic.name}`}
                                 aria-label={`Start a focused quiz on ${topic.name}`}
                                 data-testid={`weak-topic-quiz-${topic.topicId}`}
-                                className="w-full text-left pl-2.5 pr-9 py-1 space-y-1 rounded-md hover:bg-secondary/70 hover-elevate active-elevate-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                                className="w-full text-left pr-7 -mx-1 px-1 py-0.5 rounded-md hover:bg-secondary/70 hover-elevate active-elevate-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                               >
                                 <div className="flex items-center gap-2 min-w-0">
                                   <span className="flex-1 min-w-0 truncate font-medium" title={topic.name}>
@@ -560,13 +579,6 @@ export default function Dashboard() {
                                   ) : (
                                     <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 shrink-0 transition-opacity" />
                                   )}
-                                </div>
-                                <div className="flex items-center justify-between gap-2 pr-1 text-muted-foreground">
-                                  <MasterySparkline
-                                    trend={trend}
-                                    testId={`weak-topic-trend-${topic.topicId}`}
-                                  />
-                                  <span className="text-xs tabular-nums">{masteryPct}% mastery</span>
                                 </div>
                               </button>
                             </PopoverTrigger>
@@ -634,6 +646,16 @@ export default function Dashboard() {
                               </div>
                             </PopoverContent>
                           </Popover>
+                          <div className="flex items-center justify-between gap-2 pr-7 text-muted-foreground">
+                            <MasterySparkline
+                              trend={trend}
+                              testId={`weak-topic-trend-${topic.topicId}`}
+                              attempts={attemptsForPopover}
+                              popoverTitle={`Recent attempts · ${topic.name}`}
+                              popoverTestId={`weak-topic-trend-popover-${topic.topicId}`}
+                            />
+                            <span className="text-xs tabular-nums">{masteryPct}% mastery</span>
+                          </div>
                           <div className="absolute top-1 right-1">
                             <AskAiButton
                               context={`I am weak in the topic: ${topic.name}. Can you explain the core concepts I need to know for the BOC exam?`}
