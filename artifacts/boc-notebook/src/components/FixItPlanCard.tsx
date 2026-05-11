@@ -237,6 +237,58 @@ export function FixItPlanCard() {
     navigate(`/flashcards?${params.toString()}`);
   };
 
+  const historyDays = 30;
+  const historyStrip = (() => {
+    const completedSet = new Set(completedDates);
+    const days: { date: string; completed: boolean; isToday: boolean; label: string }[] = [];
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    for (let i = historyDays - 1; i >= 0; i--) {
+      const d = new Date(base);
+      d.setDate(d.getDate() - i);
+      const date = d.toISOString().slice(0, 10);
+      days.push({
+        date,
+        completed: completedSet.has(date),
+        isToday: i === 0,
+        label: d.toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        }),
+      });
+    }
+    const completedCount = days.filter((d) => d.completed).length;
+    return (
+      <div
+        className="flex items-center gap-2"
+        data-testid="fix-it-plan-history"
+        aria-label={`Fix-it plan history: ${completedCount} of last ${historyDays} days completed`}
+      >
+        <div className="flex items-center gap-1">
+          {days.map((d) => (
+            <span
+              key={d.date}
+              title={`${d.label}${d.completed ? " — completed" : ""}`}
+              data-testid={`fix-it-plan-history-day-${d.date}`}
+              data-completed={d.completed ? "true" : "false"}
+              className={
+                "h-3 w-3 rounded-sm border " +
+                (d.completed
+                  ? "bg-primary border-primary"
+                  : "bg-muted/40 border-border") +
+                (d.isToday ? " ring-1 ring-primary/60 ring-offset-1 ring-offset-background" : "")
+              }
+            />
+          ))}
+        </div>
+        <span className="text-[10px] text-muted-foreground tabular-nums">
+          {completedCount}/{historyDays}d
+        </span>
+      </div>
+    );
+  })();
+
   const streakBadge = streak > 0 ? (
     <Badge
       variant="secondary"
@@ -267,7 +319,7 @@ export function FixItPlanCard() {
             {streakBadge}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <div
             className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-3 py-3 text-sm font-medium text-primary"
             data-testid="fix-it-plan-done"
@@ -275,6 +327,7 @@ export function FixItPlanCard() {
             <CheckCircle2 className="h-5 w-5" />
             Done for today
           </div>
+          {historyStrip}
         </CardContent>
       </Card>
     );
@@ -366,6 +419,7 @@ export function FixItPlanCard() {
         >
           Start fix-it plan <ArrowRight className="ml-1 h-4 w-4" />
         </Button>
+        {historyStrip}
       </CardContent>
     </Card>
   );
