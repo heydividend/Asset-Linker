@@ -300,7 +300,7 @@ export default function NotebookDetail() {
                 {selectedNote.sourceUrl && (
                   <a href={selectedNote.sourceUrl} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">{selectedNote.sourceUrl}</a>
                 )}
-                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">{selectedNote.content}</div>
+                <MarkdownMessage content={selectedNote.content} className="prose-base" />
               </article>
             ) : (
               <p className="text-muted-foreground text-center py-8">Add or select a note to view it.</p>
