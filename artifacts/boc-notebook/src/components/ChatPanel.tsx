@@ -17,6 +17,26 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
+function FollowupChips({ items, onPick }: { items: string[]; onPick: (q: string) => void }) {
+  return (
+    <div className="flex flex-col gap-1.5 max-w-[88%] min-w-0" data-testid="followup-chips">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground px-1">
+        Follow-ups
+      </span>
+      {items.map((q, i) => (
+        <button
+          key={i}
+          onClick={() => onPick(q)}
+          className="text-left text-xs px-2.5 py-1.5 rounded-md border border-dashed border-primary/40 text-primary hover-elevate bg-background"
+          data-testid={`followup-chip-${i}`}
+        >
+          {q}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function ChatPanel() {
   const { conversationId, notebookId, initialContext, newChatNonce, startNewChat } = useChatStore();
   const { chatWidth, setChatWidth, setChatCollapsed } = useLayoutStore();
@@ -25,6 +45,7 @@ export function ChatPanel() {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<string>("");
+  const [pendingFollowups, setPendingFollowups] = useState<string[]>([]);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [saveForStudy, setSaveForStudy] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -74,6 +95,7 @@ export function ChatPanel() {
 
       setInput("");
       setStreamingMessage("");
+      setPendingFollowups([]);
       setStreaming(true);
 
       try {
@@ -107,6 +129,9 @@ export function ChatPanel() {
                 toast({ title: "AI error", description: json.error, variant: "destructive" });
                 setStreaming(false);
                 return;
+              }
+              if (Array.isArray(json.followups)) {
+                setPendingFollowups(json.followups.filter((s: unknown) => typeof s === "string"));
               }
               if (json.content) setStreamingMessage((p) => p + json.content);
             } catch {
@@ -218,16 +243,27 @@ export function ChatPanel() {
                 <p className="text-xs">Tip: attach a PDF, lecture notes, or screenshot.</p>
               </div>
             )}
-            {messages.map((m) => (
-              <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[88%] min-w-0 rounded-lg px-3 py-2 ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-                  data-testid={`chat-msg-${m.role}`}
-                >
-                  <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
+            {messages.map((m, idx) => {
+              const isLastAssistant =
+                m.role === "assistant" && idx === messages.length - 1 && !streamingMessage && !streaming;
+              const showFollowups = isLastAssistant && Array.isArray(m.followups) && m.followups.length > 0;
+              return (
+                <div key={m.id} className={`flex flex-col gap-2 ${m.role === "user" ? "items-end" : "items-start"}`}>
+                  <div
+                    className={`max-w-[88%] min-w-0 rounded-lg px-3 py-2 ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+                    data-testid={`chat-msg-${m.role}`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
+                  </div>
+                  {showFollowups && activeConvId && (
+                    <FollowupChips
+                      items={m.followups as string[]}
+                      onPick={(q) => sendMessage(q, activeConvId)}
+                    />
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {streamingMessage && (
               <div className="flex justify-start">
                 <div className="max-w-[88%] min-w-0 rounded-lg px-3 py-2 bg-muted">
@@ -235,6 +271,12 @@ export function ChatPanel() {
                 </div>
               </div>
             )}
+            {!streaming && !streamingMessage && pendingFollowups.length > 0 && messages.length > 0 &&
+              messages[messages.length - 1].role !== "assistant" && activeConvId && (
+                <div className="flex flex-col items-start">
+                  <FollowupChips items={pendingFollowups} onPick={(q) => sendMessage(q, activeConvId)} />
+                </div>
+              )}
           </div>
         </ScrollArea>
       </div>

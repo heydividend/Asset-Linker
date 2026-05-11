@@ -67,7 +67,7 @@ router.post("/mock-exams", async (req, res): Promise<void> => {
       answers: finalIds.map(() => null),
     })
     .returning();
-  res.status(201).json(serializeExam(exam, false));
+  res.status(201).json(await serializeExam(exam, false));
 });
 
 router.get("/mock-exams/:id", async (req, res): Promise<void> => {
@@ -81,7 +81,7 @@ router.get("/mock-exams/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  res.json(serializeExam(exam, exam.submitted));
+  res.json(await serializeExam(exam, exam.submitted));
 });
 
 async function serializeExam(exam: typeof mockExams.$inferSelect, includeAnswers: boolean) {

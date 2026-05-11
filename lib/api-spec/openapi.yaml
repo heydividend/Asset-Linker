@@ -1240,6 +1240,9 @@ components:
         conversationId: { type: integer }
         role: { type: string }
         content: { type: string }
+        followups:
+          type: ["array", "null"]
+          items: { type: string }
         createdAt: { type: string, format: date-time }
     OpenaiMessageInput:
       type: object

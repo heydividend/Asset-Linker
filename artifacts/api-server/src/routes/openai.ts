@@ -279,8 +279,42 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
     res.write(`data: ${JSON.stringify({ error: "AI request failed" })}\n\n`);
   }
 
+  let followups: string[] = [];
   if (fullText) {
-    await db.insert(messages).values({ conversationId: id, role: "assistant", content: fullText });
+    try {
+      const fu = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              'You generate exactly 3 short follow-up questions a BOC Athletic Training student would naturally ask next, given the tutor turn just shown. Each question must be self-contained, under 90 characters, and end with "?". Return JSON: {"followups": ["...", "...", "..."]}. No prose.',
+          },
+          { role: "user", content: `Student asked: ${content.slice(0, 800)}\n\nTutor replied:\n${fullText.slice(0, 4000)}` },
+        ],
+      });
+      const raw = fu.choices[0]?.message?.content ?? "{}";
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.followups)) {
+        followups = parsed.followups
+          .filter((s: unknown): s is string => typeof s === "string")
+          .map((s: string) => s.trim())
+          .filter((s: string) => s.length > 0)
+          .slice(0, 3);
+      }
+    } catch (err) {
+      req.log.warn({ err }, "followups generation failed");
+    }
+    await db.insert(messages).values({
+      conversationId: id,
+      role: "assistant",
+      content: fullText,
+      followups: followups.length > 0 ? followups : null,
+    });
+  }
+  if (followups.length > 0) {
+    res.write(`data: ${JSON.stringify({ followups })}\n\n`);
   }
   res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
   res.end();

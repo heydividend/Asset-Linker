@@ -11,5 +11,7 @@ export interface OpenaiMessage {
   conversationId: number;
   role: string;
   content: string;
+  /** @nullable */
+  followups?: string[] | null;
   createdAt: Date;
 }
