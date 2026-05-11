@@ -980,6 +980,9 @@ components:
       properties:
         count: { type: integer, default: 10, minimum: 1, maximum: 30 }
         focus: { type: string, description: "Optional topic/concept focus" }
+        topicId:
+          type: integer
+          description: "If set, all generated cards are locked to this topic. Otherwise each card is auto-tagged by the model from the available topics."
     FlashcardReviewInput:
       type: object
       required: [quality]

@@ -5,7 +5,10 @@ import {
   useCreateNote,
   useDeleteNote,
   useGenerateFlashcards,
+  useCreateFlashcard,
   useDeleteFlashcard,
+  useListTopics,
+  getListTopicsQueryKey,
   useGenerateStudyGuide,
   useDeleteStudyGuide,
   useGenerateAudioOverview,
@@ -41,7 +44,10 @@ export default function NotebookDetail() {
   const createNote = useCreateNote();
   const deleteNote = useDeleteNote();
   const genCards = useGenerateFlashcards();
+  const createCard = useCreateFlashcard();
   const deleteCard = useDeleteFlashcard();
+  const { data: topics = [] } = useListTopics(undefined, { query: { queryKey: getListTopicsQueryKey() } });
+  const topicsById = new Map(topics.map((t) => [t.id, t]));
   const genGuide = useGenerateStudyGuide();
   const deleteGuide = useDeleteStudyGuide();
   const genAudio = useGenerateAudioOverview();
@@ -60,7 +66,9 @@ export default function NotebookDetail() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteForm, setNoteForm] = useState({ title: "", content: "", sourceKind: "text" as "text" | "paste" | "url", sourceUrl: "" });
   const [cardOpen, setCardOpen] = useState(false);
-  const [cardForm, setCardForm] = useState({ count: "10", focus: "" });
+  const [cardForm, setCardForm] = useState({ count: "10", focus: "", topicId: "" });
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualForm, setManualForm] = useState({ front: "", back: "", topicId: "" });
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideForm, setGuideForm] = useState({ format: "outline" as "outline" | "summary" | "qa" | "mindmap", focus: "" });
   const [audioOpen, setAudioOpen] = useState(false);
@@ -90,14 +98,46 @@ export default function NotebookDetail() {
   };
 
   const onGenerateCards = () => {
-    genCards.mutate({ id, data: { count: Number(cardForm.count), focus: cardForm.focus || undefined } }, {
-      onSuccess: () => {
-        setCardOpen(false);
-        invalidate();
-        toast({ title: "Flashcards generated" });
+    genCards.mutate(
+      {
+        id,
+        data: {
+          count: Number(cardForm.count),
+          focus: cardForm.focus || undefined,
+          topicId: cardForm.topicId ? Number(cardForm.topicId) : undefined,
+        },
       },
-      onError: () => toast({ title: "Failed", variant: "destructive" }),
-    });
+      {
+        onSuccess: () => {
+          setCardOpen(false);
+          invalidate();
+          toast({ title: "Flashcards generated" });
+        },
+        onError: () => toast({ title: "Failed", variant: "destructive" }),
+      },
+    );
+  };
+
+  const onCreateCard = () => {
+    if (!manualForm.front || !manualForm.back) return;
+    createCard.mutate(
+      {
+        id,
+        data: {
+          front: manualForm.front,
+          back: manualForm.back,
+          topicId: manualForm.topicId ? Number(manualForm.topicId) : undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          setManualOpen(false);
+          setManualForm({ front: "", back: "", topicId: "" });
+          invalidate();
+          toast({ title: "Flashcard added" });
+        },
+      },
+    );
   };
 
   const onGenerateGuide = () => {
@@ -234,27 +274,81 @@ export default function NotebookDetail() {
 
           <TabsContent value="flashcards" className="flex-1 overflow-y-auto p-6">
             <div className="max-w-3xl mx-auto space-y-3">
-              <Dialog open={cardOpen} onOpenChange={setCardOpen}>
-                <DialogTrigger asChild>
-                  <Button data-testid="button-generate-flashcards"><Sparkles className="h-4 w-4 mr-1" /> Generate flashcards</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Generate flashcards from this notebook</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium">How many?</label>
-                      <Input type="number" min={1} max={30} value={cardForm.count} onChange={(e) => setCardForm({ ...cardForm, count: e.target.value })} data-testid="input-card-count" />
+              <div className="flex flex-wrap gap-2">
+                <Dialog open={cardOpen} onOpenChange={setCardOpen}>
+                  <DialogTrigger asChild>
+                    <Button data-testid="button-generate-flashcards"><Sparkles className="h-4 w-4 mr-1" /> Generate flashcards</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Generate flashcards from this notebook</DialogTitle></DialogHeader>
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium">How many?</label>
+                        <Input type="number" min={1} max={30} value={cardForm.count} onChange={(e) => setCardForm({ ...cardForm, count: e.target.value })} data-testid="input-card-count" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium">Focus (optional)</label>
+                        <Input placeholder="e.g. concussion return-to-play" value={cardForm.focus} onChange={(e) => setCardForm({ ...cardForm, focus: e.target.value })} data-testid="input-card-focus" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium">Tag to topic</label>
+                        <Select
+                          value={cardForm.topicId || "auto"}
+                          onValueChange={(v) => setCardForm({ ...cardForm, topicId: v === "auto" ? "" : v })}
+                        >
+                          <SelectTrigger data-testid="select-card-topic"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Auto-tag each card</SelectItem>
+                            {topics.map((t) => (
+                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Tagging cards lets focused review (e.g. body-map regions) surface them.</p>
+                      </div>
+                      <Button onClick={onGenerateCards} disabled={genCards.isPending} data-testid="button-confirm-generate-cards">
+                        {genCards.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Generate
+                      </Button>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium">Focus (optional)</label>
-                      <Input placeholder="e.g. concussion return-to-play" value={cardForm.focus} onChange={(e) => setCardForm({ ...cardForm, focus: e.target.value })} data-testid="input-card-focus" />
+                  </DialogContent>
+                </Dialog>
+                <Dialog open={manualOpen} onOpenChange={setManualOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" data-testid="button-add-flashcard"><Plus className="h-4 w-4 mr-1" /> Add card</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Add a flashcard</DialogTitle></DialogHeader>
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium">Front</label>
+                        <Textarea rows={3} value={manualForm.front} onChange={(e) => setManualForm({ ...manualForm, front: e.target.value })} data-testid="input-card-front" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium">Back</label>
+                        <Textarea rows={3} value={manualForm.back} onChange={(e) => setManualForm({ ...manualForm, back: e.target.value })} data-testid="input-card-back" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium">Topic</label>
+                        <Select
+                          value={manualForm.topicId || "none"}
+                          onValueChange={(v) => setManualForm({ ...manualForm, topicId: v === "none" ? "" : v })}
+                        >
+                          <SelectTrigger data-testid="select-manual-card-topic"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No topic</SelectItem>
+                            {topics.map((t) => (
+                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button onClick={onCreateCard} disabled={createCard.isPending || !manualForm.front || !manualForm.back} data-testid="button-confirm-add-card">
+                        {createCard.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Add card
+                      </Button>
                     </div>
-                    <Button onClick={onGenerateCards} disabled={genCards.isPending} data-testid="button-confirm-generate-cards">
-                      {genCards.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />} Generate
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+              </div>
               <div className="grid md:grid-cols-2 gap-3">
                 {(notebook.flashcards ?? []).map((c) => (
                   <Card key={c.id} data-testid={`card-flashcard-${c.id}`}>
@@ -262,7 +356,14 @@ export default function NotebookDetail() {
                       <p className="font-medium">{c.front}</p>
                       <p className="text-sm text-muted-foreground border-t pt-2">{c.back}</p>
                       <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">due {new Date(c.dueAt).toLocaleDateString()}</Badge>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <Badge variant="outline" className="text-xs">due {new Date(c.dueAt).toLocaleDateString()}</Badge>
+                          {c.topicId && topicsById.get(c.topicId) && (
+                            <Badge variant="secondary" className="text-xs" data-testid={`badge-card-topic-${c.id}`}>
+                              {topicsById.get(c.topicId)!.name}
+                            </Badge>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1">
                           <AskAiButton notebookId={id} context={`Explain this flashcard in depth.\nFront: ${c.front}\nBack: ${c.back}`} size="icon" variant="ghost" className="h-7 w-7" />
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteCard.mutate({ id: c.id }, { onSuccess: invalidate })} data-testid={`button-delete-card-${c.id}`}>

@@ -196,6 +196,8 @@ export interface FlashcardGenInput {
   count?: number;
   /** Optional topic/concept focus */
   focus?: string;
+  /** If set, all generated cards are locked to this topic. Otherwise each card is auto-tagged by the model from the available topics. */
+  topicId?: number;
 }
 
 export interface FlashcardReviewInput {

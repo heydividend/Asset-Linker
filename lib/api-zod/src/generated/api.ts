@@ -254,6 +254,12 @@ export const GenerateFlashcardsBody = zod.object({
     .max(generateFlashcardsBodyCountMax)
     .default(generateFlashcardsBodyCountDefault),
   focus: zod.string().optional().describe("Optional topic\/concept focus"),
+  topicId: zod
+    .number()
+    .optional()
+    .describe(
+      "If set, all generated cards are locked to this topic. Otherwise each card is auto-tagged by the model from the available topics.",
+    ),
 });
 
 export const UpdateFlashcardParams = zod.object({

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, asc, desc, eq, inArray, lte } from "drizzle-orm";
-import { db, flashcards, notes } from "@workspace/db";
+import { db, flashcards, notes, topics, domains } from "@workspace/db";
 import { parseId } from "../lib/parseId";
 import { chatJson, truncate } from "../lib/openaiHelpers";
 
@@ -44,7 +44,7 @@ router.post("/notebooks/:id/flashcards/generate", async (req, res): Promise<void
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  const { count = 10, focus } = req.body ?? {};
+  const { count = 10, focus, topicId: lockedTopicId } = req.body ?? {};
   const sourceNotes = await db.select().from(notes).where(eq(notes.notebookId, id));
   if (sourceNotes.length === 0) {
     res.status(400).json({ error: "Add notes to this notebook first." });
@@ -52,10 +52,35 @@ router.post("/notebooks/:id/flashcards/generate", async (req, res): Promise<void
   }
   const sourceText = truncate(sourceNotes.map((n) => `## ${n.title}\n${n.content}`).join("\n\n"));
 
-  let result: { cards: { front: string; back: string }[] };
+  // Load topics so we can ask the model to tag each card with one. Including
+  // the domain name gives the classifier helpful scoping context.
+  const topicRows = await db
+    .select({ id: topics.id, name: topics.name, domain: domains.name })
+    .from(topics)
+    .leftJoin(domains, eq(topics.domainId, domains.id))
+    .orderBy(topics.id);
+  const topicById = new Map(topicRows.map((t) => [t.id, t]));
+  let lockedId: number | null = null;
+  if (lockedTopicId != null) {
+    const n = Number(lockedTopicId);
+    if (!Number.isInteger(n) || !topicById.has(n)) {
+      res.status(400).json({ error: "Unknown topicId" });
+      return;
+    }
+    lockedId = n;
+  }
+
+  const topicCatalog = topicRows
+    .map((t) => `- id=${t.id} | ${t.domain ? `[${t.domain}] ` : ""}${t.name}`)
+    .join("\n");
+
+  let result: { cards: { front: string; back: string; topicId?: number | null }[] };
   try {
-    result = await chatJson<{ cards: { front: string; back: string }[] }>(
-      `Generate ${count} flashcards from the following Athletic Training study material${focus ? ` focused on: ${focus}` : ""}. Each flashcard should test a clinically relevant concept. Return JSON: {"cards":[{"front":"question","back":"answer"}]}.\n\nMATERIAL:\n${sourceText}`,
+    const topicInstruction = lockedId
+      ? `All cards MUST use topicId ${lockedId}.`
+      : `For each card, choose the single best matching topicId from the TOPICS list. If nothing fits, use null.`;
+    result = await chatJson<{ cards: { front: string; back: string; topicId?: number | null }[] }>(
+      `Generate ${count} flashcards from the following Athletic Training study material${focus ? ` focused on: ${focus}` : ""}. Each flashcard should test a clinically relevant concept. ${topicInstruction} Return JSON: {"cards":[{"front":"question","back":"answer","topicId":<integer-or-null>}]}.\n\nTOPICS:\n${topicCatalog}\n\nMATERIAL:\n${sourceText}`,
     );
   } catch (err) {
     req.log.error({ err }, "flashcard generation failed");
@@ -63,15 +88,24 @@ router.post("/notebooks/:id/flashcards/generate", async (req, res): Promise<void
     return;
   }
 
-  const inserted = await db
-    .insert(flashcards)
-    .values(
-      (result.cards ?? [])
-        .filter((c) => c.front && c.back)
-        .slice(0, count)
-        .map((c) => ({ notebookId: id, front: c.front, back: c.back })),
-    )
-    .returning();
+  const rows = (result.cards ?? [])
+    .filter((c) => c.front && c.back)
+    .slice(0, count)
+    .map((c) => {
+      let topicId: number | null = null;
+      if (lockedId != null) {
+        topicId = lockedId;
+      } else if (c.topicId != null) {
+        const n = Number(c.topicId);
+        if (Number.isInteger(n) && topicById.has(n)) topicId = n;
+      }
+      return { notebookId: id, front: c.front, back: c.back, topicId };
+    });
+  if (rows.length === 0) {
+    res.status(201).json([]);
+    return;
+  }
+  const inserted = await db.insert(flashcards).values(rows).returning();
   res.status(201).json(inserted);
 });
 
