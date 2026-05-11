@@ -1029,3 +1029,23 @@ export const RegenerateStudyPlanResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary Returns the user's fix-it plan completion dates and current streak
+ */
+export const GetFixItStreakResponse = zod.object({
+  completedDates: zod.array(zod.coerce.date()),
+  streak: zod.number(),
+  completedToday: zod.boolean(),
+  today: zod.coerce.date(),
+});
+
+/**
+ * @summary Record that the fix-it plan was completed today (server time, idempotent per session+date)
+ */
+export const MarkFixItCompleteResponse = zod.object({
+  completedDates: zod.array(zod.coerce.date()),
+  streak: zod.number(),
+  completedToday: zod.boolean(),
+  today: zod.coerce.date(),
+});

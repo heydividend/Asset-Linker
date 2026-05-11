@@ -1,3 +1,9 @@
+import {
+  getFixItStreak,
+  markFixItComplete,
+  type FixItStreak,
+} from "@workspace/api-client-react";
+
 export const FIX_IT_COMPLETED_KEY = "boc.fixItPlan.completedDates";
 export const FIX_IT_QUIZ_IDS_KEY = "boc.fixItPlan.quizIds";
 
@@ -36,21 +42,72 @@ export function getCompletedDates(): string[] {
 
 export const FIX_IT_COMPLETED_EVENT = "boc:fixItPlan:completed";
 
+function writeCompletedDates(dates: string[]): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(
+    FIX_IT_COMPLETED_KEY,
+    JSON.stringify([...new Set(dates)].sort()),
+  );
+}
+
+/**
+ * Mark today completed locally (optimistic). Always writes to localStorage so
+ * an offline streak is preserved, then fires-and-forgets a sync to the server.
+ * The server response is merged back into localStorage so other devices'
+ * completions are picked up too.
+ */
 export function markCompletedToday(): void {
   if (typeof window === "undefined") return;
   const dates = new Set(getCompletedDates());
   const today = todayStr();
-  if (dates.has(today)) return;
-  dates.add(today);
-  window.localStorage.setItem(
-    FIX_IT_COMPLETED_KEY,
-    JSON.stringify([...dates].sort()),
-  );
-  window.dispatchEvent(new Event(FIX_IT_COMPLETED_EVENT));
+  const alreadyLocal = dates.has(today);
+  if (!alreadyLocal) {
+    dates.add(today);
+    writeCompletedDates([...dates]);
+    window.dispatchEvent(new Event(FIX_IT_COMPLETED_EVENT));
+  }
+  // Sync to the server (best-effort). On success, merge server dates so we
+  // pick up completions made on other devices.
+  void markFixItComplete()
+    .then((streak) => mergeServerStreak(streak))
+    .catch(() => {
+      // Offline / server down — local copy is already updated.
+    });
 }
 
 export function isCompletedToday(): boolean {
   return getCompletedDates().includes(todayStr());
+}
+
+/**
+ * Merge the server's authoritative completion dates into localStorage so
+ * the dashboard reflects activity from other devices and sessions.
+ */
+export function mergeServerStreak(streak: FixItStreak): string[] {
+  if (typeof window === "undefined") return streak.completedDates;
+  const local = new Set(getCompletedDates());
+  const before = local.size;
+  for (const d of streak.completedDates) local.add(d);
+  const merged = [...local].sort();
+  writeCompletedDates(merged);
+  if (local.size !== before) {
+    window.dispatchEvent(new Event(FIX_IT_COMPLETED_EVENT));
+  }
+  return merged;
+}
+
+/**
+ * Fetch the server-side streak and merge it into local state. Returns the
+ * merged list of completion dates, or null if the request fails (offline).
+ */
+export async function syncStreakFromServer(): Promise<FixItStreak | null> {
+  try {
+    const streak = await getFixItStreak();
+    mergeServerStreak(streak);
+    return streak;
+  } catch {
+    return null;
+  }
 }
 
 /**

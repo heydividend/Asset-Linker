@@ -850,6 +850,28 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/StudyPlan" }
+  /plan/fix-it/streak:
+    get:
+      operationId: getFixItStreak
+      tags: [plan]
+      summary: Returns the user's fix-it plan completion dates and current streak
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FixItStreak" }
+  /plan/fix-it/complete:
+    post:
+      operationId: markFixItComplete
+      tags: [plan]
+      summary: Record that the fix-it plan was completed today (server time, idempotent per session+date)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FixItStreak" }
 
 components:
   responses:
@@ -1371,3 +1393,14 @@ components:
         topicId: { type: ["integer", "null"] }
         notebookId: { type: ["integer", "null"] }
         link: { type: ["string", "null"] }
+
+    FixItStreak:
+      type: object
+      required: [completedDates, streak, completedToday, today]
+      properties:
+        completedDates:
+          type: array
+          items: { type: string, format: date }
+        streak: { type: integer }
+        completedToday: { type: boolean }
+        today: { type: string, format: date }

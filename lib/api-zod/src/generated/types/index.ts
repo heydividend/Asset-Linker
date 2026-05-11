@@ -16,6 +16,7 @@ export * from "./dashboardSummary";
 export * from "./domain";
 export * from "./domainFlashcardCount";
 export * from "./domainScore";
+export * from "./fixItStreak";
 export * from "./flashcard";
 export * from "./flashcardGenInput";
 export * from "./flashcardInput";

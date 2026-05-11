@@ -3,8 +3,11 @@ import { useLocation } from "wouter";
 import {
   useGetDashboardTopicMastery,
   useListTopics,
+  useGetFixItStreak,
   getGetDashboardTopicMasteryQueryKey,
+  getGetFixItStreakQueryKey,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +17,7 @@ import { bodyRegions } from "@/data/bodyRegions";
 import {
   computeStreak,
   getCompletedDates,
-  isCompletedToday,
+  mergeServerStreak,
   todayStr,
 } from "@/lib/fixItPlan";
 
@@ -37,6 +40,7 @@ export function FixItPlanCard() {
     });
   const { data: topics = [], isLoading: loadingTopics } = useListTopics();
   const today = todayStr();
+  const qc = useQueryClient();
 
   const [dismissedDate, setDismissedDate] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
@@ -45,15 +49,42 @@ export function FixItPlanCard() {
 
   const dismissed = dismissedDate === today;
 
+  // Server is the source of truth for cross-device streaks. Local storage is
+  // a cache so the streak still works offline / before the request resolves.
+  const { data: serverStreak } = useGetFixItStreak({
+    query: {
+      queryKey: getGetFixItStreakQueryKey(),
+      refetchOnWindowFocus: true,
+      staleTime: 30_000,
+    },
+  });
+
   const [completedDates, setCompletedDates] = useState<string[]>(() =>
     getCompletedDates(),
   );
-  const completedToday = isCompletedToday();
-  const streak = useMemo(() => computeStreak(completedDates), [completedDates]);
+
+  // Merge any new server-known dates into local cache and state.
+  useEffect(() => {
+    if (!serverStreak) return;
+    const merged = mergeServerStreak(serverStreak);
+    setCompletedDates(merged);
+  }, [serverStreak]);
+
+  // Server is authoritative whenever the request has resolved. Local cache
+  // only drives the UI before the first response or when offline.
+  const completedToday = serverStreak
+    ? serverStreak.completedToday
+    : completedDates.includes(today);
+  const streak = serverStreak
+    ? serverStreak.streak
+    : computeStreak(completedDates);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const refresh = () => setCompletedDates(getCompletedDates());
+    const refresh = () => {
+      setCompletedDates(getCompletedDates());
+      qc.invalidateQueries({ queryKey: getGetFixItStreakQueryKey() });
+    };
     window.addEventListener("boc:fixItPlan:completed", refresh);
     window.addEventListener("storage", refresh);
     window.addEventListener("focus", refresh);
@@ -62,7 +93,7 @@ export function FixItPlanCard() {
       window.removeEventListener("storage", refresh);
       window.removeEventListener("focus", refresh);
     };
-  }, []);
+  }, [qc]);
 
   // Full pool of eligible weak regions (mastery < 60%, ≥ 1 attempt), deduped
   // and sorted weakest-first. The displayed plan is a slice; the rest serve

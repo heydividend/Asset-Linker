@@ -8,6 +8,7 @@ import {
   getGetQuizQueryKey,
   getGetDashboardTopicMasteryQueryKey,
   getGetDashboardSummaryQueryKey,
+  getGetFixItStreakQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,6 +56,7 @@ export default function QuizRunner() {
           if (wasFixItToday) {
             markCompletedToday();
             forgetFixItQuizId(quiz.id);
+            qc.invalidateQueries({ queryKey: getGetFixItStreakQueryKey() });
           }
           qc.invalidateQueries({ queryKey: getGetQuizQueryKey(id) });
           qc.invalidateQueries({ queryKey: getGetDashboardTopicMasteryQueryKey() });

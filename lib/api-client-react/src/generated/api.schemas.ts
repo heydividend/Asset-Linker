@@ -632,6 +632,13 @@ export interface StudyPlan {
   items: StudyPlanItem[];
 }
 
+export interface FixItStreak {
+  completedDates: string[];
+  streak: number;
+  completedToday: boolean;
+  today: string;
+}
+
 /**
  * Not found
  */

@@ -13,6 +13,7 @@ import resourcesRouter from "./resources";
 import scraperRouter from "./scraper";
 import dashboardRouter from "./dashboard";
 import planRouter from "./plan";
+import fixItPlanRouter from "./fixItPlan";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(resourcesRouter);
 router.use(scraperRouter);
 router.use(dashboardRouter);
 router.use(planRouter);
+router.use(fixItPlanRouter);
 
 export default router;
