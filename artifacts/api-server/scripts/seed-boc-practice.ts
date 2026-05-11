@@ -17,6 +17,7 @@ import {
   notebooks,
   notes,
   questions,
+  flashcards,
 } from "@workspace/db";
 
 const ROOT = path.resolve(process.cwd(), "../..");
@@ -259,6 +260,7 @@ async function main() {
   const skipped: number[] = [];
   const rows: typeof questions.$inferInsert[] = [];
   const noteRows: typeof notes.$inferInsert[] = [];
+  const cardRows: typeof flashcards.$inferInsert[] = [];
 
   // Create the reference notebook first
   const [nb] = await db
@@ -338,16 +340,37 @@ async function main() {
       ].join("\n"),
       sourceKind: "paste",
     });
+
+    // One flashcard per question. Front = stem (with scenario if present),
+    // back = correct letter(s), the chosen choice text(s), and the rationale.
+    const correctChoiceLines = indices
+      .map((i) => `${String.fromCharCode(65 + i)}. ${q.choices[i]}`)
+      .join("\n");
+    cardRows.push({
+      notebookId: nb.id,
+      topicId,
+      front: q.vignette
+        ? `${q.vignette}\n\n${q.stem}`
+        : q.stem,
+      back: [
+        `Correct: ${letterList}${isMulti ? "  (Select all that apply)" : ""}`,
+        "",
+        correctChoiceLines,
+        "",
+        `Why: ${a.rationale}`,
+      ].join("\n"),
+    });
   }
 
-  console.log(`Inserting ${rows.length} questions and ${noteRows.length} notes…`);
+  console.log(`Inserting ${rows.length} questions, ${noteRows.length} notes, ${cardRows.length} flashcards…`);
   // Chunk inserts to keep parameter count reasonable.
   const chunk = <T>(arr: T[], n: number) =>
     Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, (i + 1) * n));
   for (const c of chunk(rows, 50)) await db.insert(questions).values(c);
   for (const c of chunk(noteRows, 50)) await db.insert(notes).values(c);
+  for (const c of chunk(cardRows, 50)) await db.insert(flashcards).values(c);
 
-  console.log(`✓ Done. Inserted ${rows.length} questions + ${noteRows.length} notes.`);
+  console.log(`✓ Done. Inserted ${rows.length} questions + ${noteRows.length} notes + ${cardRows.length} flashcards.`);
   if (skipped.length) {
     console.log(`  skipped Q#: ${skipped.join(", ")}`);
   }
