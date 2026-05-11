@@ -13,8 +13,6 @@ import QuizHub from "@/pages/QuizHub";
 import QuizRunner from "@/pages/QuizRunner";
 import MockExamLanding from "@/pages/MockExamLanding";
 import MockExamRunner from "@/pages/MockExamRunner";
-import ResourcesPage from "@/pages/ResourcesPage";
-import ScraperPage from "@/pages/ScraperPage";
 import TutorPage from "@/pages/TutorPage";
 import SchedulePage from "@/pages/SchedulePage";
 import BodyMapPage from "@/pages/BodyMapPage";
@@ -33,8 +31,6 @@ function Router() {
         <Route path="/quiz/:id" component={QuizRunner} />
         <Route path="/mock-exam" component={MockExamLanding} />
         <Route path="/mock-exam/:id" component={MockExamRunner} />
-        <Route path="/resources" component={ResourcesPage} />
-        <Route path="/scraper" component={ScraperPage} />
         <Route path="/tutor" component={TutorPage} />
         <Route path="/schedule" component={SchedulePage} />
         <Route path="/body-map" component={BodyMapPage} />

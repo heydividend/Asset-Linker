@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { asc, desc, eq } from "drizzle-orm";
 import { db, conversations, messages, notes, notebooks } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { parseId } from "../lib/parseId";
 import multer from "multer";
 import { PDFParse } from "pdf-parse";
@@ -266,48 +267,61 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders?.();
 
+  // Build Claude-compatible message history: only user/assistant roles,
+  // collapse consecutive same-role turns by joining with a blank line.
+  const claudeMessages: { role: "user" | "assistant"; content: string }[] = [];
+  for (const m of history) {
+    if (m.role !== "user" && m.role !== "assistant") continue;
+    const last = claudeMessages[claudeMessages.length - 1];
+    if (last && last.role === m.role) {
+      last.content += "\n\n" + m.content;
+    } else {
+      claudeMessages.push({ role: m.role, content: m.content });
+    }
+  }
+  // Claude requires the first message to be a user turn.
+  while (claudeMessages.length && claudeMessages[0].role !== "user") {
+    claudeMessages.shift();
+  }
+
   let fullText = "";
   try {
-    const stream = await openai.chat.completions.create({
-      model: "gpt-5-mini",
-      stream: true,
-      messages: [
-        { role: "system", content: SYSTEM },
-        ...history.map((m) => ({
-          role: m.role as "user" | "assistant" | "system",
-          content: m.content,
-        })),
-      ],
+    const stream = anthropic.messages.stream({
+      model: "claude-sonnet-4-6",
+      max_tokens: 8192,
+      system: SYSTEM,
+      messages: claudeMessages,
     });
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content ?? "";
-      if (delta) {
-        fullText += delta;
-        res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
+    for await (const event of stream) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+        const delta = event.delta.text;
+        if (delta) {
+          fullText += delta;
+          res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
+        }
       }
     }
   } catch (err) {
-    req.log.error({ err }, "openai stream failed");
+    req.log.error({ err }, "anthropic stream failed");
     res.write(`data: ${JSON.stringify({ error: "AI request failed" })}\n\n`);
   }
 
   let followups: string[] = [];
   if (fullText) {
     try {
-      const fu = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        response_format: { type: "json_object" },
+      const fu = await anthropic.messages.create({
+        model: "claude-haiku-4-5",
+        max_tokens: 8192,
+        system:
+          'You generate exactly 3 short follow-up questions a BOC Athletic Training student would naturally ask next, given the tutor turn just shown. Each question must be self-contained, under 90 characters, and end with "?". Respond with ONLY a JSON object of the form {"followups": ["...", "...", "..."]} — no prose, no code fences.',
         messages: [
-          {
-            role: "system",
-            content:
-              'You generate exactly 3 short follow-up questions a BOC Athletic Training student would naturally ask next, given the tutor turn just shown. Each question must be self-contained, under 90 characters, and end with "?". Return JSON: {"followups": ["...", "...", "..."]}. No prose.',
-          },
           { role: "user", content: `Student asked: ${content.slice(0, 800)}\n\nTutor replied:\n${fullText.slice(0, 4000)}` },
         ],
       });
-      const raw = fu.choices[0]?.message?.content ?? "{}";
-      const parsed = JSON.parse(raw);
+      const block = fu.content.find((b) => b.type === "text");
+      const raw = block && block.type === "text" ? block.text : "{}";
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
       if (Array.isArray(parsed.followups)) {
         followups = parsed.followups
           .filter((s: unknown): s is string => typeof s === "string")
