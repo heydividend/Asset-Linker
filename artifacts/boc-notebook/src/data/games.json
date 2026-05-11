@@ -364,7 +364,7 @@
     },
     {
       "id": "ch7-equipment",
-      "title": "Ch 7: Protective Equipment",
+      "title": "Protective Equipment",
       "description": "Match each piece of protective equipment from the textbook to its name.",
       "pairs": [
         {
@@ -503,7 +503,7 @@
     },
     {
       "id": "ch8-taping",
-      "title": "Ch 8: Wrapping & Taping",
+      "title": "Wrapping & Taping",
       "description": "Match each wrap or taping technique to its name.",
       "pairs": [
         {
@@ -658,7 +658,7 @@
     },
     {
       "id": "ch12-acute-care",
-      "title": "Ch 12: Acute Care & Emergency Procedures",
+      "title": "Acute Care & Emergency Procedures",
       "description": "Match each on-field acute care or emergency procedure to its name.",
       "pairs": [
         {
@@ -793,7 +793,7 @@
     },
     {
       "id": "ch13-evaluation",
-      "title": "Ch 13: Off-the-Field Injury Evaluation",
+      "title": "Off-the-Field Injury Evaluation",
       "description": "Match each evaluation test or postural finding to its name.",
       "pairs": [
         {
@@ -912,7 +912,7 @@
     },
     {
       "id": "ch15-modalities",
-      "title": "Ch 15: Therapeutic Modalities",
+      "title": "Therapeutic Modalities",
       "description": "Match each therapeutic modality to its name.",
       "pairs": [
         {
@@ -1039,7 +1039,7 @@
     },
     {
       "id": "ch16-rehab",
-      "title": "Ch 16: Therapeutic Exercise & Rehabilitation",
+      "title": "Therapeutic Exercise & Rehabilitation",
       "description": "Match each rehabilitation exercise or device to its name.",
       "pairs": [
         {
@@ -1138,7 +1138,7 @@
     },
     {
       "id": "ch18-foot",
-      "title": "Ch 18: The Foot",
+      "title": "The Foot",
       "description": "Match each foot condition or assessment to its name.",
       "pairs": [
         {
@@ -1281,7 +1281,7 @@
     },
     {
       "id": "ch19-ankle",
-      "title": "Ch 19: The Ankle & Lower Leg",
+      "title": "The Ankle & Lower Leg",
       "description": "Match each ankle/lower-leg condition, test, or technique to its name.",
       "pairs": [
         {
@@ -1400,7 +1400,7 @@
     },
     {
       "id": "ch20-knee",
-      "title": "Ch 20: The Knee",
+      "title": "The Knee",
       "description": "Match each knee condition, test, or technique to its name.",
       "pairs": [
         {
@@ -1543,7 +1543,7 @@
     },
     {
       "id": "ch21-hip",
-      "title": "Ch 21: Thigh, Hip, Groin & Pelvis",
+      "title": "Thigh, Hip, Groin & Pelvis",
       "description": "Match each thigh/hip/groin/pelvis condition or test to its name.",
       "pairs": [
         {
@@ -1662,7 +1662,7 @@
     },
     {
       "id": "ch23-elbow",
-      "title": "Ch 23: The Elbow",
+      "title": "The Elbow",
       "description": "Match each elbow condition, test, or technique to its name.",
       "pairs": [
         {
@@ -1717,7 +1717,7 @@
     },
     {
       "id": "ch24-wrist",
-      "title": "Ch 24: Forearm, Wrist, Hand & Fingers",
+      "title": "Forearm, Wrist, Hand & Fingers",
       "description": "Match each wrist/hand/finger condition or test to its name.",
       "pairs": [
         {
@@ -1836,7 +1836,7 @@
     },
     {
       "id": "ch22-shoulder",
-      "title": "Ch 22: The Shoulder Complex",
+      "title": "The Shoulder Complex",
       "description": "Match each shoulder condition, test, or technique to its name.",
       "pairs": [
         {
@@ -1967,7 +1967,7 @@
     },
     {
       "id": "ch27-thorax",
-      "title": "Ch 27: The Thorax & Abdomen",
+      "title": "The Thorax & Abdomen",
       "description": "Match each thorax/abdomen condition or assessment to its name.",
       "pairs": [
         {
@@ -2026,7 +2026,7 @@
     },
     {
       "id": "ch25-spine",
-      "title": "Ch 25: The Spine",
+      "title": "The Spine",
       "description": "Match each spine condition, test, or technique to its name.",
       "pairs": [
         {
@@ -2141,7 +2141,7 @@
     },
     {
       "id": "ch28-skin",
-      "title": "Ch 28: Skin Disorders",
+      "title": "Skin Disorders",
       "description": "Match each skin lesion or condition to its name.",
       "pairs": [
         {
