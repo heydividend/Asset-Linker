@@ -42,7 +42,7 @@ export default function NotebooksList() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: (zodResolver as any)(formSchema),
     defaultValues: { title: "", description: "" },
   });
 

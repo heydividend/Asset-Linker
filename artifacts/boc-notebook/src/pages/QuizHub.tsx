@@ -27,7 +27,7 @@ const MODES = [
 export default function QuizHub() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
-  const { data: attempts = [] } = useListQuizAttempts({ query: { queryKey: getListQuizAttemptsQueryKey() } });
+  const { data: attempts = [] } = useListQuizAttempts(undefined, { query: { queryKey: getListQuizAttemptsQueryKey() } });
   const { data: notebooks = [] } = useListNotebooks();
   const { data: topics = [] } = useListTopics();
   const { data: domains = [] } = useListDomains();

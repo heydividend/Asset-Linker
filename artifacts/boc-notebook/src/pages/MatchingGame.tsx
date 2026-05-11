@@ -60,17 +60,17 @@ export default function MatchingGame() {
       setStreak((s) => s + 1);
       setPickedImage(null);
       setPickedLabel(null);
-    } else {
-      setWrong({ image: pickedImage, label: pickedLabel });
-      setMisses((m) => m + 1);
-      setStreak(0);
-      const t = setTimeout(() => {
-        setWrong(null);
-        setPickedImage(null);
-        setPickedLabel(null);
-      }, 700);
-      return () => clearTimeout(t);
+      return;
     }
+    setWrong({ image: pickedImage, label: pickedLabel });
+    setMisses((m) => m + 1);
+    setStreak(0);
+    const t = setTimeout(() => {
+      setWrong(null);
+      setPickedImage(null);
+      setPickedLabel(null);
+    }, 700);
+    return () => clearTimeout(t);
   }, [pickedImage, pickedLabel, streak]);
 
   if (!game) {
