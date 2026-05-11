@@ -15,6 +15,7 @@ import fixItPlanRouter from "./fixItPlan";
 import gameSessionsRouter from "./gameSessions";
 import planCompletionsRouter from "./planCompletions";
 import topicPodcastsRouter from "./topicPodcasts";
+import ttsRouter from "./tts";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(fixItPlanRouter);
 router.use(gameSessionsRouter);
 router.use(planCompletionsRouter);
 router.use(topicPodcastsRouter);
+router.use(ttsRouter);
 
 export default router;

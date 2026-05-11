@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones, Compass, MapPin, FileText, RotateCcw, HelpCircle } from "lucide-react";
 import { HelpDialog } from "./HelpDialog";
+import { VoicePicker } from "./VoicePicker";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -72,6 +73,7 @@ export function Sidebar() {
       </div>
 
       <div className="border-t border-sidebar-border px-1.5 py-2 space-y-0.5">
+        <VoicePicker />
         <HelpDialog
           trigger={
             <Button
