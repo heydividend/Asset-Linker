@@ -59,13 +59,13 @@ export default function ResourcesPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="h-14 border-b flex items-center justify-between px-6">
-        <h1 className="text-lg font-semibold flex items-center gap-2">
-          <Library className="h-5 w-5" /> Resources
+      <header className="h-12 border-b flex items-center justify-between gap-2 px-4">
+        <h1 className="text-base font-semibold flex items-center gap-2 min-w-0 truncate">
+          <Library className="h-4 w-4 shrink-0" /> Resources
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Select value={filterKind} onValueChange={setFilterKind}>
-            <SelectTrigger className="w-40" data-testid="select-filter-kind"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-28 h-8 text-xs" data-testid="select-filter-kind"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All kinds</SelectItem>
               {KINDS.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
@@ -73,7 +73,7 @@ export default function ResourcesPage() {
           </Select>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button data-testid="button-add-resource"><Plus className="h-4 w-4 mr-1" /> Add resource</Button>
+              <Button size="sm" data-testid="button-add-resource"><Plus className="h-4 w-4 mr-1" /> Add</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Add a resource</DialogTitle></DialogHeader>
@@ -106,13 +106,13 @@ export default function ResourcesPage() {
           </Dialog>
         </div>
       </header>
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-5xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-5xl mx-auto w-full">
         {recommended.length > 0 && (
           <section>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1">
-              <Sparkles className="h-4 w-4" /> Recommended for you
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1">
+              <Sparkles className="h-3.5 w-3.5" /> Recommended for you
             </h2>
-            <div className="grid md:grid-cols-2 gap-3">
+            <div className="grid sm:grid-cols-2 gap-3">
               {recommended.map((r) => (
                 <ResourceCard key={r.id} r={r} onDelete={onDelete} />
               ))}
@@ -121,11 +121,11 @@ export default function ResourcesPage() {
         )}
 
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">All resources</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">All resources</h2>
           {resources.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No resources yet. Add one above.</p>
+            <p className="text-xs text-muted-foreground">No resources yet. Add one above.</p>
           ) : (
-            <div className="grid md:grid-cols-2 gap-3">
+            <div className="grid sm:grid-cols-2 gap-3">
               {resources.map((r) => <ResourceCard key={r.id} r={r} onDelete={onDelete} />)}
             </div>
           )}
@@ -137,22 +137,22 @@ export default function ResourcesPage() {
 
 function ResourceCard({ r, onDelete }: { r: { id: number; title: string; url: string; kind: string; provider?: string | null; notes?: string | null }; onDelete: (id: number) => void }) {
   return (
-    <Card data-testid={`resource-${r.id}`}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-start justify-between gap-2">
-          <span className="truncate">{r.title}</span>
-          <Badge variant="outline" className="shrink-0">{r.kind}</Badge>
+    <Card data-testid={`resource-${r.id}`} className="overflow-hidden">
+      <CardHeader className="p-3 pb-1.5">
+        <CardTitle className="text-sm flex items-start justify-between gap-2 min-w-0">
+          <span className="truncate flex-1 min-w-0" title={r.title}>{r.title}</span>
+          <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0">{r.kind}</Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {r.provider && <p className="text-xs text-muted-foreground">{r.provider}</p>}
-        {r.notes && <p className="text-sm">{r.notes}</p>}
-        <div className="flex items-center gap-2 flex-wrap">
-          <a href={r.url} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 hover:underline truncate" data-testid={`link-resource-${r.id}`}>
+      <CardContent className="space-y-1.5 p-3 pt-0">
+        {r.provider && <p className="text-[11px] text-muted-foreground truncate">{r.provider}</p>}
+        {r.notes && <p className="text-xs line-clamp-3">{r.notes}</p>}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <a href={r.url} target="_blank" rel="noreferrer" className="text-[11px] text-primary inline-flex items-center gap-1 hover:underline" data-testid={`link-resource-${r.id}`}>
             <ExternalLink className="h-3 w-3 shrink-0" /> Open
           </a>
-          <AskAiButton context={`Help me get the most out of this resource: "${r.title}" at ${r.url}. What should I focus on for the BOC?`} size="sm" variant="ghost" />
-          <Button variant="ghost" size="icon" onClick={() => onDelete(r.id)} className="h-7 w-7 ml-auto" data-testid={`button-delete-resource-${r.id}`}>
+          <AskAiButton context={`Help me get the most out of this resource: "${r.title}" at ${r.url}. What should I focus on for the BOC?`} size="icon" variant="ghost" className="h-6 w-6" />
+          <Button variant="ghost" size="icon" onClick={() => onDelete(r.id)} className="h-6 w-6 ml-auto" data-testid={`button-delete-resource-${r.id}`}>
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>

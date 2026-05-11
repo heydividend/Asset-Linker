@@ -86,8 +86,8 @@ export default function SchedulePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="h-14 border-b flex items-center justify-between px-6 bg-background">
-        <h1 className="text-lg font-semibold flex items-center gap-2">
+      <header className="h-12 border-b flex items-center justify-between px-4 gap-2 bg-background flex-wrap">
+        <h1 className="text-base font-semibold flex items-center gap-2">
           <CalendarDays className="h-5 w-5" /> Study Schedule
         </h1>
         <Dialog
@@ -128,7 +128,7 @@ export default function SchedulePage() {
         </Dialog>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-5xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-5xl mx-auto w-full">
         <Card className="bg-primary text-primary-foreground border-none">
           <CardContent className="p-6 flex items-center gap-6">
             <div className="flex-1">

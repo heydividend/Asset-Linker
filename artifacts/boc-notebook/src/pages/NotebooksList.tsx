@@ -133,14 +133,14 @@ export default function NotebooksList() {
   };
 
   return (
-    <div className="flex flex-col h-full p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Notebooks</h1>
-        <div className="flex gap-2">
+    <div className="flex flex-col h-full p-4 space-y-4">
+      <div className="flex justify-between items-center gap-2 flex-wrap">
+        <h1 className="text-xl font-bold">Notebooks</h1>
+        <div className="flex gap-2 flex-wrap">
           <Dialog open={importOpen} onOpenChange={handleImportOpenChange}>
             <DialogTrigger asChild>
-              <Button variant="outline" data-testid="btn-import-pdf">
-                <FileUp className="w-4 h-4 mr-2" /> Import from PDF
+              <Button variant="outline" size="sm" data-testid="btn-import-pdf">
+                <FileUp className="w-4 h-4 mr-1.5" /> Import PDF
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -201,7 +201,7 @@ export default function NotebooksList() {
           </Dialog>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button data-testid="btn-new-notebook"><Plus className="w-4 h-4 mr-2" /> New Notebook</Button>
+              <Button size="sm" data-testid="btn-new-notebook"><Plus className="w-4 h-4 mr-1.5" /> New</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -244,20 +244,20 @@ export default function NotebooksList() {
       {isLoading ? (
         <div>Loading...</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {notebooks.map((nb) => (
             <Link key={nb.id} href={`/notebooks/${nb.id}`}>
               <Card className="hover-elevate cursor-pointer h-full overflow-hidden">
-                <CardHeader className="min-w-0">
-                  <CardTitle className="flex items-center gap-2 min-w-0">
-                    <Book className="w-5 h-5 text-primary shrink-0" />
-                    <span className="truncate">{nb.title}</span>
+                <CardHeader className="min-w-0 p-4 pb-2">
+                  <CardTitle className="flex items-center gap-2 min-w-0 text-sm">
+                    <Book className="w-4 h-4 text-primary shrink-0" />
+                    <span className="truncate" title={nb.title}>{nb.title}</span>
                   </CardTitle>
-                  {nb.description && <CardDescription className="line-clamp-2 break-words">{nb.description}</CardDescription>}
+                  {nb.description && <CardDescription className="line-clamp-2 break-words text-xs">{nb.description}</CardDescription>}
                 </CardHeader>
-                <CardContent className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground mt-auto">
-                  <div className="flex items-center gap-1"><BookOpen className="w-4 h-4 shrink-0"/> {nb.noteCount} Notes</div>
-                  <div className="flex items-center gap-1"><Brain className="w-4 h-4 shrink-0"/> {nb.flashcardCount} Cards</div>
+                <CardContent className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted-foreground mt-auto p-4 pt-0">
+                  <div className="flex items-center gap-1"><BookOpen className="w-3.5 h-3.5 shrink-0"/> {nb.noteCount} Notes</div>
+                  <div className="flex items-center gap-1"><Brain className="w-3.5 h-3.5 shrink-0"/> {nb.flashcardCount} Cards</div>
                 </CardContent>
               </Card>
             </Link>

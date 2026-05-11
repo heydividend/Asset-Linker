@@ -62,8 +62,8 @@ export default function FlashcardsReview() {
   if (!card) {
     return (
       <div className="flex flex-col h-full">
-        <header className="h-14 border-b flex items-center justify-between px-6">
-          <h1 className="text-lg font-semibold flex items-center gap-2">
+        <header className="h-12 border-b flex items-center justify-between px-4">
+          <h1 className="text-base font-semibold flex items-center gap-2">
             <Brain className="h-5 w-5" /> Flashcards
             {isFocused && focusRegion && (
               <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1" data-testid="badge-focus-region">
@@ -121,8 +121,8 @@ export default function FlashcardsReview() {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="h-14 border-b flex items-center justify-between px-6 gap-3">
-        <h1 className="text-lg font-semibold flex items-center gap-2">
+      <header className="h-12 border-b flex items-center justify-between px-4 gap-3 flex-wrap">
+        <h1 className="text-base font-semibold flex items-center gap-2">
           <Brain className="h-5 w-5" /> Flashcards
           {isFocused && focusRegion && (
             <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1" data-testid="badge-focus-region">

@@ -142,8 +142,8 @@ export default function TutorPage() {
         </ScrollArea>
       </aside>
       <main className="flex-1 flex flex-col">
-        <header className="h-14 border-b flex items-center px-6">
-          <h1 className="text-lg font-semibold flex items-center gap-2">
+        <header className="h-12 border-b flex items-center px-4">
+          <h1 className="text-base font-semibold flex items-center gap-2">
             <Bot className="h-5 w-5" /> AI Tutor
           </h1>
         </header>

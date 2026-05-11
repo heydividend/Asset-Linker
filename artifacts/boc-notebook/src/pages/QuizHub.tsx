@@ -58,19 +58,19 @@ export default function QuizHub() {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="h-14 border-b flex items-center px-6">
-        <h1 className="text-lg font-semibold flex items-center gap-2">
-          <ClipboardList className="h-5 w-5" /> Practice Quizzes
+      <header className="h-12 border-b flex items-center px-4">
+        <h1 className="text-base font-semibold flex items-center gap-2">
+          <ClipboardList className="h-4 w-4" /> Practice Quizzes
         </h1>
       </header>
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-4xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" /> Start a quiz
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 p-4 pt-0">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Mode</label>
@@ -123,17 +123,17 @@ export default function QuizHub() {
                 </Select>
               </div>
             </div>
-            <Button onClick={onStart} disabled={start.isPending} size="lg" data-testid="button-start-quiz">
+            <Button onClick={onStart} disabled={start.isPending} data-testid="button-start-quiz">
               <Play className="h-4 w-4 mr-2" /> Start quiz
             </Button>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Recent attempts</CardTitle></CardHeader>
-          <CardContent>
+          <CardHeader className="p-4 pb-2"><CardTitle className="text-base">Recent attempts</CardTitle></CardHeader>
+          <CardContent className="p-4 pt-0">
             {attempts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No attempts yet.</p>
+              <p className="text-xs text-muted-foreground">No attempts yet.</p>
             ) : (
               <div className="space-y-2">
                 {attempts.map((a) => {
@@ -143,15 +143,15 @@ export default function QuizHub() {
                     <button
                       key={a.id}
                       onClick={() => navigate(`/quiz/${a.id}`)}
-                      className="w-full flex items-center justify-between p-3 border rounded-md hover-elevate text-left"
+                      className="w-full flex items-center justify-between gap-2 p-2.5 border rounded-md hover-elevate text-left min-w-0"
                       data-testid={`attempt-${a.id}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="uppercase text-xs">{a.mode}</Badge>
-                        <span className="font-medium">{a.totalQuestions} questions</span>
-                        {!finished && <Badge variant="secondary">In progress</Badge>}
+                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                        <Badge variant="outline" className="uppercase text-[10px] px-1.5 py-0">{a.mode}</Badge>
+                        <span className="font-medium text-xs">{a.totalQuestions}q</span>
+                        {!finished && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">In progress</Badge>}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs text-muted-foreground shrink-0">
                         {finished ? `${pct}% (${a.correctCount}/${a.totalQuestions})` : "Resume"}
                       </div>
                     </button>

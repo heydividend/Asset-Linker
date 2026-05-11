@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export const SIDEBAR_MIN = 180;
+export const SIDEBAR_MIN = 160;
 export const SIDEBAR_MAX = 360;
-export const SIDEBAR_DEFAULT = 256;
-export const CHAT_MIN = 280;
+export const SIDEBAR_DEFAULT = SIDEBAR_MIN;
+export const CHAT_MIN = 260;
 export const CHAT_MAX = 640;
-export const CHAT_DEFAULT = 400;
+export const CHAT_DEFAULT = CHAT_MIN;
 
 interface LayoutState {
   sidebarWidth: number;
@@ -37,6 +37,21 @@ export const useLayoutStore = create<LayoutState>()(
       toggleChat: () => set((s) => ({ chatCollapsed: !s.chatCollapsed })),
       setChatCollapsed: (v) => set({ chatCollapsed: v }),
     }),
-    { name: "boc-layout" },
+    {
+      name: "boc-layout",
+      version: 2,
+      migrate: () => ({
+        sidebarWidth: SIDEBAR_DEFAULT,
+        chatWidth: CHAT_DEFAULT,
+        sidebarCollapsed: false,
+        chatCollapsed: false,
+        setSidebarWidth: () => {},
+        setChatWidth: () => {},
+        toggleSidebar: () => {},
+        setSidebarCollapsed: () => {},
+        toggleChat: () => {},
+        setChatCollapsed: () => {},
+      }),
+    },
   ),
 );
