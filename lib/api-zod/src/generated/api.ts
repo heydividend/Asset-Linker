@@ -934,6 +934,31 @@ export const GetDashboardTopicMasteryResponse = zod.array(
   GetDashboardTopicMasteryResponseItem,
 );
 
+/**
+ * @summary Full per-topic attempt history (timestamps + correct flags)
+ */
+export const GetDashboardTopicHistoryQueryParams = zod.object({
+  topicIds: zod.coerce
+    .string()
+    .optional()
+    .describe("Comma-separated topic IDs to filter (omit for all)."),
+});
+
+export const GetDashboardTopicHistoryResponseItem = zod.object({
+  topicId: zod.number(),
+  attempts: zod
+    .array(
+      zod.object({
+        correct: zod.boolean(),
+        answeredAt: zod.coerce.date(),
+      }),
+    )
+    .describe("All quiz answers for this topic, oldest first."),
+});
+export const GetDashboardTopicHistoryResponse = zod.array(
+  GetDashboardTopicHistoryResponseItem,
+);
+
 export const GetStudyPlanTodayResponse = zod.object({
   date: zod.coerce.date(),
   items: zod.array(

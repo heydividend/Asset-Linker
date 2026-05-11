@@ -797,6 +797,25 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/TopicMasteryEntry" }
+  /dashboard/topic-history:
+    get:
+      operationId: getDashboardTopicHistory
+      tags: [dashboard]
+      summary: Full per-topic attempt history (timestamps + correct flags)
+      parameters:
+        - name: topicIds
+          in: query
+          required: false
+          description: "Comma-separated topic IDs to filter (omit for all)."
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TopicHistoryEntry" }
   /plan/today:
     get:
       operationId: getStudyPlanToday
@@ -1186,6 +1205,15 @@ components:
       properties:
         correct: { type: boolean }
         answeredAt: { type: string, format: date-time }
+    TopicHistoryEntry:
+      type: object
+      required: [topicId, attempts]
+      properties:
+        topicId: { type: integer }
+        attempts:
+          type: array
+          description: "All quiz answers for this topic, oldest first."
+          items: { $ref: "#/components/schemas/RecentAttempt" }
 
     OpenaiConversation:
       type: object

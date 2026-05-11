@@ -151,4 +151,52 @@ router.get("/dashboard/topic-mastery", async (_req, res): Promise<void> => {
   res.json(result);
 });
 
+router.get("/dashboard/topic-history", async (req, res): Promise<void> => {
+  const raw = typeof req.query.topicIds === "string" ? req.query.topicIds : "";
+  const requested = raw
+    .split(",")
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n));
+
+  const filterClause = requested.length
+    ? sql`AND q.topic_id IN (${sql.join(requested.map((n) => sql`${n}`), sql`, `)})`
+    : sql``;
+
+  const rows = (await db.execute(sql`
+    SELECT q.topic_id AS topic_id,
+           qa.correct AS correct,
+           qa.answered_at AS answered_at
+    FROM quiz_answers qa
+    JOIN questions q ON q.id = qa.question_id
+    WHERE q.topic_id IS NOT NULL
+    ${filterClause}
+    ORDER BY q.topic_id ASC, qa.answered_at ASC
+  `)) as unknown as {
+    rows: Array<{ topic_id: number; correct: boolean; answered_at: string | Date }>;
+  };
+
+  const byTopic = new Map<number, Array<{ correct: boolean; answeredAt: string }>>();
+  const ensureTopic = (id: number) => {
+    if (!byTopic.has(id)) byTopic.set(id, []);
+    return byTopic.get(id)!;
+  };
+  for (const id of requested) ensureTopic(id);
+  for (const row of rows.rows) {
+    ensureTopic(row.topic_id).push({
+      correct: row.correct,
+      answeredAt:
+        row.answered_at instanceof Date
+          ? row.answered_at.toISOString()
+          : new Date(row.answered_at).toISOString(),
+    });
+  }
+
+  res.json(
+    Array.from(byTopic.entries()).map(([topicId, attempts]) => ({
+      topicId,
+      attempts,
+    })),
+  );
+});
+
 export default router;

@@ -26,6 +26,7 @@ import type {
   FlashcardInput,
   FlashcardReviewInput,
   FlashcardUpdate,
+  GetDashboardTopicHistoryParams,
   HealthStatus,
   ListDueFlashcardsParams,
   ListQuizAttemptsParams,
@@ -63,6 +64,7 @@ import type {
   StudyGuideInput,
   StudyPlan,
   Topic,
+  TopicHistoryEntry,
   TopicMasteryEntry,
 } from "./api.schemas";
 
@@ -4550,6 +4552,109 @@ export function useGetDashboardTopicMastery<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetDashboardTopicMasteryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Full per-topic attempt history (timestamps + correct flags)
+ */
+export const getGetDashboardTopicHistoryUrl = (
+  params?: GetDashboardTopicHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/dashboard/topic-history?${stringifiedParams}`
+    : `/api/dashboard/topic-history`;
+};
+
+export const getDashboardTopicHistory = async (
+  params?: GetDashboardTopicHistoryParams,
+  options?: RequestInit,
+): Promise<TopicHistoryEntry[]> => {
+  return customFetch<TopicHistoryEntry[]>(
+    getGetDashboardTopicHistoryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDashboardTopicHistoryQueryKey = (
+  params?: GetDashboardTopicHistoryParams,
+) => {
+  return [`/api/dashboard/topic-history`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetDashboardTopicHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDashboardTopicHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDashboardTopicHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDashboardTopicHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDashboardTopicHistoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDashboardTopicHistory>>
+  > = ({ signal }) =>
+    getDashboardTopicHistory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardTopicHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDashboardTopicHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDashboardTopicHistory>>
+>;
+export type GetDashboardTopicHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Full per-topic attempt history (timestamps + correct flags)
+ */
+
+export function useGetDashboardTopicHistory<
+  TData = Awaited<ReturnType<typeof getDashboardTopicHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDashboardTopicHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDashboardTopicHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDashboardTopicHistoryQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

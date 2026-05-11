@@ -5,9 +5,21 @@ import {
   useListTopics,
   useStartQuiz,
   useGetDashboardTopicMastery,
+  useGetDashboardTopicHistory,
   getListQuizAttemptsQueryKey,
   getGetDashboardTopicMasteryQueryKey,
+  getGetDashboardTopicHistoryQueryKey,
 } from "@workspace/api-client-react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ReferenceLine,
+} from "recharts";
 import { bodyRegions, type BodyRegion } from "@/data/bodyRegions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -239,6 +251,52 @@ export default function BodyMapPage() {
     navigate(`/flashcards?${params.toString()}`);
   };
 
+  // Topic IDs for the currently open region — drives the full attempt history fetch.
+  const selectedTopicIds = useMemo(() => {
+    if (!selected) return [] as number[];
+    return selected.topicNames
+      .map((n) => topicIdByName.get(n))
+      .filter((v): v is number => typeof v === "number")
+      .sort((a, b) => a - b);
+  }, [selected, topicIdByName]);
+
+  const topicIdsParam = selectedTopicIds.join(",");
+  const historyParams = topicIdsParam ? { topicIds: topicIdsParam } : undefined;
+  const { data: historyRows = [], isLoading: historyLoading } =
+    useGetDashboardTopicHistory(historyParams, {
+      query: {
+        queryKey: getGetDashboardTopicHistoryQueryKey(historyParams),
+        enabled: selectedTopicIds.length > 0,
+      },
+    });
+
+  // Merge per-topic histories chronologically and compute a rolling-accuracy
+  // line so users can see longer-term progress on the open region.
+  const historyChart = useMemo(() => {
+    const merged: { correct: boolean; answeredAt: string }[] = [];
+    for (const row of historyRows) {
+      for (const a of row.attempts) merged.push(a);
+    }
+    merged.sort((a, b) => a.answeredAt.localeCompare(b.answeredAt));
+    if (merged.length === 0) return { points: [], totalAttempts: 0, totalCorrect: 0 };
+    const window = Math.max(3, Math.min(10, Math.ceil(merged.length / 4)));
+    const points = merged.map((a, i) => {
+      const start = Math.max(0, i + 1 - window);
+      const slice = merged.slice(start, i + 1);
+      const correctInWindow = slice.filter((s) => s.correct).length;
+      const overallCorrect = merged.slice(0, i + 1).filter((s) => s.correct).length;
+      return {
+        index: i + 1,
+        rolling: Math.round((correctInWindow / slice.length) * 100),
+        overall: Math.round((overallCorrect / (i + 1)) * 100),
+        answeredAt: a.answeredAt,
+        correct: a.correct,
+      };
+    });
+    const totalCorrect = merged.filter((a) => a.correct).length;
+    return { points, totalAttempts: merged.length, totalCorrect, window };
+  }, [historyRows]);
+
   const onQuizRegion = (region: BodyRegion) => {
     const ids = region.topicNames
       .map((n) => topicIdByName.get(n))
@@ -257,6 +315,7 @@ export default function BodyMapPage() {
         onSuccess: (q) => {
           qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
           qc.invalidateQueries({ queryKey: getGetDashboardTopicMasteryQueryKey() });
+          qc.invalidateQueries({ queryKey: [`/api/dashboard/topic-history`] });
           setSelected(null);
           navigate(`/quiz/${q.id}`);
         },
@@ -596,6 +655,131 @@ export default function BodyMapPage() {
               </SheetHeader>
 
               <div className="mt-6 space-y-6">
+                <Card data-testid="card-region-history">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-semibold text-sm flex items-center gap-1.5">
+                          <TrendingUp className="h-4 w-4 text-primary" />
+                          Attempt history
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          {historyChart.totalAttempts > 0
+                            ? `Rolling accuracy across ${historyChart.totalAttempts} attempt${historyChart.totalAttempts === 1 ? "" : "s"} on this region's topics${historyChart.window ? ` (window of ${historyChart.window})` : ""}.`
+                            : "Mastery over time across this region's topics."}
+                        </p>
+                      </div>
+                      {historyChart.totalAttempts > 0 && (
+                        <Badge variant="outline" className="tabular-nums shrink-0">
+                          {Math.round((historyChart.totalCorrect / historyChart.totalAttempts) * 100)}% overall
+                        </Badge>
+                      )}
+                    </div>
+                    {selectedTopicIds.length === 0 ? (
+                      <div
+                        className="rounded-md border bg-muted/40 p-4 text-xs text-muted-foreground text-center"
+                        data-testid="region-history-empty"
+                      >
+                        No quizable topics are linked to this region in the seed bank yet.
+                      </div>
+                    ) : historyLoading ? (
+                      <div
+                        className="rounded-md border bg-muted/40 p-4 text-xs text-muted-foreground text-center"
+                        data-testid="region-history-loading"
+                      >
+                        Loading attempt history…
+                      </div>
+                    ) : historyChart.points.length === 0 ? (
+                      <div
+                        className="rounded-md border bg-muted/40 p-4 text-xs text-muted-foreground text-center"
+                        data-testid="region-history-empty"
+                      >
+                        No attempts yet on this region. Drill it once and your trend will show up here.
+                      </div>
+                    ) : (
+                      <div
+                        className="h-56 w-full"
+                        data-testid="region-history-chart"
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={historyChart.points}
+                            margin={{ top: 8, right: 8, left: -16, bottom: 4 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis
+                              dataKey="index"
+                              tick={{ fontSize: 10 }}
+                              stroke="hsl(var(--muted-foreground))"
+                              label={{
+                                value: "Attempt #",
+                                position: "insideBottom",
+                                offset: -2,
+                                fontSize: 10,
+                                fill: "hsl(var(--muted-foreground))",
+                              }}
+                            />
+                            <YAxis
+                              domain={[0, 100]}
+                              tick={{ fontSize: 10 }}
+                              stroke="hsl(var(--muted-foreground))"
+                              tickFormatter={(v) => `${v}%`}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                background: "hsl(var(--popover))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: 6,
+                                fontSize: 12,
+                              }}
+                              formatter={(value: number, name: string) => [
+                                `${value}%`,
+                                name === "rolling" ? "Rolling" : "Overall",
+                              ]}
+                              labelFormatter={(_, payload) => {
+                                const p = payload?.[0]?.payload as
+                                  | { answeredAt: string; correct: boolean }
+                                  | undefined;
+                                if (!p) return "";
+                                const d = new Date(p.answeredAt);
+                                return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} — ${p.correct ? "Correct" : "Incorrect"}`;
+                              }}
+                            />
+                            <ReferenceLine
+                              y={70}
+                              stroke="hsl(var(--muted-foreground))"
+                              strokeDasharray="4 4"
+                              label={{
+                                value: "Target 70%",
+                                position: "insideTopRight",
+                                fontSize: 10,
+                                fill: "hsl(var(--muted-foreground))",
+                              }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="overall"
+                              stroke="hsl(var(--muted-foreground))"
+                              strokeDasharray="4 3"
+                              strokeWidth={1.5}
+                              dot={false}
+                              isAnimationActive={false}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="rolling"
+                              stroke="hsl(var(--primary))"
+                              strokeWidth={2}
+                              dot={{ r: 2.5 }}
+                              isAnimationActive={false}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {selected.injuries.map((inj) => (
                   <Card key={inj.name} data-testid={`card-injury-${inj.name.replace(/\s+/g, "-").toLowerCase()}`}>
                     <CardContent className="p-4 space-y-3">

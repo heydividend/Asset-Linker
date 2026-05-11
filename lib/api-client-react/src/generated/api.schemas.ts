@@ -451,6 +451,12 @@ export interface TopicMasteryEntry {
   recentAttempts: RecentAttempt[];
 }
 
+export interface TopicHistoryEntry {
+  topicId: number;
+  /** All quiz answers for this topic, oldest first. */
+  attempts: RecentAttempt[];
+}
+
 export interface OpenaiConversation {
   id: number;
   title: string;
@@ -638,4 +644,11 @@ export type ListResourcesParams = {
   topicId?: number;
   domainId?: number;
   kind?: string;
+};
+
+export type GetDashboardTopicHistoryParams = {
+  /**
+   * Comma-separated topic IDs to filter (omit for all).
+   */
+  topicIds?: string;
 };
