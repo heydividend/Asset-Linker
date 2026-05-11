@@ -46,10 +46,9 @@ export default function MockExamRunner() {
 
   // Hide global chrome while exam is in progress
   useEffect(() => {
-    if (exam && !exam.submitted) {
-      document.body.classList.add("exam-mode");
-      return () => document.body.classList.remove("exam-mode");
-    }
+    if (!exam || exam.submitted) return;
+    document.body.classList.add("exam-mode");
+    return () => document.body.classList.remove("exam-mode");
   }, [exam]);
 
   // Tick timer every second
