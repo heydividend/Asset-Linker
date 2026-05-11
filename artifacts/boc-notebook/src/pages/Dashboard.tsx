@@ -31,6 +31,15 @@ import { Button } from "@/components/ui/button";
 import { useTour } from "@/components/TourProvider";
 import { TOUR_SEEN_KEY } from "@/lib/tour";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
@@ -828,16 +837,61 @@ export default function Dashboard() {
                 <CardTitle className="text-base flex items-center gap-2">
                   <RotateCw className="h-4 w-4 text-primary" /> Continue learning
                 </CardTitle>
-                <Link href="/notebooks">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-muted-foreground"
-                    data-testid="continue-learning-view-all"
-                  >
-                    View all <ArrowRight className="h-3 w-3 ml-1" />
-                  </Button>
-                </Link>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-muted-foreground"
+                      data-testid="continue-learning-view-all"
+                      disabled={!summary?.continueLearning?.length}
+                    >
+                      View all <ArrowRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Continue learning</DialogTitle>
+                      <DialogDescription>
+                        Everything you've recently touched — notes, study guides, podcasts, and games.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[60vh] -mx-1 px-1">
+                      <ul className="space-y-1.5" data-testid="continue-learning-full-list">
+                        {summary?.continueLearning?.map((item, idx) => {
+                          const meta = CONTINUE_KIND_META[item.kind];
+                          const Icon = meta.icon;
+                          return (
+                            <li key={`all-${item.kind}-${item.link}-${idx}`}>
+                              <Link href={item.link}>
+                                <button
+                                  type="button"
+                                  data-testid={`continue-learning-full-item-${idx}`}
+                                  data-kind={item.kind}
+                                  className="w-full text-left rounded-md border bg-secondary/40 hover-elevate active-elevate-2 transition-colors px-3 py-2 flex items-center gap-2 min-w-0"
+                                >
+                                  <Icon className="h-4 w-4 text-primary shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate" title={item.title}>
+                                      {item.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {meta.label}
+                                      {item.subtitle ? ` · ${item.subtitle}` : ""}
+                                      {" · "}
+                                      {formatRelative(item.lastTouchedAt)}
+                                    </p>
+                                  </div>
+                                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                </button>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </ScrollArea>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 {loadingSummary ? (
@@ -890,16 +944,63 @@ export default function Dashboard() {
             <Card>
               <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
                 <CardTitle className="text-base">Weak Topics</CardTitle>
-                <Link href="/quiz">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-muted-foreground"
-                    data-testid="weak-topics-view-all"
-                  >
-                    View all <ArrowRight className="h-3 w-3 ml-1" />
-                  </Button>
-                </Link>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs text-muted-foreground"
+                      data-testid="weak-topics-view-all"
+                      disabled={!summary?.weakTopics?.length}
+                    >
+                      View all <ArrowRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Weak Topics</DialogTitle>
+                      <DialogDescription>
+                        Every topic with at least 2 attempts and below 70% mastery — sorted weakest first.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[60vh] -mx-1 px-1">
+                      <ul className="space-y-1.5" data-testid="weak-topics-full-list">
+                        {summary?.weakTopics?.map((topic) => {
+                          const masteryPct = Math.round((topic.mastery ?? 0) * 100);
+                          return (
+                            <li
+                              key={`all-weak-${topic.topicId}`}
+                              className="rounded-md border bg-secondary/40 px-3 py-2 flex items-center gap-3"
+                              data-testid={`weak-topic-full-${topic.topicId}`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate" title={topic.name}>
+                                  {topic.name}
+                                </p>
+                                <div className="mt-1">
+                                  <Progress value={masteryPct} className="h-1.5" />
+                                </div>
+                              </div>
+                              <span className="text-xs tabular-nums text-muted-foreground shrink-0 w-20 text-right">
+                                {masteryPct}% mastery
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 shrink-0"
+                                onClick={() => onQuizTopic(topic.topicId, topic.name, 10)}
+                                disabled={startQuiz.isPending}
+                                data-testid={`weak-topic-full-quiz-${topic.topicId}`}
+                              >
+                                <Play className="h-3 w-3 mr-1" /> Quiz
+                              </Button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </ScrollArea>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 {loadingSummary ? (
@@ -1078,16 +1179,54 @@ export default function Dashboard() {
                     testId="dashboard-trend-window"
                     label="Last"
                   />
-                  <Link href="/quiz">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-xs text-muted-foreground"
-                      data-testid="domain-mastery-view-all"
-                    >
-                      View all <ArrowRight className="h-3 w-3 ml-1" />
-                    </Button>
-                  </Link>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-muted-foreground"
+                        data-testid="domain-mastery-view-all"
+                        disabled={!summary?.domainMastery?.length}
+                      >
+                        View all <ArrowRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>Domain Mastery</DialogTitle>
+                        <DialogDescription>
+                          Full breakdown across all five BOC domains based on every attempt to date.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <ScrollArea className="max-h-[60vh] -mx-1 px-1">
+                        <ul className="space-y-2" data-testid="domain-mastery-full-list">
+                          {summary?.domainMastery?.map((domain) => {
+                            const percent = domain.total > 0 ? Math.round((domain.correct / domain.total) * 100) : 0;
+                            return (
+                              <li
+                                key={`all-domain-${domain.domainId}`}
+                                className="rounded-md border bg-secondary/40 px-3 py-2 space-y-1.5"
+                                data-testid={`domain-mastery-full-${domain.domainId}`}
+                              >
+                                <div className="flex items-center justify-between gap-2 min-w-0">
+                                  <p className="text-sm font-medium truncate" title={domain.name}>
+                                    <span className="text-muted-foreground tabular-nums mr-1">
+                                      {domain.code}
+                                    </span>
+                                    {domain.name}
+                                  </p>
+                                  <span className="text-xs tabular-nums text-muted-foreground shrink-0">
+                                    {domain.correct}/{domain.total} · {percent}%
+                                  </span>
+                                </div>
+                                <Progress value={percent} className="h-2" />
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </ScrollArea>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </CardHeader>
               <CardContent className="p-4 pt-0">

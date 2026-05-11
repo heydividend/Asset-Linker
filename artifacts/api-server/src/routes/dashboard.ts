@@ -83,7 +83,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
   const weakTopics = mastery
     .filter((m) => m.attempts >= 2 && m.mastery < 0.7)
     .sort((a, b) => a.mastery - b.mastery)
-    .slice(0, 6)
+    .slice(0, 50)
     .map((m) => {
       const t = tRows.find((x) => x.id === m.topicId);
       return {
@@ -171,7 +171,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     .from(notes)
     .innerJoin(notebooks, eq(notebooks.id, notes.notebookId))
     .orderBy(desc(notes.createdAt))
-    .limit(5);
+    .limit(30);
   const recentGuides = await db
     .select({
       id: studyGuides.id,
@@ -183,7 +183,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     .from(studyGuides)
     .innerJoin(notebooks, eq(notebooks.id, studyGuides.notebookId))
     .orderBy(desc(studyGuides.createdAt))
-    .limit(5);
+    .limit(30);
   const recentPodcasts = await db
     .select({
       id: audioOverviews.id,
@@ -195,7 +195,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     .from(audioOverviews)
     .where(eq(audioOverviews.status, "ready"))
     .orderBy(desc(audioOverviews.createdAt))
-    .limit(5);
+    .limit(30);
   const recentGames = await db
     .select({
       gameId: gameSessions.gameId,
@@ -206,7 +206,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     .from(gameSessions)
     .where(eq(gameSessions.sessionId, sessionId))
     .orderBy(desc(gameSessions.completedAt))
-    .limit(5);
+    .limit(30);
 
   type CL = {
     kind: "note" | "study_guide" | "podcast" | "game";
@@ -248,7 +248,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     })),
   ]
     .sort((a, b) => b.lastTouchedAt.localeCompare(a.lastTouchedAt))
-    .slice(0, 5);
+    .slice(0, 30);
 
   res.json({
     readinessScore,
