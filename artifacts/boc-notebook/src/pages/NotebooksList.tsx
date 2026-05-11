@@ -247,17 +247,17 @@ export default function NotebooksList() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {notebooks.map((nb) => (
             <Link key={nb.id} href={`/notebooks/${nb.id}`}>
-              <Card className="hover-elevate cursor-pointer h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Book className="w-5 h-5 text-primary" />
-                    {nb.title}
+              <Card className="hover-elevate cursor-pointer h-full overflow-hidden">
+                <CardHeader className="min-w-0">
+                  <CardTitle className="flex items-center gap-2 min-w-0">
+                    <Book className="w-5 h-5 text-primary shrink-0" />
+                    <span className="truncate">{nb.title}</span>
                   </CardTitle>
-                  {nb.description && <CardDescription>{nb.description}</CardDescription>}
+                  {nb.description && <CardDescription className="line-clamp-2 break-words">{nb.description}</CardDescription>}
                 </CardHeader>
-                <CardContent className="flex gap-4 text-sm text-muted-foreground mt-auto">
-                  <div className="flex items-center gap-1"><BookOpen className="w-4 h-4"/> {nb.noteCount} Notes</div>
-                  <div className="flex items-center gap-1"><Brain className="w-4 h-4"/> {nb.flashcardCount} Cards</div>
+                <CardContent className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground mt-auto">
+                  <div className="flex items-center gap-1"><BookOpen className="w-4 h-4 shrink-0"/> {nb.noteCount} Notes</div>
+                  <div className="flex items-center gap-1"><Brain className="w-4 h-4 shrink-0"/> {nb.flashcardCount} Cards</div>
                 </CardContent>
               </Card>
             </Link>
