@@ -152,6 +152,36 @@ export default function Dashboard() {
     return m;
   }, [topicsList]);
 
+  // domainId → sorted list of topic IDs in that domain, used to deep-link
+  // the Domain Mastery rows into a focused flashcard review.
+  const topicIdsByDomainId = useMemo(() => {
+    const m = new Map<number, number[]>();
+    for (const t of topicsList) {
+      const bucket = m.get(t.domainId) ?? [];
+      bucket.push(t.id);
+      m.set(t.domainId, bucket);
+    }
+    for (const ids of m.values()) ids.sort((a, b) => a - b);
+    return m;
+  }, [topicsList]);
+
+  const onReviewDomain = (domainId: number, domainName: string) => {
+    const ids = topicIdsByDomainId.get(domainId) ?? [];
+    if (ids.length === 0) {
+      toast({
+        title: "No focused review available yet",
+        description:
+          "We don't have flashcard topics linked to this domain in the seed bank yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const params = new URLSearchParams();
+    params.set("topicIds", ids.join(","));
+    params.set("region", domainName);
+    navigate(`/flashcards?${params.toString()}`);
+  };
+
   // domainId → chronological correctness of the most recent 5 attempts across
   // all topics in that domain. Mirrors the per-region merge in BodyMapPage.
   const trendByDomainId = useMemo(() => {
@@ -540,33 +570,48 @@ export default function Dashboard() {
                         startQuiz.variables?.data?.mode === "domain" &&
                         startQuiz.variables?.data?.domainId === domain.domainId;
                       return (
-                        <button
+                        <div
                           key={domain.domainId}
-                          type="button"
-                          onClick={() => onQuizDomain(domain.domainId, domain.name)}
-                          disabled={startQuiz.isPending}
-                          title={`Start a quiz on ${domain.name}`}
-                          aria-label={`Start a quiz on ${domain.name}`}
-                          data-testid={`domain-mastery-quiz-${domain.domainId}`}
-                          className="w-full text-left space-y-1 min-w-0 rounded-md p-1.5 -m-1.5 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed group"
+                          className="relative group min-w-0"
+                          data-testid={`domain-mastery-${domain.domainId}`}
                         >
-                          <div className="flex justify-between items-center gap-2 text-xs min-w-0">
-                            <span className="font-medium truncate flex-1 min-w-0" title={domain.name}>{domain.name}</span>
-                            {isStartingThis ? (
-                              <span className="text-[10px] text-muted-foreground shrink-0">Starting…</span>
-                            ) : (
-                              <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 shrink-0 transition-opacity" />
-                            )}
-                            <span className="text-muted-foreground shrink-0 tabular-nums">{percent}%</span>
-                          </div>
-                          <Progress value={percent} className="h-1.5" />
-                          <div className="text-muted-foreground">
-                            <MasterySparkline
-                              trend={trend}
-                              testId={`domain-trend-${domain.domainId}`}
-                            />
-                          </div>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => onQuizDomain(domain.domainId, domain.name)}
+                            disabled={startQuiz.isPending}
+                            title={`Start a quiz on ${domain.name}`}
+                            aria-label={`Start a quiz on ${domain.name}`}
+                            data-testid={`domain-mastery-quiz-${domain.domainId}`}
+                            className="w-full text-left space-y-1 min-w-0 rounded-md p-1.5 -m-1.5 pr-9 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            <div className="flex justify-between items-center gap-2 text-xs min-w-0">
+                              <span className="font-medium truncate flex-1 min-w-0" title={domain.name}>{domain.name}</span>
+                              {isStartingThis ? (
+                                <span className="text-[10px] text-muted-foreground shrink-0">Starting…</span>
+                              ) : (
+                                <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 shrink-0 transition-opacity" />
+                              )}
+                              <span className="text-muted-foreground shrink-0 tabular-nums">{percent}%</span>
+                            </div>
+                            <Progress value={percent} className="h-1.5" />
+                            <div className="text-muted-foreground">
+                              <MasterySparkline
+                                trend={trend}
+                                testId={`domain-trend-${domain.domainId}`}
+                              />
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onReviewDomain(domain.domainId, domain.name)}
+                            title={`Open a focused review for ${domain.name}`}
+                            aria-label={`Open a focused review for ${domain.name}`}
+                            data-testid={`domain-mastery-review-${domain.domainId}`}
+                            className="absolute top-0 right-0 h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-background/50 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                          >
+                            <ArrowRight className="h-3 w-3" />
+                          </button>
+                        </div>
                       );
                     })}
                   </div>
