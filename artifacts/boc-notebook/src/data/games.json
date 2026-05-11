@@ -1278,6 +1278,387 @@
           "image": "/games/ch18-foot/fig_17_04.jpg"
         }
       ]
+    },
+    {
+      "id": "ch19-ankle",
+      "title": "Ch 19: The Ankle & Lower Leg",
+      "description": "Match each ankle/lower-leg condition, test, or technique to its name.",
+      "pairs": [
+        {
+          "label": "Ankle dorsiflexion ROM",
+          "image": "/games/ch19-ankle/fig_02_00.jpg"
+        },
+        {
+          "label": "Ankle inversion ROM",
+          "image": "/games/ch19-ankle/fig_02_01.jpg"
+        },
+        {
+          "label": "Ankle plantar-flexion ROM",
+          "image": "/games/ch19-ankle/fig_02_03.jpg"
+        },
+        {
+          "label": "Heel-thump (percussion) test",
+          "image": "/games/ch19-ankle/fig_04_01.jpg"
+        },
+        {
+          "label": "Compression squeeze test (syndesmosis)",
+          "image": "/games/ch19-ankle/fig_04_02.jpg"
+        },
+        {
+          "label": "Thompson test (Achilles rupture)",
+          "image": "/games/ch19-ankle/fig_05_00.jpg"
+        },
+        {
+          "label": "Homan's sign (DVT)",
+          "image": "/games/ch19-ankle/fig_05_01.jpg"
+        },
+        {
+          "label": "Ankle anterior drawer test",
+          "image": "/games/ch19-ankle/fig_05_02.jpg"
+        },
+        {
+          "label": "Talar tilt test",
+          "image": "/games/ch19-ankle/fig_05_03.jpg"
+        },
+        {
+          "label": "Kleiger's test (syndesmosis)",
+          "image": "/games/ch19-ankle/fig_05_04.jpg"
+        },
+        {
+          "label": "Cotton test",
+          "image": "/games/ch19-ankle/fig_05_05.jpg"
+        },
+        {
+          "label": "Medial subtalar glide test",
+          "image": "/games/ch19-ankle/fig_05_06.jpg"
+        },
+        {
+          "label": "Horseshoe pad + elastic wrap",
+          "image": "/games/ch19-ankle/fig_08_00.jpg"
+        },
+        {
+          "label": "Ankle fracture (X-ray)",
+          "image": "/games/ch19-ankle/fig_09_00.jpg"
+        },
+        {
+          "label": "Achilles tendinosis",
+          "image": "/games/ch19-ankle/fig_10_00.jpg"
+        },
+        {
+          "label": "Shin contusion / hematoma",
+          "image": "/games/ch19-ankle/fig_11_01.jpg"
+        },
+        {
+          "label": "Tibia/fibula fracture (X-ray)",
+          "image": "/games/ch19-ankle/fig_12_01.jpg"
+        },
+        {
+          "label": "Medial tibial stress syndrome",
+          "image": "/games/ch19-ankle/fig_12_02.jpg"
+        },
+        {
+          "label": "Tibial stress fracture (X-ray)",
+          "image": "/games/ch19-ankle/fig_14_00.jpg"
+        },
+        {
+          "label": "Posterior tibial glide",
+          "image": "/games/ch19-ankle/fig_14_03.jpg"
+        },
+        {
+          "label": "Posterior talar glide",
+          "image": "/games/ch19-ankle/fig_14_04.jpg"
+        },
+        {
+          "label": "Subtalar joint mobilization",
+          "image": "/games/ch19-ankle/fig_14_05.jpg"
+        },
+        {
+          "label": "Towel stretch (plantar flexors)",
+          "image": "/games/ch19-ankle/fig_14_06.jpg"
+        },
+        {
+          "label": "Wall calf stretch",
+          "image": "/games/ch19-ankle/fig_14_08.jpg"
+        },
+        {
+          "label": "Rocker board (single-leg)",
+          "image": "/games/ch19-ankle/fig_14_11.jpg"
+        },
+        {
+          "label": "Seated BAPS board",
+          "image": "/games/ch19-ankle/fig_15_01.jpg"
+        },
+        {
+          "label": "Single-leg mini-squat",
+          "image": "/games/ch19-ankle/fig_15_03.jpg"
+        },
+        {
+          "label": "Resisted tubing (ankle)",
+          "image": "/games/ch19-ankle/fig_16_01.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ch20-knee",
+      "title": "Ch 20: The Knee",
+      "description": "Match each knee condition, test, or technique to its name.",
+      "pairs": [
+        {
+          "label": "Knee flexion ROM",
+          "image": "/games/ch20-knee/fig_02_00.jpg"
+        },
+        {
+          "label": "Knee extension ROM",
+          "image": "/games/ch20-knee/fig_02_01.jpg"
+        },
+        {
+          "label": "Tibial external rotation",
+          "image": "/games/ch20-knee/fig_02_02.jpg"
+        },
+        {
+          "label": "Tibial internal rotation",
+          "image": "/games/ch20-knee/fig_02_03.jpg"
+        },
+        {
+          "label": "Tibial torsion measurement",
+          "image": "/games/ch20-knee/fig_04_00.jpg"
+        },
+        {
+          "label": "Genu valgum / varum / recurvatum",
+          "image": "/games/ch20-knee/fig_05_03.jpg"
+        },
+        {
+          "label": "Knee swelling sites (bursae)",
+          "image": "/games/ch20-knee/fig_06_00.jpg"
+        },
+        {
+          "label": "Valgus / varus stress tests",
+          "image": "/games/ch20-knee/fig_07_00.jpg"
+        },
+        {
+          "label": "Knee anterior drawer test",
+          "image": "/games/ch20-knee/fig_08_00.jpg"
+        },
+        {
+          "label": "Lachman test (ACL)",
+          "image": "/games/ch20-knee/fig_08_01.jpg"
+        },
+        {
+          "label": "Lever sign test (ACL)",
+          "image": "/games/ch20-knee/fig_08_02.jpg"
+        },
+        {
+          "label": "Pivot-shift test",
+          "image": "/games/ch20-knee/fig_08_03.jpg"
+        },
+        {
+          "label": "Posterior drawer test (PCL)",
+          "image": "/games/ch20-knee/fig_09_00.jpg"
+        },
+        {
+          "label": "Posterior sag sign (PCL)",
+          "image": "/games/ch20-knee/fig_09_01.jpg"
+        },
+        {
+          "label": "External rotation recurvatum test",
+          "image": "/games/ch20-knee/fig_09_02.jpg"
+        },
+        {
+          "label": "Knee arthrometer (KT-1000/2000)",
+          "image": "/games/ch20-knee/fig_09_05.jpg"
+        },
+        {
+          "label": "McMurray's meniscal test",
+          "image": "/games/ch20-knee/fig_10_00.jpg"
+        },
+        {
+          "label": "Ege's test (meniscus)",
+          "image": "/games/ch20-knee/fig_10_01.jpg"
+        },
+        {
+          "label": "Apley compression / joint-line test",
+          "image": "/games/ch20-knee/fig_10_02.jpg"
+        },
+        {
+          "label": "Thessaly's test (meniscus)",
+          "image": "/games/ch20-knee/fig_10_03.jpg"
+        },
+        {
+          "label": "Q angle measurement",
+          "image": "/games/ch20-knee/fig_11_02.jpg"
+        },
+        {
+          "label": "A angle measurement",
+          "image": "/games/ch20-knee/fig_11_03.jpg"
+        },
+        {
+          "label": "Patellar compression test",
+          "image": "/games/ch20-knee/fig_12_01.jpg"
+        },
+        {
+          "label": "Patellar grind test",
+          "image": "/games/ch20-knee/fig_12_02.jpg"
+        },
+        {
+          "label": "Fairbank's patellar apprehension test",
+          "image": "/games/ch20-knee/fig_12_03.jpg"
+        },
+        {
+          "label": "Prophylactic knee brace",
+          "image": "/games/ch20-knee/fig_13_00.jpg"
+        },
+        {
+          "label": "PCL tear mechanism",
+          "image": "/games/ch20-knee/fig_15_00.jpg"
+        },
+        {
+          "label": "Osteochondral fracture (X-ray)",
+          "image": "/games/ch20-knee/fig_17_01.jpg"
+        },
+        {
+          "label": "Chondromalacia patellae",
+          "image": "/games/ch20-knee/fig_19_00.jpg"
+        },
+        {
+          "label": "Lateral patellar dislocation",
+          "image": "/games/ch20-knee/fig_19_01.jpg"
+        },
+        {
+          "label": "Patellar fracture",
+          "image": "/games/ch20-knee/fig_19_03.jpg"
+        },
+        {
+          "label": "Sinding-Larsen-Johansson disease",
+          "image": "/games/ch20-knee/fig_20_00.jpg"
+        },
+        {
+          "label": "Osgood-Schlatter disease",
+          "image": "/games/ch20-knee/fig_20_01.jpg"
+        },
+        {
+          "label": "Patellar tendon (Chopat) brace",
+          "image": "/games/ch20-knee/fig_21_00.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ch21-hip",
+      "title": "Ch 21: Thigh, Hip, Groin & Pelvis",
+      "description": "Match each thigh/hip/groin/pelvis condition or test to its name.",
+      "pairs": [
+        {
+          "label": "Person lying supine on examination table",
+          "image": "/games/ch21-hip/fig_00_00.jpg"
+        },
+        {
+          "label": "Quadriceps contusion",
+          "image": "/games/ch21-hip/fig_02_00.jpg"
+        },
+        {
+          "label": "Grade 3 rectus femoris strain",
+          "image": "/games/ch21-hip/fig_03_01.jpg"
+        },
+        {
+          "label": "Neoprene thigh sleeve",
+          "image": "/games/ch21-hip/fig_03_02.jpg"
+        },
+        {
+          "label": "FADDIR test (FAI)",
+          "image": "/games/ch21-hip/fig_07_00.jpg"
+        },
+        {
+          "label": "FABER (Patrick's) test",
+          "image": "/games/ch21-hip/fig_07_01.jpg"
+        },
+        {
+          "label": "Flexion-internal rotation test",
+          "image": "/games/ch21-hip/fig_07_02.jpg"
+        },
+        {
+          "label": "Scour test (hip)",
+          "image": "/games/ch21-hip/fig_07_03.jpg"
+        },
+        {
+          "label": "Patellar-pubic percussion test",
+          "image": "/games/ch21-hip/fig_08_00.jpg"
+        },
+        {
+          "label": "Trendelenburg's test",
+          "image": "/games/ch21-hip/fig_08_01.jpg"
+        },
+        {
+          "label": "Resisted hip abduction test",
+          "image": "/games/ch21-hip/fig_08_02.jpg"
+        },
+        {
+          "label": "Kendall test (hip flexors)",
+          "image": "/games/ch21-hip/fig_08_03.jpg"
+        },
+        {
+          "label": "Thomas test (hip flexor)",
+          "image": "/games/ch21-hip/fig_08_05.jpg"
+        },
+        {
+          "label": "Renne's test (ITB)",
+          "image": "/games/ch21-hip/fig_09_00.jpg"
+        },
+        {
+          "label": "Noble's test (ITB)",
+          "image": "/games/ch21-hip/fig_09_01.jpg"
+        },
+        {
+          "label": "Ober's test (ITB)",
+          "image": "/games/ch21-hip/fig_09_02.jpg"
+        },
+        {
+          "label": "Piriformis tightness test",
+          "image": "/games/ch21-hip/fig_09_03.jpg"
+        },
+        {
+          "label": "Ely's test (rectus femoris)",
+          "image": "/games/ch21-hip/fig_09_04.jpg"
+        },
+        {
+          "label": "Craig's test (femoral version)",
+          "image": "/games/ch21-hip/fig_10_00.jpg"
+        },
+        {
+          "label": "Leg-length measurement",
+          "image": "/games/ch21-hip/fig_10_01.jpg"
+        },
+        {
+          "label": "Hip dislocation (X-ray)",
+          "image": "/games/ch21-hip/fig_11_01.jpg"
+        },
+        {
+          "label": "Femoroacetabular impingement (cam/pincer)",
+          "image": "/games/ch21-hip/fig_12_00.jpg"
+        },
+        {
+          "label": "Hip labral tear",
+          "image": "/games/ch21-hip/fig_12_01.jpg"
+        },
+        {
+          "label": "Avascular necrosis of femoral head",
+          "image": "/games/ch21-hip/fig_13_00.jpg"
+        },
+        {
+          "label": "Slipped capital femoral epiphysis",
+          "image": "/games/ch21-hip/fig_13_01.jpg"
+        },
+        {
+          "label": "Hip pointer (iliac crest contusion)",
+          "image": "/games/ch21-hip/fig_14_00.jpg"
+        },
+        {
+          "label": "Sitting piriformis stretch",
+          "image": "/games/ch21-hip/fig_15_02.jpg"
+        },
+        {
+          "label": "Inferior femoral glide",
+          "image": "/games/ch21-hip/fig_15_12.jpg"
+        }
+      ]
     }
   ]
 }
