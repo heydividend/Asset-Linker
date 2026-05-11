@@ -29,9 +29,12 @@ export default function QuizRunner() {
 
   if (isLoading || !quiz) return <div className="p-6">Loading quiz…</div>;
 
-  const idx = localIdx ?? quiz.currentIndex;
-  const q = quiz.questions[idx];
   const total = quiz.questions.length;
+  const rawIdx = localIdx ?? quiz.currentIndex;
+  // Server may advance currentIndex past the last question once it's answered;
+  // clamp to the last valid index so the user can still see the rationale and finish.
+  const idx = Math.min(Math.max(0, rawIdx), Math.max(0, total - 1));
+  const q = quiz.questions[idx];
   const allAnswered = quiz.questions.every((qq) => qq.selectedIndex != null);
   const finished = quiz.finished;
 
