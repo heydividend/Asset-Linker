@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "LyOft6DwXq-5CwuWl_CqF"
+uri = "file://artifacts/boc-notebook/src/assets/anatomy/layer-skin.png"
+type = "image"
+title = "anatomy skin layer"
+
+[[generated]]
+id = "iXLlE19JnMZUeBwv-moS5"
+uri = "file://artifacts/boc-notebook/src/assets/anatomy/layer-muscle.png"
+type = "image"
+title = "anatomy muscle layer"
+
+[[generated]]
+id = "uuRUPzdCLXb3dSpKBUDuz"
+uri = "file://artifacts/boc-notebook/src/assets/anatomy/layer-skeleton.png"
+type = "image"
+title = "anatomy skeleton layer"

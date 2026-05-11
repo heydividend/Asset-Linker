@@ -6,117 +6,214 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { AskAiButton } from "@/components/AskAiButton";
-import { AlertTriangle, Activity, Heart, Stethoscope } from "lucide-react";
+import { AlertTriangle, Activity, Heart, Stethoscope, Eye, EyeOff, RotateCcw } from "lucide-react";
+import skinImg from "@/assets/anatomy/layer-skin.png";
+import muscleImg from "@/assets/anatomy/layer-muscle.png";
+import skeletonImg from "@/assets/anatomy/layer-skeleton.png";
+
+// SVG hot-zones were authored in a 200×500 viewBox. Convert to percent of
+// the image container so they overlay the anatomical PNGs cleanly.
+const VB_W = 200;
+const VB_H = 500;
+const pct = (n: number, dim: number) => `${(n / dim) * 100}%`;
+
+type LayerKey = "skin" | "muscle" | "skeleton";
+const LAYERS: { key: LayerKey; label: string; src: string }[] = [
+  { key: "skin", label: "Surface anatomy", src: skinImg },
+  { key: "muscle", label: "Muscular system", src: muscleImg },
+  { key: "skeleton", label: "Skeleton & organs", src: skeletonImg },
+];
+
+const PRESETS: Record<string, Record<LayerKey, number>> = {
+  Skin: { skin: 1, muscle: 0, skeleton: 0 },
+  Muscle: { skin: 0.15, muscle: 1, skeleton: 0 },
+  Skeleton: { skin: 0.1, muscle: 0, skeleton: 1 },
+  "X-ray": { skin: 0.5, muscle: 0.6, skeleton: 0.9 },
+};
 
 export default function BodyMapPage() {
-  const [view, setView] = useState<"front" | "back">("front");
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<BodyRegion | null>(null);
+  const [opacity, setOpacity] = useState<Record<LayerKey, number>>({ skin: 1, muscle: 0, skeleton: 0 });
+  const [showHotspots, setShowHotspots] = useState(true);
 
-  const visible = bodyRegions.filter((r) => r.side === view || r.side === "both");
+  // Only "front" + "both" regions overlay these anterior images.
+  const visible = bodyRegions.filter((r) => r.side === "front" || r.side === "both");
+
+  const setLayer = (k: LayerKey, v: number) => setOpacity((o) => ({ ...o, [k]: v }));
+  const applyPreset = (name: keyof typeof PRESETS) => setOpacity(PRESETS[name]);
 
   return (
     <div className="flex flex-col h-full">
-      <header className="h-14 border-b flex items-center justify-between px-6">
+      <header className="h-14 border-b flex items-center justify-between px-6 gap-4">
         <div className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-semibold">Clinical Body Map</h1>
+          <Badge variant="outline" className="ml-2 text-xs">Anterior view</Badge>
         </div>
-        <Tabs value={view} onValueChange={(v) => setView(v as "front" | "back")}>
-          <TabsList>
-            <TabsTrigger value="front" data-testid="tab-body-front">Anterior</TabsTrigger>
-            <TabsTrigger value="back" data-testid="tab-body-back">Posterior</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-2">
+          {(Object.keys(PRESETS) as (keyof typeof PRESETS)[]).map((name) => (
+            <Button
+              key={name}
+              size="sm"
+              variant="outline"
+              onClick={() => applyPreset(name)}
+              data-testid={`preset-${name.toLowerCase()}`}
+            >
+              {name}
+            </Button>
+          ))}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowHotspots((v) => !v)}
+            data-testid="toggle-hotspots"
+            title={showHotspots ? "Hide regions" : "Show regions"}
+          >
+            {showHotspots ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </Button>
+        </div>
       </header>
 
-      <div className="flex-1 overflow-hidden grid lg:grid-cols-[1fr_360px]">
-        <div className="overflow-auto p-6 flex justify-center bg-muted/20">
-          <div className="relative w-full max-w-md">
-            <p className="text-center text-xs text-muted-foreground mb-2">
-              Hover for a quick clinical snapshot · click to open full breakdown with Ask AI
+      <div className="flex-1 overflow-hidden grid lg:grid-cols-[260px_1fr_360px]">
+        {/* Layer controls */}
+        <aside className="border-r bg-sidebar overflow-y-auto p-4 space-y-5">
+          <div>
+            <p className="text-sm font-semibold mb-1">Anatomical layers</p>
+            <p className="text-xs text-muted-foreground">
+              Toggle layers and adjust opacity to peel the body from skin to bone.
             </p>
-            <svg viewBox="0 0 200 500" className="w-full h-auto" data-testid="svg-body-map">
-              {/* Stylized human silhouette */}
-              <g fill="hsl(var(--muted))" stroke="hsl(var(--border))" strokeWidth="0.6">
-                {/* Head */}
-                <ellipse cx="100" cy="42" rx="28" ry="32" />
-                {/* Neck */}
-                <rect x="88" y="68" width="24" height="20" />
-                {/* Torso */}
-                <path d="M55 95 Q60 85 80 88 L120 88 Q140 85 145 95 L138 200 Q132 230 125 240 L75 240 Q68 230 62 200 Z" />
-                {/* Pelvis */}
-                <path d="M68 235 L132 235 L130 270 Q120 280 100 280 Q80 280 70 270 Z" />
-                {/* Left arm */}
-                <path d="M55 95 Q40 130 42 175 Q35 210 28 240 L40 245 Q48 215 52 180 Q60 140 65 105 Z" />
-                {/* Right arm */}
-                <path d="M145 95 Q160 130 158 175 Q165 210 172 240 L160 245 Q152 215 148 180 Q140 140 135 105 Z" />
-                {/* Left leg */}
-                <path d="M70 270 L72 360 Q72 405 78 440 L76 470 L92 470 L92 440 Q96 400 96 360 L96 270 Z" />
-                {/* Right leg */}
-                <path d="M104 270 L104 360 Q104 400 108 440 L108 470 L124 470 L122 440 Q128 405 128 360 L130 270 Z" />
-                {/* Feet */}
-                <ellipse cx="84" cy="478" rx="14" ry="6" />
-                <ellipse cx="116" cy="478" rx="14" ry="6" />
-              </g>
+          </div>
+          {LAYERS.map((l) => {
+            const on = opacity[l.key] > 0;
+            return (
+              <div key={l.key} className="space-y-2" data-testid={`layer-control-${l.key}`}>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">{l.label}</label>
+                  <Switch
+                    checked={on}
+                    onCheckedChange={(c) => setLayer(l.key, c ? 1 : 0)}
+                    data-testid={`switch-${l.key}`}
+                  />
+                </div>
+                <Slider
+                  value={[opacity[l.key] * 100]}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={([v]) => setLayer(l.key, v / 100)}
+                  data-testid={`slider-${l.key}`}
+                />
+                <p className="text-[10px] text-muted-foreground tabular-nums">
+                  {Math.round(opacity[l.key] * 100)}% opacity
+                </p>
+              </div>
+            );
+          })}
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => applyPreset("Skin")}
+            data-testid="button-reset-layers"
+          >
+            <RotateCcw className="h-3 w-3 mr-1" /> Reset
+          </Button>
+        </aside>
 
-              {/* Hot zones */}
-              {visible.map((r) => {
-                const isHover = hovered === r.id;
-                const fill = isHover ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.15)";
-                const stroke = "hsl(var(--primary))";
-                const common = {
-                  fill,
-                  stroke,
-                  strokeWidth: isHover ? 1.5 : 0.8,
-                  className: "cursor-pointer transition-all",
-                  onMouseEnter: () => setHovered(r.id),
-                  onMouseLeave: () => setHovered(null),
-                  onClick: () => setSelected(r),
-                  "data-testid": `region-${r.id}`,
-                };
-                const hotspot =
-                  r.shape === "ellipse" ? (
-                    <ellipse key={r.id} cx={r.cx} cy={r.cy} rx={r.rx} ry={r.ry} {...common} />
-                  ) : r.shape === "circle" ? (
-                    <circle key={r.id} cx={r.cx} cy={r.cy} r={r.r} {...common} />
-                  ) : (
-                    <rect key={r.id} x={r.x} y={r.y} width={r.width} height={r.height} rx={4} {...common} />
-                  );
+        {/* Body viewer */}
+        <div className="overflow-auto p-6 flex justify-center bg-muted/20">
+          <div className="relative w-full max-w-md aspect-[3/4]" data-testid="body-viewer">
+            {/* Stacked anatomical images */}
+            {LAYERS.map((l) => (
+              <img
+                key={l.key}
+                src={l.src}
+                alt={l.label}
+                draggable={false}
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none transition-opacity duration-200"
+                style={{ opacity: opacity[l.key] }}
+              />
+            ))}
 
-                return (
-                  <HoverCard key={r.id} openDelay={120} closeDelay={50}>
-                    <HoverCardTrigger asChild>{hotspot}</HoverCardTrigger>
-                    <HoverCardContent side="right" className="w-72">
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold text-sm">{r.name}</p>
-                            <Badge variant="outline" className="mt-1 text-[10px]">{r.domain}</Badge>
-                          </div>
-                          <Stethoscope className="h-4 w-4 text-primary mt-0.5" />
+            {/* Hot-zone overlay (positioned in % so it tracks any image size) */}
+            {showHotspots && visible.map((r) => {
+              const isHover = hovered === r.id;
+              // Compute bounding-box style from the original SVG primitive
+              let left = "50%", top = "50%", width = "8%", height = "5%", borderRadius = "9999px";
+              if (r.shape === "ellipse" && r.cx != null && r.cy != null && r.rx != null && r.ry != null) {
+                left = pct(r.cx, VB_W);
+                top = pct(r.cy, VB_H);
+                width = pct(r.rx * 2, VB_W);
+                height = pct(r.ry * 2, VB_H);
+              } else if (r.shape === "circle" && r.cx != null && r.cy != null && r.r != null) {
+                left = pct(r.cx, VB_W);
+                top = pct(r.cy, VB_H);
+                width = pct(r.r * 2, VB_W);
+                height = pct(r.r * 2, VB_H);
+              } else if (r.shape === "rect" && r.x != null && r.y != null && r.width != null && r.height != null) {
+                left = pct(r.x + r.width / 2, VB_W);
+                top = pct(r.y + r.height / 2, VB_H);
+                width = pct(r.width, VB_W);
+                height = pct(r.height, VB_H);
+                borderRadius = "0.4rem";
+              }
+
+              return (
+                <HoverCard key={r.id} openDelay={120} closeDelay={50}>
+                  <HoverCardTrigger asChild>
+                    <button
+                      type="button"
+                      onMouseEnter={() => setHovered(r.id)}
+                      onMouseLeave={() => setHovered(null)}
+                      onClick={() => setSelected(r)}
+                      data-testid={`region-${r.id}`}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all"
+                      style={{
+                        left,
+                        top,
+                        width,
+                        height,
+                        borderRadius,
+                        background: isHover
+                          ? "hsl(var(--primary) / 0.45)"
+                          : "hsl(var(--primary) / 0.18)",
+                        border: `2px solid ${isHover ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.6)"}`,
+                        boxShadow: isHover ? "0 0 0 4px hsl(var(--primary) / 0.18)" : undefined,
+                      }}
+                    />
+                  </HoverCardTrigger>
+                  <HoverCardContent side="right" className="w-72">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold text-sm">{r.name}</p>
+                          <Badge variant="outline" className="mt-1 text-[10px]">{r.domain}</Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">{r.blurb}</p>
-                        <div className="text-xs space-y-0.5">
-                          <p className="font-medium">Common injuries:</p>
-                          <ul className="list-disc list-inside text-muted-foreground">
-                            {r.injuries.slice(0, 3).map((i) => <li key={i.name}>{i.name}</li>)}
-                          </ul>
-                        </div>
-                        <Button size="sm" variant="outline" className="w-full" onClick={() => setSelected(r)}>
-                          Open full breakdown
-                        </Button>
+                        <Stethoscope className="h-4 w-4 text-primary mt-0.5" />
                       </div>
-                    </HoverCardContent>
-                  </HoverCard>
-                );
-              })}
-            </svg>
+                      <p className="text-xs text-muted-foreground">{r.blurb}</p>
+                      <div className="text-xs space-y-0.5">
+                        <p className="font-medium">Common injuries:</p>
+                        <ul className="list-disc list-inside text-muted-foreground">
+                          {r.injuries.slice(0, 3).map((i) => <li key={i.name}>{i.name}</li>)}
+                        </ul>
+                      </div>
+                      <Button size="sm" variant="outline" className="w-full" onClick={() => setSelected(r)}>
+                        Open full breakdown
+                      </Button>
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              );
+            })}
           </div>
         </div>
 
+        {/* Region list */}
         <aside className="border-l bg-sidebar overflow-hidden flex flex-col">
           <div className="h-12 border-b flex items-center px-4">
             <span className="text-sm font-semibold">Regions ({visible.length})</span>
@@ -141,6 +238,7 @@ export default function BodyMapPage() {
         </aside>
       </div>
 
+      {/* Detail sheet (unchanged) */}
       <Sheet open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
           {selected && (
