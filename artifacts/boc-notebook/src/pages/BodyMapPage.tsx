@@ -32,7 +32,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { AskAiButton } from "@/components/AskAiButton";
-import { MasterySparkline } from "@/components/MasterySparkline";
+import { MasterySparkline, formatRelativeAttempt } from "@/components/MasterySparkline";
 import {
   AlertTriangle, Activity, Heart, Stethoscope, Eye, EyeOff, RotateCcw, Play, Brain,
 } from "lucide-react";
@@ -114,14 +114,25 @@ export default function BodyMapPage() {
   }, [topicMasteryRows]);
 
   // Aggregate mastery + recent trend across all of a region's seeded topics.
+  // Also tracks sample-size context (how many topics contributed, how recent)
+  // so the trend caption/tooltip can explain what the sparkline summarizes.
   const regionMastery = useMemo(() => {
     const out = new Map<
       string,
-      { pct: number | null; attempts: number; trend: boolean[] }
+      {
+        pct: number | null;
+        attempts: number;
+        trend: boolean[];
+        shown: number;
+        contributingTopics: number;
+        totalTopics: number;
+        latest: string | null;
+      }
     >();
     for (const r of bodyRegions) {
       let totalAttempts = 0;
       let totalCorrect = 0;
+      let contributingTopics = 0;
       const merged: { correct: boolean; answeredAt: string }[] = [];
       for (const name of r.topicNames) {
         const m = masteryByName.get(name);
@@ -129,20 +140,52 @@ export default function BodyMapPage() {
         if (m.attempts > 0) {
           totalAttempts += m.attempts;
           totalCorrect += m.mastery * m.attempts;
+          contributingTopics += 1;
         }
         for (const a of m.recent) merged.push(a);
       }
       // Most recent 5 across all the region's topics, then chronological for the spark.
       merged.sort((a, b) => b.answeredAt.localeCompare(a.answeredAt));
-      const trend = merged.slice(0, 5).reverse().map((a) => a.correct);
+      const slice = merged.slice(0, 5);
+      const latest = slice[0]?.answeredAt ?? null;
+      const trend = slice.slice().reverse().map((a) => a.correct);
       out.set(r.id, {
         pct: totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : null,
         attempts: totalAttempts,
         trend,
+        shown: slice.length,
+        contributingTopics,
+        totalTopics: r.topicNames.length,
+        latest,
       });
     }
     return out;
   }, [masteryByName]);
+
+  // Build the caption + tooltip for a region's recent-trend sparkline so we
+  // can reuse the same pattern across the hover card and region list rows.
+  const trendMeta = (rm: {
+    shown: number;
+    attempts: number;
+    contributingTopics: number;
+    totalTopics: number;
+    latest: string | null;
+  }): { caption?: string; tooltipExtra?: string } => {
+    if (rm.shown === 0) return {};
+    const caption =
+      rm.attempts > rm.shown
+        ? `${rm.shown} of ${rm.attempts} attempts`
+        : `${rm.shown} attempt${rm.shown === 1 ? "" : "s"}`;
+    const parts: string[] = [];
+    if (rm.totalTopics > 0) {
+      parts.push(
+        `across ${rm.contributingTopics} of ${rm.totalTopics} topic${rm.totalTopics === 1 ? "" : "s"}`,
+      );
+    }
+    const rel = formatRelativeAttempt(rm.latest);
+    if (rel) parts.push(`latest ${rel}`);
+    return { caption, tooltipExtra: parts.join(" · ") || undefined };
+  };
 
   const masteryTone = (pct: number | null): { label: string; cls: string; hint: string } => {
     if (pct == null) return { label: "—", cls: "border-muted text-muted-foreground", hint: "No attempts yet" };
@@ -425,7 +468,12 @@ export default function BodyMapPage() {
                         data-testid={`hover-trend-${r.id}`}
                       >
                         <span className="font-medium">Recent trend</span>
-                        <MasterySparkline trend={rm.trend} testId={`hover-spark-${r.id}`} />
+                        <MasterySparkline
+                          trend={rm.trend}
+                          testId={`hover-spark-${r.id}`}
+                          {...trendMeta(rm)}
+                          captionTestId={`hover-spark-caption-${r.id}`}
+                        />
                       </div>
                       <p className="text-xs text-muted-foreground">{r.blurb}</p>
                       <div className="text-xs space-y-0.5">
@@ -497,7 +545,11 @@ export default function BodyMapPage() {
                     >
                       <span className="truncate">{r.name}</span>
                       <span className="flex items-center gap-2 shrink-0">
-                        <MasterySparkline trend={rm.trend} testId={`region-trend-${r.id}`} />
+                        <MasterySparkline
+                          trend={rm.trend}
+                          testId={`region-trend-${r.id}`}
+                          tooltipExtra={trendMeta(rm).tooltipExtra}
+                        />
                         <Badge
                           variant="outline"
                           className={`text-[10px] tabular-nums ${tone.cls}`}

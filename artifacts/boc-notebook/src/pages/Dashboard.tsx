@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AskAiButton } from "@/components/AskAiButton";
 import { FixItPlanCard } from "@/components/FixItPlanCard";
-import { MasterySparkline } from "@/components/MasterySparkline";
+import { MasterySparkline, formatRelativeAttempt } from "@/components/MasterySparkline";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -213,24 +213,69 @@ export default function Dashboard() {
     navigate(`/flashcards?${params.toString()}`);
   };
 
+  // Total topics seeded per domain — denominator for "X of Y topics" caption.
+  const topicCountByDomain = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const t of topicsList) m.set(t.domainId, (m.get(t.domainId) ?? 0) + 1);
+    return m;
+  }, [topicsList]);
+
   // domainId → chronological correctness of the most recent 5 attempts across
-  // all topics in that domain. Mirrors the per-region merge in BodyMapPage.
-  const trendByDomainId = useMemo(() => {
-    const byDomain = new Map<number, { correct: boolean; answeredAt: string }[]>();
+  // all topics in that domain, plus sample-size context so the trend caption
+  // can show "5 of 23 attempts" and the tooltip can explain the coverage.
+  const domainTrendStats = useMemo(() => {
+    const byDomain = new Map<
+      number,
+      {
+        merged: { correct: boolean; answeredAt: string; topicId: number }[];
+        totalAttempts: number;
+        topicsWithAttempts: Set<number>;
+      }
+    >();
     for (const row of topicMasteryRows) {
       const dId = domainIdByTopicId.get(row.topicId);
       if (dId == null) continue;
-      const bucket = byDomain.get(dId) ?? [];
-      for (const a of row.recentAttempts ?? []) bucket.push(a);
+      const bucket =
+        byDomain.get(dId) ?? {
+          merged: [],
+          totalAttempts: 0,
+          topicsWithAttempts: new Set<number>(),
+        };
+      const attempts = (row as unknown as { attempts?: number }).attempts ?? 0;
+      bucket.totalAttempts += attempts;
+      if (attempts > 0) bucket.topicsWithAttempts.add(row.topicId);
+      for (const a of row.recentAttempts ?? []) {
+        bucket.merged.push({ ...a, topicId: row.topicId });
+      }
       byDomain.set(dId, bucket);
     }
-    const out = new Map<number, boolean[]>();
-    for (const [dId, attempts] of byDomain) {
-      attempts.sort((a, b) => b.answeredAt.localeCompare(a.answeredAt));
-      out.set(dId, attempts.slice(0, 5).reverse().map((a) => a.correct));
+    const out = new Map<
+      number,
+      {
+        trend: boolean[];
+        shown: number;
+        totalAttempts: number;
+        contributingTopics: number;
+        totalTopics: number;
+        latest: string | null;
+      }
+    >();
+    for (const [dId, b] of byDomain) {
+      b.merged.sort((a, c) => c.answeredAt.localeCompare(a.answeredAt));
+      const slice = b.merged.slice(0, 5);
+      const latest = slice[0]?.answeredAt ?? null;
+      const trend = slice.slice().reverse().map((a) => a.correct);
+      out.set(dId, {
+        trend,
+        shown: slice.length,
+        totalAttempts: b.totalAttempts,
+        contributingTopics: b.topicsWithAttempts.size,
+        totalTopics: topicCountByDomain.get(dId) ?? b.topicsWithAttempts.size,
+        latest,
+      });
     }
     return out;
-  }, [topicMasteryRows, domainIdByTopicId]);
+  }, [topicMasteryRows, domainIdByTopicId, topicCountByDomain]);
 
   return (
     <div className="flex flex-col h-full">
@@ -595,7 +640,24 @@ export default function Dashboard() {
                   <div className="space-y-3">
                     {summary?.domainMastery?.map(domain => {
                       const percent = domain.total > 0 ? Math.round((domain.correct / domain.total) * 100) : 0;
-                      const trend = trendByDomainId.get(domain.domainId) ?? [];
+                      const stats = domainTrendStats.get(domain.domainId);
+                      const trend = stats?.trend ?? [];
+                      const caption =
+                        stats && stats.shown > 0
+                          ? stats.totalAttempts > stats.shown
+                            ? `${stats.shown} of ${stats.totalAttempts} attempts`
+                            : `${stats.shown} attempt${stats.shown === 1 ? "" : "s"}`
+                          : undefined;
+                      const tooltipParts: string[] = [];
+                      if (stats && stats.shown > 0) {
+                        if (stats.totalTopics > 0) {
+                          tooltipParts.push(
+                            `across ${stats.contributingTopics} of ${stats.totalTopics} topic${stats.totalTopics === 1 ? "" : "s"}`,
+                          );
+                        }
+                        const rel = formatRelativeAttempt(stats.latest);
+                        if (rel) tooltipParts.push(`latest ${rel}`);
+                      }
                       const isStartingThis =
                         startQuiz.isPending &&
                         startQuiz.variables?.data?.mode === "domain" &&
@@ -629,6 +691,9 @@ export default function Dashboard() {
                               <MasterySparkline
                                 trend={trend}
                                 testId={`domain-trend-${domain.domainId}`}
+                                caption={caption}
+                                captionTestId={`domain-trend-caption-${domain.domainId}`}
+                                tooltipExtra={tooltipParts.join(" · ") || undefined}
                               />
                             </div>
                           </button>
