@@ -1591,6 +1591,81 @@ export const useReviewFlashcard = <
 };
 
 /**
+ * @summary All flashcards across notebooks (browse / re-study mode)
+ */
+export const getListAllFlashcardsUrl = () => {
+  return `/api/flashcards`;
+};
+
+export const listAllFlashcards = async (
+  options?: RequestInit,
+): Promise<Flashcard[]> => {
+  return customFetch<Flashcard[]>(getListAllFlashcardsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAllFlashcardsQueryKey = () => {
+  return [`/api/flashcards`] as const;
+};
+
+export const getListAllFlashcardsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAllFlashcards>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAllFlashcards>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAllFlashcardsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAllFlashcards>>
+  > = ({ signal }) => listAllFlashcards({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAllFlashcards>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAllFlashcardsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllFlashcards>>
+>;
+export type ListAllFlashcardsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary All flashcards across notebooks (browse / re-study mode)
+ */
+
+export function useListAllFlashcards<
+  TData = Awaited<ReturnType<typeof listAllFlashcards>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAllFlashcards>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAllFlashcardsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary All flashcards due today across notebooks
  */
 export const getListDueFlashcardsUrl = (params?: ListDueFlashcardsParams) => {

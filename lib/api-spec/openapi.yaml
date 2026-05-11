@@ -291,6 +291,19 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Flashcard" }
+  /flashcards:
+    get:
+      operationId: listAllFlashcards
+      tags: [flashcards]
+      summary: All flashcards across notebooks (browse / re-study mode)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Flashcard" }
   /flashcards/due:
     get:
       operationId: listDueFlashcards

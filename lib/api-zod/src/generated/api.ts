@@ -323,6 +323,26 @@ export const ReviewFlashcardResponse = zod.object({
 });
 
 /**
+ * @summary All flashcards across notebooks (browse / re-study mode)
+ */
+export const ListAllFlashcardsResponseItem = zod.object({
+  id: zod.number(),
+  notebookId: zod.number(),
+  front: zod.string(),
+  back: zod.string(),
+  topicId: zod.number().nullish(),
+  easeFactor: zod.number(),
+  intervalDays: zod.number(),
+  repetitions: zod.number(),
+  dueAt: zod.coerce.date(),
+  lastReviewedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAllFlashcardsResponse = zod.array(
+  ListAllFlashcardsResponseItem,
+);
+
+/**
  * @summary All flashcards due today across notebooks
  */
 export const ListDueFlashcardsQueryParams = zod.object({

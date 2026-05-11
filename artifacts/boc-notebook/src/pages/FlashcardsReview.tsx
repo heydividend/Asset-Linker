@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import {
   useListDueFlashcards,
+  useListAllFlashcards,
   useReviewFlashcard,
   useStartQuiz,
   getListDueFlashcardsQueryKey,
+  getListAllFlashcardsQueryKey,
   getGetDashboardSummaryQueryKey,
   getListQuizAttemptsQueryKey,
 } from "@workspace/api-client-react";
@@ -13,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AskAiButton } from "@/components/AskAiButton";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, Eye, RotateCcw, Sparkles, CheckCheck, Target, X, Play } from "lucide-react";
+import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, CheckCheck, Target, X, Play } from "lucide-react";
 import { Link, useSearch, useLocation } from "wouter";
 import { rememberFixItQuizId } from "@/lib/fixItPlan";
 
@@ -26,6 +28,8 @@ export default function FlashcardsReview() {
   const search = useSearch();
   const [revealed, setRevealed] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
+  const [mode, setMode] = useState<"review" | "browse">("review");
+  const [browseIdx, setBrowseIdx] = useState(0);
 
   const { focusTopicIdsParam, focusTopicIds, focusRegion, thenQuiz, quizCount, fixIt } = useMemo(() => {
     const params = new URLSearchParams(search);
@@ -47,7 +51,10 @@ export default function FlashcardsReview() {
 
   const queryParams = focusTopicIdsParam ? { topicIds: focusTopicIdsParam } : undefined;
   const { data: cards = [], isLoading } = useListDueFlashcards(queryParams, {
-    query: { queryKey: getListDueFlashcardsQueryKey(queryParams) },
+    query: { queryKey: getListDueFlashcardsQueryKey(queryParams), enabled: mode === "review" },
+  });
+  const { data: allCards = [], isLoading: isLoadingAll } = useListAllFlashcards({
+    query: { queryKey: getListAllFlashcardsQueryKey(), enabled: mode === "browse" },
   });
 
   const card = cards[0];
@@ -93,6 +100,23 @@ export default function FlashcardsReview() {
       },
     );
   };
+
+  if (mode === "browse") {
+    return (
+      <BrowseMode
+        cards={allCards}
+        isLoading={isLoadingAll}
+        idx={browseIdx}
+        setIdx={setBrowseIdx}
+        revealed={revealed}
+        setRevealed={setRevealed}
+        onExit={() => {
+          setMode("review");
+          setRevealed(false);
+        }}
+      />
+    );
+  }
 
   if (isLoading) return <div className="p-6">Loading flashcards…</div>;
 
@@ -161,9 +185,18 @@ export default function FlashcardsReview() {
                     {reviewedCount > 0 ? `Nice — you reviewed ${reviewedCount} card${reviewedCount === 1 ? "" : "s"}.` : "No cards are due right now."}
                   </p>
                   <p className="text-sm text-muted-foreground">Generate more cards from a notebook to keep your spaced-repetition stack growing.</p>
-                  <Link href="/notebooks">
-                    <Button data-testid="button-go-notebooks">Go to notebooks</Button>
-                  </Link>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => { setMode("browse"); setBrowseIdx(0); setRevealed(false); }}
+                      data-testid="button-browse-all-empty"
+                    >
+                      <Layers className="h-4 w-4 mr-1" /> Browse all cards
+                    </Button>
+                    <Link href="/notebooks">
+                      <Button data-testid="button-go-notebooks">Go to notebooks</Button>
+                    </Link>
+                  </div>
                 </>
               )}
             </CardContent>
@@ -202,6 +235,15 @@ export default function FlashcardsReview() {
               <X className="h-3 w-3 mr-1" /> Show all due
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => { setMode("browse"); setBrowseIdx(0); setRevealed(false); }}
+            data-testid="button-browse-all"
+            title="Flip through every card without affecting the SRS schedule"
+          >
+            <Layers className="h-3 w-3 mr-1" /> Browse all
+          </Button>
           <Badge variant="outline" data-testid="badge-due-count">{cards.length} due{isFocused ? " here" : ""}</Badge>
         </div>
       </header>
@@ -243,6 +285,94 @@ export default function FlashcardsReview() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+interface BrowseCard { id: number; front: string; back: string }
+interface BrowseModeProps {
+  cards: BrowseCard[];
+  isLoading: boolean;
+  idx: number;
+  setIdx: (n: number) => void;
+  revealed: boolean;
+  setRevealed: (b: boolean) => void;
+  onExit: () => void;
+}
+
+function BrowseMode({ cards, isLoading, idx, setIdx, revealed, setRevealed, onExit }: BrowseModeProps) {
+  const safeIdx = cards.length === 0 ? 0 : Math.min(Math.max(0, idx), cards.length - 1);
+  const card = cards[safeIdx];
+
+  const goPrev = () => {
+    if (safeIdx === 0) return;
+    setRevealed(false);
+    setIdx(safeIdx - 1);
+  };
+  const goNext = () => {
+    if (safeIdx >= cards.length - 1) return;
+    setRevealed(false);
+    setIdx(safeIdx + 1);
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <header className="h-12 border-b flex items-center justify-between px-4 gap-3 flex-wrap">
+        <h1 className="text-base font-semibold flex items-center gap-2">
+          <Layers className="h-5 w-5" /> Browse all flashcards
+        </h1>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" data-testid="badge-browse-position">
+            {cards.length === 0 ? "0 of 0" : `${safeIdx + 1} of ${cards.length}`}
+          </Badge>
+          <Button size="sm" variant="ghost" onClick={onExit} data-testid="button-exit-browse">
+            <X className="h-3 w-3 mr-1" /> Back to review
+          </Button>
+        </div>
+      </header>
+      <div className="flex-1 flex items-center justify-center p-6">
+        {isLoading ? (
+          <p className="text-muted-foreground">Loading cards…</p>
+        ) : !card ? (
+          <Card className="max-w-md text-center">
+            <CardContent className="p-10 space-y-4">
+              <Brain className="h-12 w-12 mx-auto text-muted-foreground" />
+              <h2 className="text-2xl font-semibold">No cards yet</h2>
+              <p className="text-muted-foreground">Generate flashcards from a notebook to start a deck.</p>
+              <Link href="/notebooks">
+                <Button data-testid="button-go-notebooks-browse">Go to notebooks</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="w-full max-w-2xl min-h-[420px] flex flex-col">
+            <CardContent className="flex-1 flex flex-col p-8">
+              <div className="flex items-center justify-between mb-4">
+                <Badge variant="secondary" className="uppercase tracking-wide text-xs">
+                  {revealed ? "Answer" : "Front"}
+                </Badge>
+                <span className="text-xs text-muted-foreground">Browse mode — no SRS rating</span>
+              </div>
+              <div className="flex-1 flex items-center justify-center text-center">
+                <p className="text-2xl font-medium leading-relaxed" data-testid="flashcard-browse-content">
+                  {revealed ? card.back : card.front}
+                </p>
+              </div>
+              <div className="mt-6 flex items-center justify-between gap-2">
+                <Button variant="outline" onClick={goPrev} disabled={safeIdx === 0} data-testid="button-browse-prev">
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                </Button>
+                <Button variant="default" onClick={() => setRevealed(!revealed)} data-testid="button-browse-flip">
+                  <Eye className="h-4 w-4 mr-2" /> {revealed ? "Show front" : "Reveal answer"}
+                </Button>
+                <Button variant="outline" onClick={goNext} disabled={safeIdx >= cards.length - 1} data-testid="button-browse-next">
+                  Next <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

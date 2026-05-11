@@ -182,6 +182,14 @@ router.post("/flashcards/:id/review", async (req, res): Promise<void> => {
   res.json(updated);
 });
 
+router.get("/flashcards", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(flashcards)
+    .orderBy(desc(flashcards.createdAt));
+  res.json(rows);
+});
+
 router.get("/flashcards/due", async (req, res): Promise<void> => {
   const raw = typeof req.query.topicIds === "string" ? req.query.topicIds : "";
   const topicIds = raw

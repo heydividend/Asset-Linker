@@ -15,7 +15,8 @@ import { Progress } from "@/components/ui/progress";
 import { AskAiButton } from "@/components/AskAiButton";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, ChevronRight, Trophy } from "lucide-react";
+import { AlertTriangle, ChevronRight, LogOut, Trophy } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface MockExamResult {
   examId: number;
@@ -47,6 +48,8 @@ export default function MockExamRunner() {
   const [pendingAnswerIdx, setPendingAnswerIdx] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
   const submittedRef = useRef(false);
+  const exitingRef = useRef(false);
+  const [, navigate] = useLocation();
 
   // Initialize localIdx once from the server's currentIndex (resume support).
   // After that, navigation is driven entirely by local state so refetches
@@ -113,6 +116,7 @@ export default function MockExamRunner() {
   useEffect(() => {
     if (!exam || exam.submitted) return;
     const handler = (e: BeforeUnloadEvent) => {
+      if (exitingRef.current) return;
       e.preventDefault();
       e.returnValue = "";
     };
@@ -236,6 +240,11 @@ export default function MockExamRunner() {
   };
 
   const submitBlocked = pendingAnswerIdx !== null || answer.isPending || submit.isPending;
+  const onExit = () => {
+    if (!confirm("Exit this exam? Your answers so far are saved — you can resume from the Mock Exam page.")) return;
+    exitingRef.current = true;
+    navigate("/mock-exam");
+  };
   const onSubmit = () => {
     if (submitBlocked) {
       toast({ title: "Hang on", description: "Saving your last answer…" });
@@ -257,6 +266,9 @@ export default function MockExamRunner() {
           <div className={`text-2xl font-mono tabular-nums ${remaining < 600 ? "text-destructive" : ""}`} data-testid="text-timer">
             {formatTime(remaining)}
           </div>
+          <Button variant="ghost" size="sm" onClick={onExit} data-testid="button-exit-exam" title="Save progress and exit — you can resume later">
+            <LogOut className="h-4 w-4 mr-1" /> Exit
+          </Button>
           <Button variant="destructive" size="sm" onClick={onSubmit} disabled={submitBlocked} data-testid="button-submit-exam">Submit</Button>
         </div>
       </header>

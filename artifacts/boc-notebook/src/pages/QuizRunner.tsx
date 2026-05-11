@@ -1,4 +1,4 @@
-import { useParams, Link, useSearch } from "wouter";
+import { useParams, Link, useSearch, useLocation } from "wouter";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { forgetFixItQuizId, isTodayFixItQuiz, markCompletedToday } from "@/lib/fixItPlan";
 import {
@@ -20,7 +20,7 @@ import { AskAiButton } from "@/components/AskAiButton";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySparkline";
 import { Progress } from "@/components/ui/progress";
-import { Check, ChevronRight, ExternalLink, Trophy, X } from "lucide-react";
+import { Check, ChevronRight, ExternalLink, LogOut, Trophy, X } from "lucide-react";
 
 export default function QuizRunner() {
   const params = useParams();
@@ -30,6 +30,12 @@ export default function QuizRunner() {
   const answer = useAnswerQuizQuestion();
   const finish = useFinishQuiz();
   const [localIdx, setLocalIdx] = useState<number | null>(null);
+  const [, navigate] = useLocation();
+
+  const onExit = () => {
+    if (!confirm("Exit this quiz? Your answers so far are saved — you can resume later from the Practice page.")) return;
+    navigate("/quiz");
+  };
 
   if (isLoading || !quiz) return <div className="p-6">Loading quiz…</div>;
 
@@ -85,6 +91,9 @@ export default function QuizRunner() {
       <header className="h-14 border-b flex items-center px-6 gap-4">
         <h1 className="text-lg font-semibold">Question {idx + 1} of {total}</h1>
         <Progress value={((idx + 1) / total) * 100} className="flex-1 h-2 max-w-xs" />
+        <Button variant="ghost" size="sm" onClick={onExit} data-testid="button-exit-quiz" title="Save progress and exit — you can resume later">
+          <LogOut className="h-4 w-4 mr-1" /> Exit
+        </Button>
       </header>
       <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full space-y-6">
         {!answered && <StudyCoachTip context="quiz-pick" />}
