@@ -1,4 +1,6 @@
 import { useChatStore } from "@/hooks/use-chat";
+import { useLayoutStore } from "@/hooks/use-layout";
+import { ResizeHandle } from "./ResizeHandle";
 import { Button } from "@/components/ui/button";
 import { Bot, Send, Paperclip, X, Loader2, BookmarkPlus, Plus, ChevronRight } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -16,7 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
 export function ChatPanel() {
-  const { conversationId, notebookId, initialContext, newChatNonce, togglePanel, startNewChat } = useChatStore();
+  const { conversationId, notebookId, initialContext, newChatNonce, startNewChat } = useChatStore();
+  const { chatWidth, setChatWidth, setChatCollapsed } = useLayoutStore();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [input, setInput] = useState("");
@@ -168,7 +171,16 @@ export function ChatPanel() {
   };
 
   return (
-    <aside className="hidden lg:flex flex-col w-[360px] xl:w-[400px] border-l bg-background h-screen sticky top-0 shrink-0">
+    <aside
+      className="relative hidden lg:flex flex-col border-l bg-background h-screen sticky top-0 shrink-0"
+      style={{ width: chatWidth }}
+    >
+      <ResizeHandle
+        side="right"
+        getStartWidth={() => chatWidth}
+        onResize={setChatWidth}
+        testId="resize-handle-chat"
+      />
       <header className="h-14 border-b flex items-center justify-between px-3 gap-2 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <Bot className="h-5 w-5 text-primary shrink-0" />
@@ -187,7 +199,7 @@ export function ChatPanel() {
           <Button
             size="icon"
             variant="ghost"
-            onClick={togglePanel}
+            onClick={() => setChatCollapsed(true)}
             data-testid="button-collapse-chat"
             className="h-8 w-8"
             title="Hide panel"

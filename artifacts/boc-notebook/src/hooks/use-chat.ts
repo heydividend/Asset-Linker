@@ -1,4 +1,9 @@
 import { create } from "zustand";
+import { useLayoutStore } from "./use-layout";
+
+const revealChatPanel = () => {
+  useLayoutStore.getState().setChatCollapsed(false);
+};
 
 interface ChatState {
   isOpen: boolean;
@@ -25,7 +30,8 @@ export const useChatStore = create<ChatState>((set) => ({
   setOpen: (isOpen) => set({ isOpen }),
   togglePanel: () => set((s) => ({ isPanelCollapsed: !s.isPanelCollapsed })),
   setPanelCollapsed: (collapsed) => set({ isPanelCollapsed: collapsed }),
-  openChat: (options = {}) =>
+  openChat: (options = {}) => {
+    revealChatPanel();
     set((s) => ({
       isOpen: true,
       isPanelCollapsed: false,
@@ -33,9 +39,11 @@ export const useChatStore = create<ChatState>((set) => ({
       notebookId: options.notebookId ?? s.notebookId,
       initialContext: options.initialContext ?? null,
       newChatNonce: options.conversationId ? s.newChatNonce : s.newChatNonce + 1,
-    })),
+    }));
+  },
   closeChat: () => set({ isOpen: false, initialContext: null }),
-  startNewChat: (options = {}) =>
+  startNewChat: (options = {}) => {
+    revealChatPanel();
     set((s) => ({
       isOpen: true,
       isPanelCollapsed: false,
@@ -43,5 +51,6 @@ export const useChatStore = create<ChatState>((set) => ({
       notebookId: options.notebookId ?? null,
       initialContext: options.initialContext ?? null,
       newChatNonce: s.newChatNonce + 1,
-    })),
+    }));
+  },
 }));
