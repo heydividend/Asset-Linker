@@ -655,6 +655,141 @@
           "image": "/games/ch8-taping/fig_16_01.jpg"
         }
       ]
+    },
+    {
+      "id": "ch12-acute-care",
+      "title": "Ch 12: Acute Care & Emergency Procedures",
+      "description": "Match each on-field acute care or emergency procedure to its name.",
+      "pairs": [
+        {
+          "label": "Recovery position",
+          "image": "/games/ch12-acute-care/fig_03_01.jpg"
+        },
+        {
+          "label": "AED use",
+          "image": "/games/ch12-acute-care/fig_03_02.jpg"
+        },
+        {
+          "label": "CPR chest compressions",
+          "image": "/games/ch12-acute-care/fig_04_01.jpg"
+        },
+        {
+          "label": "Head-tilt/chin-lift airway",
+          "image": "/games/ch12-acute-care/fig_04_02.jpg"
+        },
+        {
+          "label": "Airway suction device",
+          "image": "/games/ch12-acute-care/fig_04_03.jpg"
+        },
+        {
+          "label": "Oropharyngeal airways",
+          "image": "/games/ch12-acute-care/fig_04_04.jpg"
+        },
+        {
+          "label": "Nasopharyngeal airway insertion",
+          "image": "/games/ch12-acute-care/fig_05_00.jpg"
+        },
+        {
+          "label": "Back blows / abdominal thrusts",
+          "image": "/games/ch12-acute-care/fig_06_00.jpg"
+        },
+        {
+          "label": "Brachial artery compression",
+          "image": "/games/ch12-acute-care/fig_07_00.jpg"
+        },
+        {
+          "label": "Femoral artery compression",
+          "image": "/games/ch12-acute-care/fig_07_01.jpg"
+        },
+        {
+          "label": "Radial pulse measurement",
+          "image": "/games/ch12-acute-care/fig_08_00.jpg"
+        },
+        {
+          "label": "Blood pressure (sphygmomanometer)",
+          "image": "/games/ch12-acute-care/fig_08_01.jpg"
+        },
+        {
+          "label": "Tympanic thermometer",
+          "image": "/games/ch12-acute-care/fig_09_00.jpg"
+        },
+        {
+          "label": "Measuring tympanic temperature",
+          "image": "/games/ch12-acute-care/fig_09_01.jpg"
+        },
+        {
+          "label": "Oral thermometer",
+          "image": "/games/ch12-acute-care/fig_09_02.jpg"
+        },
+        {
+          "label": "Infrared skin thermometer",
+          "image": "/games/ch12-acute-care/fig_09_03.jpg"
+        },
+        {
+          "label": "Rapid form vacuum immobilizer",
+          "image": "/games/ch12-acute-care/fig_11_00.jpg"
+        },
+        {
+          "label": "Air splint",
+          "image": "/games/ch12-acute-care/fig_11_01.jpg"
+        },
+        {
+          "label": "SAM splint",
+          "image": "/games/ch12-acute-care/fig_11_02.jpg"
+        },
+        {
+          "label": "Half-ring splint",
+          "image": "/games/ch12-acute-care/fig_11_03.jpg"
+        },
+        {
+          "label": "Kendrick traction splint",
+          "image": "/games/ch12-acute-care/fig_11_04.jpg"
+        },
+        {
+          "label": "Full body vacuum mattress splint",
+          "image": "/games/ch12-acute-care/fig_11_05.jpg"
+        },
+        {
+          "label": "Head-squeeze C-spine immobilization",
+          "image": "/games/ch12-acute-care/fig_12_07.jpg"
+        },
+        {
+          "label": "Trap-squeeze C-spine immobilization",
+          "image": "/games/ch12-acute-care/fig_12_08.jpg"
+        },
+        {
+          "label": "Rigid cervical collar",
+          "image": "/games/ch12-acute-care/fig_14_00.jpg"
+        },
+        {
+          "label": "Logroll onto spine board",
+          "image": "/games/ch12-acute-care/fig_14_01.jpg"
+        },
+        {
+          "label": "Spider straps on spine board",
+          "image": "/games/ch12-acute-care/fig_14_02.jpg"
+        },
+        {
+          "label": "Seat-belt straps on spine board",
+          "image": "/games/ch12-acute-care/fig_14_03.jpg"
+        },
+        {
+          "label": "Scoop stretcher",
+          "image": "/games/ch12-acute-care/fig_15_01.jpg"
+        },
+        {
+          "label": "Manual conveyance / stair chair",
+          "image": "/games/ch12-acute-care/fig_16_00.jpg"
+        },
+        {
+          "label": "Crutch fitting",
+          "image": "/games/ch12-acute-care/fig_17_02.jpg"
+        },
+        {
+          "label": "Cane use",
+          "image": "/games/ch12-acute-care/fig_17_03.jpg"
+        }
+      ]
     }
   ]
 }
