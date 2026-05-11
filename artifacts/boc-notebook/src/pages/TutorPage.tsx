@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   useListOpenaiConversations,
   useCreateOpenaiConversation,
@@ -72,6 +72,33 @@ export default function TutorPage() {
     const vp = getViewport();
     if (vp) vp.scrollTop = vp.scrollHeight;
   }, [messages, displayedStream, pendingUserMessage, atBottom, getViewport]);
+
+  // Group conversations by date so the (often long) recents list stays
+  // scannable instead of an endless wall of "Help me study this note…" rows.
+  const groupedConvs = useMemo(() => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const buckets: { label: string; items: typeof convs }[] = [
+      { label: "Today", items: [] },
+      { label: "Yesterday", items: [] },
+      { label: "Previous 7 days", items: [] },
+      { label: "Previous 30 days", items: [] },
+      { label: "Older", items: [] },
+    ];
+    const sorted = [...convs].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    for (const c of sorted) {
+      const t = new Date(c.createdAt).getTime();
+      if (t >= startOfDay) buckets[0].items.push(c);
+      else if (t >= startOfDay - dayMs) buckets[1].items.push(c);
+      else if (t >= startOfDay - 7 * dayMs) buckets[2].items.push(c);
+      else if (t >= startOfDay - 30 * dayMs) buckets[3].items.push(c);
+      else buckets[4].items.push(c);
+    }
+    return buckets.filter((b) => b.items.length > 0);
+  }, [convs]);
 
   const scrollToLatest = useCallback(() => {
     const vp = getViewport();
@@ -317,29 +344,40 @@ export default function TutorPage() {
           )}
         </div>
         <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
-            {convs.map((c) => (
-              <div
-                key={c.id}
-                className={`flex items-center gap-1 group ${c.id === activeId ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"} rounded-md`}
-              >
-                <button
-                  className="flex-1 text-left px-2 py-2 text-sm truncate"
-                  onClick={() => setActiveId(c.id)}
-                  data-testid={`conv-${c.id}`}
-                >
-                  {c.title || `Conversation ${c.id}`}
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 mr-1 text-muted-foreground hover:text-destructive"
-                  onClick={() => removeConv(c.id)}
-                  title="Delete this conversation"
-                  data-testid={`button-delete-conv-${c.id}`}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+          <div className="p-2 space-y-3">
+            {groupedConvs.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-4">No chats yet.</p>
+            )}
+            {groupedConvs.map((group) => (
+              <div key={group.label} className="space-y-0.5">
+                <div className="px-2 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {group.label}
+                </div>
+                {group.items.map((c) => (
+                  <div
+                    key={c.id}
+                    className={`flex items-center gap-1 group rounded-md ${c.id === activeId ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"}`}
+                  >
+                    <button
+                      className="flex-1 min-w-0 text-left px-2 py-2 text-sm truncate"
+                      onClick={() => setActiveId(c.id)}
+                      data-testid={`conv-${c.id}`}
+                      title={c.title || `Conversation ${c.id}`}
+                    >
+                      {c.title || `Conversation ${c.id}`}
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 mr-1 shrink-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                      onClick={() => removeConv(c.id)}
+                      title="Delete this conversation"
+                      data-testid={`button-delete-conv-${c.id}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             ))}
           </div>
