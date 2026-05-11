@@ -4,7 +4,11 @@ import {
   useGetDashboardSummary,
   useGetStudyPlanToday,
   useGetDashboardTopicMastery,
+  useStartQuiz,
+  getListQuizAttemptsQueryKey,
+  getGetDashboardTopicMasteryQueryKey,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +16,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AskAiButton } from "@/components/AskAiButton";
 import { FixItPlanCard } from "@/components/FixItPlanCard";
 import { MasterySparkline } from "@/components/MasterySparkline";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   BrainCircuit,
@@ -24,8 +28,10 @@ import {
   Flame,
   Sparkles,
   GraduationCap,
+  Play,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 interface ScheduleDay {
   date: string;
@@ -72,6 +78,32 @@ export default function Dashboard() {
   }, [schedule]);
   const scheduleProgress =
     schedule && schedule.totalDays > 0 ? Math.round((schedule.daysCompleted / schedule.totalDays) * 100) : 0;
+
+  const [, navigate] = useLocation();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const startQuiz = useStartQuiz();
+
+  const onQuizTopic = (topicId: number, topicName: string) => {
+    startQuiz.mutate(
+      { data: { mode: "region", count: 10, topicIds: [topicId] } },
+      {
+        onSuccess: (q) => {
+          qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetDashboardTopicMasteryQueryKey() });
+          qc.invalidateQueries({ queryKey: [`/api/dashboard/topic-history`] });
+          navigate(`/quiz/${q.id}`);
+        },
+        onError: (e) => {
+          toast({
+            title: `Couldn't start quiz on ${topicName}`,
+            description: e instanceof Error ? e.message : "Try another topic.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
 
   // topicId → chronological correctness of last ≤5 attempts, for the sparkline.
   const trendByTopicId = useMemo(() => {
@@ -308,29 +340,51 @@ export default function Dashboard() {
                     {summary.weakTopics.map(topic => {
                       const trend = trendByTopicId.get(topic.topicId) ?? [];
                       const masteryPct = Math.round((topic.mastery ?? 0) * 100);
+                      const isStartingThis =
+                        startQuiz.isPending &&
+                        startQuiz.variables?.data?.topicIds?.[0] === topic.topicId;
                       return (
                         <li
                           key={topic.topicId}
-                          className="bg-secondary text-secondary-foreground pl-2.5 pr-1 py-1 rounded-md text-xs min-w-0 space-y-1"
+                          className="bg-secondary text-secondary-foreground rounded-md text-xs min-w-0 relative group focus-within:ring-2 focus-within:ring-ring"
                           data-testid={`weak-topic-${topic.topicId}`}
                         >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="flex-1 min-w-0 truncate font-medium" title={topic.name}>
-                              {topic.name}
-                            </span>
+                          <button
+                            type="button"
+                            onClick={() => onQuizTopic(topic.topicId, topic.name)}
+                            disabled={startQuiz.isPending}
+                            title={`Start a focused quiz on ${topic.name}`}
+                            aria-label={`Start a focused quiz on ${topic.name}`}
+                            data-testid={`weak-topic-quiz-${topic.topicId}`}
+                            className="w-full text-left pl-2.5 pr-9 py-1 space-y-1 rounded-md hover:bg-secondary/70 hover-elevate active-elevate-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="flex-1 min-w-0 truncate font-medium" title={topic.name}>
+                                {topic.name}
+                              </span>
+                              {isStartingThis ? (
+                                <span className="text-[10px] text-muted-foreground shrink-0">
+                                  Starting…
+                                </span>
+                              ) : (
+                                <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 shrink-0 transition-opacity" />
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between gap-2 pr-1 text-muted-foreground">
+                              <MasterySparkline
+                                trend={trend}
+                                testId={`weak-topic-trend-${topic.topicId}`}
+                              />
+                              <span className="text-xs tabular-nums">{masteryPct}% mastery</span>
+                            </div>
+                          </button>
+                          <div className="absolute top-1 right-1">
                             <AskAiButton
                               context={`I am weak in the topic: ${topic.name}. Can you explain the core concepts I need to know for the BOC exam?`}
                               size="icon"
                               variant="ghost"
                               className="h-6 w-6 hover:bg-background/50 rounded-md shrink-0"
                             />
-                          </div>
-                          <div className="flex items-center justify-between gap-2 pr-1 text-muted-foreground">
-                            <MasterySparkline
-                              trend={trend}
-                              testId={`weak-topic-trend-${topic.topicId}`}
-                            />
-                            <span className="text-xs tabular-nums">{masteryPct}% mastery</span>
                           </div>
                         </li>
                       );
