@@ -1047,91 +1047,195 @@
           "image": "/games/ch16-rehab/fig_00_00.jpg"
         },
         {
-          "label": "Stability ball core exercise",
+          "label": "People demonstrating lunge exercise positions",
+          "image": "/games/ch16-rehab/fig_01_00.jpg"
+        },
+        {
+          "label": "Person demonstrating single leg balance exercise",
+          "image": "/games/ch16-rehab/fig_01_01.jpg"
+        },
+        {
+          "label": "Person performing core stabilization exercise on green stability ball - position A",
           "image": "/games/ch16-rehab/fig_02_00.jpg"
         },
         {
-          "label": "Dumbbell chest press",
+          "label": "Person performing core stabilization exercise on green stability ball - position B",
+          "image": "/games/ch16-rehab/fig_02_01.jpg"
+        },
+        {
+          "label": "Person performing core stabilization exercise on red stability ball with bench - position C",
+          "image": "/games/ch16-rehab/fig_02_02.jpg"
+        },
+        {
+          "label": "Person performing core stabilization exercise on red stability ball with bench - position D",
+          "image": "/games/ch16-rehab/fig_02_03.jpg"
+        },
+        {
+          "label": "Person performing dumbbell chest press exercise",
           "image": "/games/ch16-rehab/fig_03_00.jpg"
         },
         {
-          "label": "Resistance tubing exercise",
+          "label": "Person performing exercise with resistance tubing",
           "image": "/games/ch16-rehab/fig_03_01.jpg"
         },
         {
-          "label": "Cable column exercise",
+          "label": "Person performing manual resistance exercise with partner",
+          "image": "/games/ch16-rehab/fig_03_02.jpg"
+        },
+        {
+          "label": "Person performing resistance exercise with elastic tubing or pole",
+          "image": "/games/ch16-rehab/fig_03_03.jpg"
+        },
+        {
+          "label": "Person performing exercise with position-adjustable cable system",
           "image": "/games/ch16-rehab/fig_03_04.jpg"
         },
         {
-          "label": "Isokinetic machine",
+          "label": "Person using isokinetic exercise machine",
           "image": "/games/ch16-rehab/fig_03_05.jpg"
         },
         {
-          "label": "Balance discs / BOSU trainer",
+          "label": "People demonstrating balance training equipment - two standing on balance discs and one on a balance trainer",
           "image": "/games/ch16-rehab/fig_04_00.jpg"
         },
         {
-          "label": "Stationary bike (rehab)",
+          "label": "Person using stationary bike for cardio rehabilitation",
           "image": "/games/ch16-rehab/fig_04_01.jpg"
         },
         {
-          "label": "Terminal knee extension (TKE)",
+          "label": "Woman doing squats with barbell",
+          "image": "/games/ch16-rehab/fig_06_00.jpg"
+        },
+        {
+          "label": "Person doing leg press exercise",
+          "image": "/games/ch16-rehab/fig_06_01.jpg"
+        },
+        {
+          "label": "Person on stepping machine",
+          "image": "/games/ch16-rehab/fig_06_02.jpg"
+        },
+        {
+          "label": "People doing lateral step-ups",
+          "image": "/games/ch16-rehab/fig_06_03.jpg"
+        },
+        {
+          "label": "Person in squat position",
+          "image": "/games/ch16-rehab/fig_06_04.jpg"
+        },
+        {
+          "label": "Person doing terminal knee extension with tubing",
           "image": "/games/ch16-rehab/fig_06_05.jpg"
         },
         {
-          "label": "Stationary bicycle",
+          "label": "Person using stationary bicycle",
           "image": "/games/ch16-rehab/fig_06_06.jpg"
         },
         {
-          "label": "Shuttle 2000",
+          "label": "Person on rowing machine",
+          "image": "/games/ch16-rehab/fig_06_07.jpg"
+        },
+        {
+          "label": "Person using shuttle 2000 machine",
           "image": "/games/ch16-rehab/fig_06_08.jpg"
         },
         {
-          "label": "Balance board",
+          "label": "Person doing quadruped position exercise",
+          "image": "/games/ch16-rehab/fig_06_09.jpg"
+        },
+        {
+          "label": "Person doing sitting exercise",
+          "image": "/games/ch16-rehab/fig_06_10.jpg"
+        },
+        {
+          "label": "Person on balance board",
           "image": "/games/ch16-rehab/fig_06_11.jpg"
         },
         {
-          "label": "Aquatic exercise",
+          "label": "Person doing aquatic exercise in pool",
           "image": "/games/ch16-rehab/fig_06_12.jpg"
         },
         {
-          "label": "Wet vest deep-water exercise",
+          "label": "Person floating in water with wet vest",
           "image": "/games/ch16-rehab/fig_07_00.jpg"
         },
         {
-          "label": "PNF slow-reversal-hold-relax",
+          "label": "Person exercising in pool with flotation device",
+          "image": "/games/ch16-rehab/fig_07_01.jpg"
+        },
+        {
+          "label": "Therapist performing slow-reversal-hold-relax stretching technique",
           "image": "/games/ch16-rehab/fig_08_00.jpg"
         },
         {
-          "label": "PNF D1 / D2 upper-extremity patterns",
+          "label": "Upper extremity PNF patterns - 8 sequential positions showing D1 and D2 movements",
           "image": "/games/ch16-rehab/fig_08_01.jpg"
         },
         {
-          "label": "Mulligan mobilization (ankle)",
+          "label": "PNF patterns in standing and kneeling positions with exercise equipment",
+          "image": "/games/ch16-rehab/fig_09_01.jpg"
+        },
+        {
+          "label": "Joint mobilization examples for knee and ankle",
+          "image": "/games/ch16-rehab/fig_09_02.jpg"
+        },
+        {
+          "label": "Joint mobilization and traction techniques demonstration",
+          "image": "/games/ch16-rehab/fig_10_00.jpg"
+        },
+        {
+          "label": "Posterior humeral, tibial, and femoral glide techniques",
+          "image": "/games/ch16-rehab/fig_10_01.jpg"
+        },
+        {
+          "label": "Mulligan technique for ankle dorsiflexion",
           "image": "/games/ch16-rehab/fig_10_02.jpg"
         },
         {
-          "label": "Foam roller (hamstrings)",
+          "label": "Mulligan technique for elbow movement loss",
+          "image": "/games/ch16-rehab/fig_10_03.jpg"
+        },
+        {
+          "label": "Mulligan technique for knee flexion",
+          "image": "/games/ch16-rehab/fig_10_04.jpg"
+        },
+        {
+          "label": "Mulligan technique for hip abduction",
+          "image": "/games/ch16-rehab/fig_10_05.jpg"
+        },
+        {
+          "label": "Self-myofascial release with foam roller on hamstring muscles",
           "image": "/games/ch16-rehab/fig_10_06.jpg"
+        },
+        {
+          "label": "Self-myofascial release with foam roller on upper back muscles",
+          "image": "/games/ch16-rehab/fig_10_07.jpg"
         },
         {
           "label": "Graston technique",
           "image": "/games/ch16-rehab/fig_11_00.jpg"
         },
         {
-          "label": "Strain / counterstrain",
+          "label": "Graston technique on back/shoulder area",
+          "image": "/games/ch16-rehab/fig_11_01.jpg"
+        },
+        {
+          "label": "Strain/counterstrain technique on patient lying supine",
           "image": "/games/ch16-rehab/fig_11_02.jpg"
         },
         {
-          "label": "Positional release therapy",
+          "label": "Positional release therapy - quadriceps position",
           "image": "/games/ch16-rehab/fig_11_03.jpg"
         },
         {
-          "label": "90/90 bridge with ball and balloon",
+          "label": "Positional release therapy - quadratus lumborum position",
+          "image": "/games/ch16-rehab/fig_11_04.jpg"
+        },
+        {
+          "label": "Patient performing 90/90 Bridge with Ball and Balloon technique",
           "image": "/games/ch16-rehab/fig_12_01.jpg"
         },
         {
-          "label": "Biofeedback unit",
+          "label": "Biofeedback unit with electrodes and red display device",
           "image": "/games/ch16-rehab/fig_12_02.jpg"
         }
       ]
@@ -1158,83 +1262,147 @@
           "image": "/games/ch18-foot/fig_01_02.jpg"
         },
         {
-          "label": "Shoe last construction (slip/board/combo)",
+          "label": "Achilles tendon and plantar fascia",
+          "image": "/games/ch18-foot/fig_01_03.jpg"
+        },
+        {
+          "label": "Articulations of the foot",
+          "image": "/games/ch18-foot/fig_01_04.jpg"
+        },
+        {
+          "label": "Movements of the foot and toes - toe extension, abduction, adduction, pronation, and supination",
+          "image": "/games/ch18-foot/fig_03_00.jpg"
+        },
+        {
+          "label": "Dorsal surface anatomy of foot showing lateral and medial malleolus",
+          "image": "/games/ch18-foot/fig_03_01.jpg"
+        },
+        {
+          "label": "Plantar surface anatomy of foot showing transverse arch and head of 1st metatarsal",
+          "image": "/games/ch18-foot/fig_03_02.jpg"
+        },
+        {
+          "label": "Dorsal and plantar view of foot showing anatomical landmarks",
+          "image": "/games/ch18-foot/fig_04_00.jpg"
+        },
+        {
+          "label": "Foot showing propulsion and absorption during heel strike to toe-off",
+          "image": "/games/ch18-foot/fig_04_02.jpg"
+        },
+        {
+          "label": "Shoe lasts showing slip-lasted, board-lasted, and combination-lasted construction",
           "image": "/games/ch18-foot/fig_05_00.jpg"
         },
         {
-          "label": "Shoe last shapes (straight/curved)",
+          "label": "Shoe lasts showing straight and curved shapes",
           "image": "/games/ch18-foot/fig_05_01.jpg"
         },
         {
-          "label": "Morton's test",
+          "label": "Athletic trainer palpating foot/ankle of patient lying down",
+          "image": "/games/ch18-foot/fig_06_00.jpg"
+        },
+        {
+          "label": "Hand holding measuring device against lower leg/ankle",
+          "image": "/games/ch18-foot/fig_06_01.jpg"
+        },
+        {
+          "label": "Sole of athletic shoe showing wear pattern under second metatarsal",
+          "image": "/games/ch18-foot/fig_06_02.jpg"
+        },
+        {
+          "label": "Morton's test - hand compressing metatarsals",
           "image": "/games/ch18-foot/fig_07_00.jpg"
         },
         {
-          "label": "Mulder's sign",
+          "label": "Mulder's sign - squeezing metatarsal heads",
           "image": "/games/ch18-foot/fig_07_01.jpg"
         },
         {
-          "label": "Tinel's sign (posterior tibial nerve)",
+          "label": "Tinel's sign test - tapping posterior tibial nerve",
           "image": "/games/ch18-foot/fig_07_02.jpg"
         },
         {
-          "label": "Retrocalcaneal bursitis (pump bump)",
+          "label": "Tinel's sign test - finger pressure on plantar surface",
+          "image": "/games/ch18-foot/fig_07_03.jpg"
+        },
+        {
+          "label": "Tinel's sign test - tapping medial foot",
+          "image": "/games/ch18-foot/fig_07_04.jpg"
+        },
+        {
+          "label": "Retrocalcaneal bursitis at Achilles tendon attachment, pump bump, and doughnut-type pad",
           "image": "/games/ch18-foot/fig_08_01.jpg"
         },
         {
-          "label": "Cuboid manipulation",
+          "label": "Heel pad compression test and protective doughnut pad",
+          "image": "/games/ch18-foot/fig_08_02.jpg"
+        },
+        {
+          "label": "Hands performing cuboid manipulation technique",
           "image": "/games/ch18-foot/fig_09_00.jpg"
         },
         {
-          "label": "Lisfranc injury (X-ray)",
+          "label": "X-ray image of foot showing Lisfranc injury with circled area",
           "image": "/games/ch18-foot/fig_09_01.jpg"
         },
         {
-          "label": "Pes planus (flat foot)",
+          "label": "Side view of foot showing pes planus",
           "image": "/games/ch18-foot/fig_09_02.jpg"
         },
         {
-          "label": "Pes cavus (high arch)",
+          "label": "Side view of foot showing pes cavus",
           "image": "/games/ch18-foot/fig_09_03.jpg"
         },
         {
-          "label": "Morton's toe",
+          "label": "Skeletal anatomy of foot showing metatarsals",
+          "image": "/games/ch18-foot/fig_10_00.jpg"
+        },
+        {
+          "label": "Top view of foot showing Morton's toe",
           "image": "/games/ch18-foot/fig_10_01.jpg"
         },
         {
-          "label": "Calcaneal (heel) spur \u2014 X-ray",
+          "label": "Foot and ankle showing plantar fascia anatomy",
+          "image": "/games/ch18-foot/fig_11_00.jpg"
+        },
+        {
+          "label": "X-ray of calcaneal spur",
           "image": "/games/ch18-foot/fig_11_01.jpg"
         },
         {
-          "label": "Plantar fascia night splint",
+          "label": "Night splint on foot and ankle",
           "image": "/games/ch18-foot/fig_11_02.jpg"
         },
         {
-          "label": "Jones fracture",
+          "label": "Anatomical diagram and X-ray of Jones fracture",
           "image": "/games/ch18-foot/fig_11_03.jpg"
         },
         {
-          "label": "Metatarsal bar orthotic",
+          "label": "Metatarsal bar orthotic device on foot skeleton",
           "image": "/games/ch18-foot/fig_12_01.jpg"
         },
         {
-          "label": "Metatarsal callus",
+          "label": "Bottom view of foot showing metatarsal callus",
           "image": "/games/ch18-foot/fig_12_02.jpg"
         },
         {
-          "label": "Thomas heel pad",
+          "label": "Foot with Thomas heel pad",
           "image": "/games/ch18-foot/fig_13_00.jpg"
         },
         {
-          "label": "Metatarsal pad",
+          "label": "Foot showing fallen transverse metatarsal arch",
+          "image": "/games/ch18-foot/fig_13_01.jpg"
+        },
+        {
+          "label": "Metatarsal pad on skeletal foot model",
           "image": "/games/ch18-foot/fig_13_02.jpg"
         },
         {
-          "label": "Morton's neuroma",
+          "label": "Morton's neuroma location on skeletal foot model",
           "image": "/games/ch18-foot/fig_13_03.jpg"
         },
         {
-          "label": "Toe phalanx fracture (X-ray)",
+          "label": "X-ray of foot showing proximal phalanx fracture of second toe",
           "image": "/games/ch18-foot/fig_14_00.jpg"
         },
         {
@@ -1242,39 +1410,67 @@
           "image": "/games/ch18-foot/fig_15_01.jpg"
         },
         {
-          "label": "Draining subungual hematoma",
+          "label": "Draining subungual hematoma with electrocautery",
           "image": "/games/ch18-foot/fig_15_02.jpg"
         },
         {
-          "label": "Calcaneocuboid glide",
+          "label": "Person doing pool exercise",
+          "image": "/games/ch18-foot/fig_15_03.jpg"
+        },
+        {
+          "label": "Joint mobilization techniques on foot and ankle",
+          "image": "/games/ch18-foot/fig_15_04.jpg"
+        },
+        {
+          "label": "Anterior/posterior calcaneo cuboid glides demonstration",
           "image": "/games/ch18-foot/fig_16_00.jpg"
         },
         {
-          "label": "Plantar fascia stretch (manual)",
+          "label": "Anterior/posterior cuboid metatarsal glides demonstration",
+          "image": "/games/ch18-foot/fig_16_01.jpg"
+        },
+        {
+          "label": "Anterior/posterior tarsometatarsal glides demonstration",
+          "image": "/games/ch18-foot/fig_16_02.jpg"
+        },
+        {
+          "label": "Plantar fascia stretches manual",
           "image": "/games/ch18-foot/fig_16_03.jpg"
         },
         {
-          "label": "Toe gripping & spreading",
+          "label": "Plantar fascia stretches prostretch device",
+          "image": "/games/ch18-foot/fig_16_04.jpg"
+        },
+        {
+          "label": "Gripping and spreading of toes exercise",
           "image": "/games/ch18-foot/fig_16_05.jpg"
         },
         {
-          "label": "Towel gathering",
+          "label": "Towel gathering exercise",
           "image": "/games/ch18-foot/fig_16_06.jpg"
         },
         {
-          "label": "Towel scoop",
+          "label": "Towel scoop exercise",
           "image": "/games/ch18-foot/fig_16_07.jpg"
         },
         {
-          "label": "BAPS balance board",
+          "label": "Foot with marked points - relaxed position",
+          "image": "/games/ch18-foot/fig_17_00.jpg"
+        },
+        {
+          "label": "Foot with marked points - contracted position",
+          "image": "/games/ch18-foot/fig_17_01.jpg"
+        },
+        {
+          "label": "Person standing on BAPS balance board",
           "image": "/games/ch18-foot/fig_17_02.jpg"
         },
         {
-          "label": "Proprioceptive exercise sandal",
+          "label": "Foot on exercise sandal with hemisphere",
           "image": "/games/ch18-foot/fig_17_03.jpg"
         },
         {
-          "label": "Single-leg stance with sandal",
+          "label": "Person performing single-leg stance exercise with sandal",
           "image": "/games/ch18-foot/fig_17_04.jpg"
         }
       ]

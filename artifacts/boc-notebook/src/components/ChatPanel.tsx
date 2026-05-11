@@ -11,7 +11,7 @@ import {
   getListOpenaiConversationsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,14 @@ export function ChatPanel() {
   const [streaming, setStreaming] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = chatInputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [input]);
 
   const { data: messages = [] } = useListOpenaiMessages(activeConvId!, {
     query: { enabled: !!activeConvId, queryKey: getListOpenaiMessagesQueryKey(activeConvId!) },
@@ -331,7 +339,7 @@ export function ChatPanel() {
             e.preventDefault();
             if (activeConvId) sendMessage(input, activeConvId);
           }}
-          className="flex gap-2"
+          className="flex gap-2 items-end"
         >
           <input
             ref={fileRef}
@@ -352,13 +360,23 @@ export function ChatPanel() {
           >
             <Paperclip className="h-4 w-4" />
           </Button>
-          <Input
+          <Textarea
+            ref={chatInputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                if (activeConvId && !streaming && !uploading && (input.trim() || pendingFile)) {
+                  sendMessage(input, activeConvId);
+                }
+              }
+            }}
+            rows={1}
             placeholder={pendingFile ? "Add a question…" : "Ask your tutor…"}
             disabled={!activeConvId || streaming}
             data-testid="input-chat-message"
-            className="min-w-0"
+            className="min-w-0 min-h-9 max-h-40 resize-none overflow-y-auto py-1.5"
           />
           <Button
             type="submit"
