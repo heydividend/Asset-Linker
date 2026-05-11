@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { MarkdownMessage } from "./MarkdownMessage";
 import { CopyMessageButton } from "./CopyMessageButton";
+import { useTypewriter } from "@/hooks/use-typewriter";
 
 function FollowupChips({ items, onPick }: { items: string[]; onPick: (q: string) => void }) {
   return (
@@ -47,7 +48,10 @@ export function ChatPanel() {
   const [input, setInput] = useState("");
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<string>("");
+  const [streamDone, setStreamDone] = useState<boolean>(false);
+  const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
   const [pendingFollowups, setPendingFollowups] = useState<string[]>([]);
+  const displayedStream = useTypewriter(streamingMessage, streamDone);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [saveForStudy, setSaveForStudy] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -105,6 +109,8 @@ export function ChatPanel() {
 
       setInput("");
       setStreamingMessage("");
+      setStreamDone(false);
+      setPendingUserMessage(trimmed);
       setPendingFollowups([]);
       setStreaming(true);
 
@@ -139,11 +145,14 @@ export function ChatPanel() {
             try {
               const json = JSON.parse(line.slice(6));
               if (json.done) {
-                // Visible answer is complete — release the UI immediately
-                // even though follow-up suggestions may still be on the way.
+                // Visible answer is complete — flush the typewriter to the
+                // full buffer and release the UI immediately, even though
+                // follow-up suggestions may still be on the way. The
+                // refetch will swap the streaming bubble for the persisted
+                // assistant message and clear the optimistic user echo.
+                setStreamDone(true);
                 queryClient.invalidateQueries({ queryKey: getListOpenaiMessagesQueryKey(convId) });
                 queryClient.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
-                setStreamingMessage("");
                 setStreaming(false);
                 continue;
               }
@@ -173,6 +182,26 @@ export function ChatPanel() {
     },
     [pendingFile, saveForStudy, queryClient, toast],
   );
+
+  // Once the assistant message has been persisted and refetched, drop the
+  // optimistic user echo and clear the streaming buffer so we render the
+  // canonical messages list (with copy button + followups) instead of two
+  // bubbles at once.
+  useEffect(() => {
+    if (!pendingUserMessage) return;
+    const last = messages[messages.length - 1];
+    const prev = messages[messages.length - 2];
+    const userEchoed =
+      (last?.role === "user" && last.content === pendingUserMessage) ||
+      (last?.role === "assistant" && prev?.role === "user" && prev.content === pendingUserMessage);
+    if (userEchoed) {
+      setPendingUserMessage(null);
+      if (last?.role === "assistant") {
+        setStreamingMessage("");
+        setStreamDone(false);
+      }
+    }
+  }, [messages, pendingUserMessage]);
 
   // Sync activeConvId with store: explicit conversationId selects that one;
   // otherwise (newChatNonce changed or first mount), create a fresh one.
@@ -214,7 +243,7 @@ export function ChatPanel() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, streamingMessage]);
+  }, [messages, displayedStream, pendingUserMessage]);
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -269,7 +298,7 @@ export function ChatPanel() {
       <div className="flex-1 min-h-0 overflow-hidden relative">
         <ScrollArea className="h-full" ref={scrollRef}>
           <div className="flex flex-col gap-3 p-4 pb-2">
-            {messages.length === 0 && !streamingMessage && (
+            {messages.length === 0 && !streamingMessage && !pendingUserMessage && (
               <div className="text-sm text-muted-foreground text-center py-8 space-y-2">
                 <p>Ask anything about Athletic Training or the BOC blueprint.</p>
                 <p className="text-xs">Tip: attach a PDF, lecture notes, or screenshot.</p>
@@ -306,10 +335,25 @@ export function ChatPanel() {
                 </div>
               );
             })}
-            {streamingMessage && (
-              <div className="flex justify-start">
+            {pendingUserMessage && (
+              <div className="flex flex-col gap-1 items-end" data-testid="chat-msg-user-pending">
+                <div className="max-w-[88%] min-w-0 rounded-lg px-3 py-2 bg-primary text-primary-foreground opacity-90">
+                  <p className="text-sm whitespace-pre-wrap break-words">{pendingUserMessage}</p>
+                </div>
+              </div>
+            )}
+            {(displayedStream || (streaming && pendingUserMessage)) && (
+              <div className="flex justify-start" data-testid="chat-msg-assistant-streaming">
                 <div className="max-w-[88%] min-w-0 rounded-lg px-3 py-2 bg-muted">
-                  <MarkdownMessage content={streamingMessage} className="text-sm" />
+                  {displayedStream ? (
+                    <MarkdownMessage content={displayedStream} className="text-sm" />
+                  ) : (
+                    <span className="inline-flex gap-1 py-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce" />
+                    </span>
+                  )}
                 </div>
               </div>
             )}

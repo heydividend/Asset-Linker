@@ -16,6 +16,7 @@ import { Bot, Plus, Send, Trash2, Loader2, Paperclip, Eraser } from "lucide-reac
 import { useToast } from "@/hooks/use-toast";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { CopyMessageButton } from "@/components/CopyMessageButton";
+import { useTypewriter } from "@/hooks/use-typewriter";
 
 export default function TutorPage() {
   const qc = useQueryClient();
@@ -29,6 +30,9 @@ export default function TutorPage() {
   });
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState("");
+  const [streamDone, setStreamDone] = useState(false);
+  const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
+  const displayedStream = useTypewriter(streaming, streamDone);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -40,7 +44,25 @@ export default function TutorPage() {
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, streaming]);
+  }, [messages, displayedStream, pendingUserMessage]);
+
+  // Drop the optimistic user echo and streaming buffer once the persisted
+  // assistant message arrives via refetch, so we don't double-render.
+  useEffect(() => {
+    if (!pendingUserMessage) return;
+    const last = messages[messages.length - 1];
+    const prev = messages[messages.length - 2];
+    const userEchoed =
+      (last?.role === "user" && last.content === pendingUserMessage) ||
+      (last?.role === "assistant" && prev?.role === "user" && prev.content === pendingUserMessage);
+    if (userEchoed) {
+      setPendingUserMessage(null);
+      if (last?.role === "assistant") {
+        setStreaming("");
+        setStreamDone(false);
+      }
+    }
+  }, [messages, pendingUserMessage]);
 
   const newConv = () => {
     create.mutate(
@@ -109,6 +131,8 @@ export default function TutorPage() {
     const text = input;
     setInput("");
     setStreaming("");
+    setStreamDone(false);
+    setPendingUserMessage(text);
     setBusy(true);
     try {
       const res = await fetch(`/api/openai/conversations/${activeId}/messages`, {
@@ -154,10 +178,12 @@ export default function TutorPage() {
           try {
             const json = JSON.parse(line.slice(6));
             if (json.done) {
-              // Visible answer is complete — release the UI immediately
-              // even though follow-up suggestions may still be on the way.
+              // Visible answer is complete — flush typewriter to full
+              // buffer and release the UI; the refetch will swap the
+              // streaming bubble for the persisted assistant message and
+              // clear the optimistic user echo.
+              setStreamDone(true);
               qc.invalidateQueries({ queryKey: getListOpenaiMessagesQueryKey(activeId) });
-              setStreaming("");
               setBusy(false);
               continue;
             }
@@ -182,7 +208,6 @@ export default function TutorPage() {
       });
     } finally {
       setBusy(false);
-      setStreaming("");
     }
   };
 
@@ -324,10 +349,25 @@ export default function TutorPage() {
                 )}
               </div>
             ))}
-            {streaming && (
-              <div className="flex justify-start">
+            {pendingUserMessage && (
+              <div className="flex flex-col gap-1 items-end" data-testid="chat-msg-user-pending">
+                <div className="max-w-[80%] min-w-0 rounded-lg px-4 py-2 bg-primary text-primary-foreground opacity-90">
+                  <p className="text-sm whitespace-pre-wrap break-words">{pendingUserMessage}</p>
+                </div>
+              </div>
+            )}
+            {(displayedStream || (busy && pendingUserMessage)) && (
+              <div className="flex justify-start" data-testid="chat-msg-assistant-streaming">
                 <div className="max-w-[80%] min-w-0 rounded-lg px-4 py-2 bg-muted">
-                  <MarkdownMessage content={streaming} className="text-sm" />
+                  {displayedStream ? (
+                    <MarkdownMessage content={displayedStream} className="text-sm" />
+                  ) : (
+                    <span className="inline-flex gap-1 py-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce" />
+                    </span>
+                  )}
                 </div>
               </div>
             )}
