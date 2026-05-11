@@ -12,7 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Plus, Send, Trash2, Loader2, Paperclip } from "lucide-react";
+import { Bot, Plus, Send, Trash2, Loader2, Paperclip, Eraser } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function TutorPage() {
@@ -53,13 +53,42 @@ export default function TutorPage() {
   };
 
   const removeConv = (id: number) => {
-    if (!confirm("Delete this conversation?")) return;
+    if (!confirm("Delete this conversation? This cannot be undone.")) return;
     del.mutate({ id }, {
       onSuccess: () => {
         if (activeId === id) setActiveId(null);
         qc.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
+        toast({ title: "Conversation deleted" });
+      },
+      onError: (e) => {
+        toast({
+          title: "Couldn't delete conversation",
+          description: e instanceof Error ? e.message : "Try again.",
+          variant: "destructive",
+        });
       },
     });
+  };
+
+  const clearAll = async () => {
+    if (convs.length === 0) return;
+    if (!confirm(`Delete ALL ${convs.length} conversation${convs.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    try {
+      await Promise.all(
+        convs.map((c) =>
+          fetch(`/api/openai/conversations/${c.id}`, { method: "DELETE" }),
+        ),
+      );
+      setActiveId(null);
+      qc.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
+      toast({ title: "All conversations deleted" });
+    } catch (e) {
+      toast({
+        title: "Couldn't clear conversations",
+        description: e instanceof Error ? e.message : "Try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const send = async () => {
@@ -181,10 +210,22 @@ export default function TutorPage() {
   return (
     <div className="flex h-full">
       <aside className="w-64 border-r bg-sidebar flex flex-col">
-        <div className="p-3 border-b">
+        <div className="p-3 border-b space-y-2">
           <Button className="w-full" size="sm" onClick={newConv} data-testid="button-new-conversation">
             <Plus className="h-4 w-4 mr-2" /> New chat
           </Button>
+          {convs.length > 0 && (
+            <Button
+              className="w-full"
+              size="sm"
+              variant="outline"
+              onClick={clearAll}
+              data-testid="button-clear-all-conversations"
+              title="Delete every conversation"
+            >
+              <Eraser className="h-4 w-4 mr-2" /> Clear all chats
+            </Button>
+          )}
         </div>
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
@@ -203,11 +244,12 @@ export default function TutorPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 opacity-0 group-hover:opacity-100"
+                  className="h-7 w-7 mr-1 text-muted-foreground hover:text-destructive"
                   onClick={() => removeConv(c.id)}
+                  title="Delete this conversation"
                   data-testid={`button-delete-conv-${c.id}`}
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
             ))}
@@ -215,10 +257,22 @@ export default function TutorPage() {
         </ScrollArea>
       </aside>
       <main className="flex-1 flex flex-col">
-        <header className="h-12 border-b flex items-center px-4">
+        <header className="h-12 border-b flex items-center justify-between px-4">
           <h1 className="text-base font-semibold flex items-center gap-2">
             <Bot className="h-5 w-5" /> AI Tutor
           </h1>
+          {activeId != null && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => removeConv(activeId)}
+              data-testid="button-delete-active-conv"
+              title="Delete this conversation"
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-1" /> Delete chat
+            </Button>
+          )}
         </header>
         <ScrollArea className="flex-1 p-6" ref={scrollRef}>
           <div className="max-w-3xl mx-auto space-y-4">
