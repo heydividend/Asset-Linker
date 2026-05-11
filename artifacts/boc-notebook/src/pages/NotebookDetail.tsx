@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import { useParams, useLocation, useSearch } from "wouter";
 import {
   useGetNotebook,
   useCreateNote,
@@ -47,7 +47,16 @@ export default function NotebookDetail() {
   const genAudio = useGenerateAudioOverview();
   const startQuiz = useStartQuiz();
 
-  const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
+  const search = useSearch();
+  const requestedNoteId = (() => {
+    const v = new URLSearchParams(search).get("note");
+    const n = v ? Number(v) : NaN;
+    return Number.isFinite(n) ? n : null;
+  })();
+  const [selectedNoteId, setSelectedNoteId] = useState<number | null>(requestedNoteId);
+  useEffect(() => {
+    if (requestedNoteId != null) setSelectedNoteId(requestedNoteId);
+  }, [requestedNoteId]);
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteForm, setNoteForm] = useState({ title: "", content: "", sourceKind: "text" as "text" | "paste" | "url", sourceUrl: "" });
   const [cardOpen, setCardOpen] = useState(false);

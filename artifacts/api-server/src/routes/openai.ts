@@ -7,7 +7,7 @@ import multer from "multer";
 import { PDFParse } from "pdf-parse";
 import { COACHING_STRATEGIES } from "../lib/coachingStrategies";
 
-async function extractPdfText(buf: Buffer): Promise<string> {
+export async function extractPdfText(buf: Buffer): Promise<string> {
   const parser = new PDFParse({ data: new Uint8Array(buf) });
   try {
     const result = await parser.getText();
