@@ -296,6 +296,12 @@ paths:
       operationId: listDueFlashcards
       tags: [flashcards]
       summary: All flashcards due today across notebooks
+      parameters:
+        - name: topicIds
+          in: query
+          required: false
+          description: Comma-separated topic IDs to restrict due cards to (used by focused region review).
+          schema: { type: string }
       responses:
         "200":
           description: OK

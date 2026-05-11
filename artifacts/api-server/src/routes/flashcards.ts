@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, desc, eq, lte } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lte } from "drizzle-orm";
 import { db, flashcards, notes } from "@workspace/db";
 import { parseId } from "../lib/parseId";
 import { chatJson, truncate } from "../lib/openaiHelpers";
@@ -148,11 +148,21 @@ router.post("/flashcards/:id/review", async (req, res): Promise<void> => {
   res.json(updated);
 });
 
-router.get("/flashcards/due", async (_req, res): Promise<void> => {
+router.get("/flashcards/due", async (req, res): Promise<void> => {
+  const raw = typeof req.query.topicIds === "string" ? req.query.topicIds : "";
+  const topicIds = raw
+    .split(",")
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isInteger(n) && n > 0);
+
+  const where = topicIds.length > 0
+    ? and(lte(flashcards.dueAt, new Date()), inArray(flashcards.topicId, topicIds))
+    : lte(flashcards.dueAt, new Date());
+
   const rows = await db
     .select()
     .from(flashcards)
-    .where(lte(flashcards.dueAt, new Date()))
+    .where(where)
     .orderBy(asc(flashcards.dueAt))
     .limit(100);
   res.json(rows);

@@ -319,6 +319,15 @@ export const ReviewFlashcardResponse = zod.object({
 /**
  * @summary All flashcards due today across notebooks
  */
+export const ListDueFlashcardsQueryParams = zod.object({
+  topicIds: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Comma-separated topic IDs to restrict due cards to (used by focused region review).",
+    ),
+});
+
 export const ListDueFlashcardsResponseItem = zod.object({
   id: zod.number(),
   notebookId: zod.number(),

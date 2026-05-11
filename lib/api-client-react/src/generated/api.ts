@@ -27,6 +27,7 @@ import type {
   FlashcardReviewInput,
   FlashcardUpdate,
   HealthStatus,
+  ListDueFlashcardsParams,
   ListQuizAttemptsParams,
   ListResourcesParams,
   ListTopicsParams,
@@ -1588,41 +1589,60 @@ export const useReviewFlashcard = <
 /**
  * @summary All flashcards due today across notebooks
  */
-export const getListDueFlashcardsUrl = () => {
-  return `/api/flashcards/due`;
+export const getListDueFlashcardsUrl = (params?: ListDueFlashcardsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/flashcards/due?${stringifiedParams}`
+    : `/api/flashcards/due`;
 };
 
 export const listDueFlashcards = async (
+  params?: ListDueFlashcardsParams,
   options?: RequestInit,
 ): Promise<Flashcard[]> => {
-  return customFetch<Flashcard[]>(getListDueFlashcardsUrl(), {
+  return customFetch<Flashcard[]>(getListDueFlashcardsUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListDueFlashcardsQueryKey = () => {
-  return [`/api/flashcards/due`] as const;
+export const getListDueFlashcardsQueryKey = (
+  params?: ListDueFlashcardsParams,
+) => {
+  return [`/api/flashcards/due`, ...(params ? [params] : [])] as const;
 };
 
 export const getListDueFlashcardsQueryOptions = <
   TData = Awaited<ReturnType<typeof listDueFlashcards>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listDueFlashcards>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListDueFlashcardsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDueFlashcards>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListDueFlashcardsQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getListDueFlashcardsQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof listDueFlashcards>>
-  > = ({ signal }) => listDueFlashcards({ signal, ...requestOptions });
+  > = ({ signal }) => listDueFlashcards(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listDueFlashcards>>,
@@ -1643,15 +1663,18 @@ export type ListDueFlashcardsQueryError = ErrorType<unknown>;
 export function useListDueFlashcards<
   TData = Awaited<ReturnType<typeof listDueFlashcards>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listDueFlashcards>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListDueFlashcardsQueryOptions(options);
+>(
+  params?: ListDueFlashcardsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listDueFlashcards>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListDueFlashcardsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

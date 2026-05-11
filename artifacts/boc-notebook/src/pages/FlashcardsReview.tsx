@@ -1,21 +1,46 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useListDueFlashcards, useReviewFlashcard, getListDueFlashcardsQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AskAiButton } from "@/components/AskAiButton";
-import { Brain, Eye, RotateCcw, Sparkles, CheckCheck } from "lucide-react";
-import { Link } from "wouter";
+import { Brain, Eye, RotateCcw, Sparkles, CheckCheck, Target, X } from "lucide-react";
+import { Link, useSearch, useLocation } from "wouter";
 
 export default function FlashcardsReview() {
-  const { data: cards = [], isLoading } = useListDueFlashcards({ query: { queryKey: getListDueFlashcardsQueryKey() } });
   const review = useReviewFlashcard();
   const qc = useQueryClient();
+  const [, navigate] = useLocation();
+  const search = useSearch();
   const [revealed, setRevealed] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
 
+  const { focusTopicIdsParam, focusRegion } = useMemo(() => {
+    const params = new URLSearchParams(search);
+    const raw = params.get("topicIds") ?? "";
+    const ids = raw
+      .split(",")
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isInteger(n) && n > 0);
+    return {
+      focusTopicIdsParam: ids.length > 0 ? ids.join(",") : undefined,
+      focusRegion: params.get("region"),
+    };
+  }, [search]);
+
+  const queryParams = focusTopicIdsParam ? { topicIds: focusTopicIdsParam } : undefined;
+  const { data: cards = [], isLoading } = useListDueFlashcards(queryParams, {
+    query: { queryKey: getListDueFlashcardsQueryKey(queryParams) },
+  });
+
   const card = cards[0];
+  // Only treat as focused when we actually have topic IDs constraining the
+  // server query — a stray `region` param alone would otherwise show focused
+  // UI while loading every due card.
+  const isFocused = !!focusTopicIdsParam;
+
+  const clearFocus = () => navigate("/flashcards");
 
   const submit = (quality: number) => {
     if (!card) return;
@@ -37,23 +62,56 @@ export default function FlashcardsReview() {
   if (!card) {
     return (
       <div className="flex flex-col h-full">
-        <header className="h-14 border-b flex items-center px-6">
+        <header className="h-14 border-b flex items-center justify-between px-6">
           <h1 className="text-lg font-semibold flex items-center gap-2">
             <Brain className="h-5 w-5" /> Flashcards
+            {isFocused && focusRegion && (
+              <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1" data-testid="badge-focus-region">
+                <Target className="h-3 w-3" /> {focusRegion}
+              </Badge>
+            )}
           </h1>
+          {isFocused && (
+            <Button size="sm" variant="ghost" onClick={clearFocus} data-testid="button-clear-focus">
+              <X className="h-3 w-3 mr-1" /> Show all due
+            </Button>
+          )}
         </header>
         <div className="flex-1 flex items-center justify-center p-6">
           <Card className="max-w-md text-center">
             <CardContent className="p-10 space-y-4">
               <CheckCheck className="h-12 w-12 mx-auto text-primary" />
               <h2 className="text-2xl font-semibold">All caught up</h2>
-              <p className="text-muted-foreground">
-                {reviewedCount > 0 ? `Nice — you reviewed ${reviewedCount} card${reviewedCount === 1 ? "" : "s"}.` : "No cards are due right now."}
-              </p>
-              <p className="text-sm text-muted-foreground">Generate more cards from a notebook to keep your spaced-repetition stack growing.</p>
-              <Link href="/notebooks">
-                <Button data-testid="button-go-notebooks">Go to notebooks</Button>
-              </Link>
+              {isFocused ? (
+                <>
+                  <p className="text-muted-foreground">
+                    {reviewedCount > 0
+                      ? `You reviewed ${reviewedCount} ${focusRegion ?? "focused"} card${reviewedCount === 1 ? "" : "s"}. Nothing else due for this region.`
+                      : `No due flashcards are tagged to ${focusRegion ?? "this region"} yet.`}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Generate flashcards from a notebook and tag them to the region's topics to grow this stack.
+                  </p>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                    <Button variant="outline" onClick={clearFocus} data-testid="button-empty-clear-focus">
+                      Review all due cards
+                    </Button>
+                    <Link href="/notebooks">
+                      <Button data-testid="button-go-notebooks">Go to notebooks</Button>
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-muted-foreground">
+                    {reviewedCount > 0 ? `Nice — you reviewed ${reviewedCount} card${reviewedCount === 1 ? "" : "s"}.` : "No cards are due right now."}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Generate more cards from a notebook to keep your spaced-repetition stack growing.</p>
+                  <Link href="/notebooks">
+                    <Button data-testid="button-go-notebooks">Go to notebooks</Button>
+                  </Link>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -63,11 +121,23 @@ export default function FlashcardsReview() {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="h-14 border-b flex items-center justify-between px-6">
+      <header className="h-14 border-b flex items-center justify-between px-6 gap-3">
         <h1 className="text-lg font-semibold flex items-center gap-2">
           <Brain className="h-5 w-5" /> Flashcards
+          {isFocused && focusRegion && (
+            <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1" data-testid="badge-focus-region">
+              <Target className="h-3 w-3" /> {focusRegion}
+            </Badge>
+          )}
         </h1>
-        <Badge variant="outline" data-testid="badge-due-count">{cards.length} due</Badge>
+        <div className="flex items-center gap-2">
+          {isFocused && (
+            <Button size="sm" variant="ghost" onClick={clearFocus} data-testid="button-clear-focus">
+              <X className="h-3 w-3 mr-1" /> Show all due
+            </Button>
+          )}
+          <Badge variant="outline" data-testid="badge-due-count">{cards.length} due{isFocused ? " here" : ""}</Badge>
+        </div>
       </header>
       <div className="flex-1 flex items-center justify-center p-6">
         <Card className="w-full max-w-2xl min-h-[420px] flex flex-col">
@@ -77,7 +147,7 @@ export default function FlashcardsReview() {
                 {revealed ? "Answer" : "Front"}
               </Badge>
               <AskAiButton
-                context={`I'm reviewing a flashcard. Front: ${card.front}\nBack: ${card.back}\nExplain it deeply with clinical context.`}
+                context={`I'm reviewing a flashcard${focusRegion ? ` focused on ${focusRegion}` : ""}. Front: ${card.front}\nBack: ${card.back}\nExplain it deeply with clinical context.`}
                 size="sm"
                 variant="ghost"
               />

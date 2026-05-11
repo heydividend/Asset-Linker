@@ -623,6 +623,13 @@ export type ListTopicsParams = {
   domainId?: number;
 };
 
+export type ListDueFlashcardsParams = {
+  /**
+   * Comma-separated topic IDs to restrict due cards to (used by focused region review).
+   */
+  topicIds?: string;
+};
+
 export type ListQuizAttemptsParams = {
   limit?: number;
 };

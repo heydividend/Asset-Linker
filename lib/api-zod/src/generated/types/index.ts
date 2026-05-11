@@ -21,6 +21,7 @@ export * from "./flashcardInput";
 export * from "./flashcardReviewInput";
 export * from "./flashcardUpdate";
 export * from "./healthStatus";
+export * from "./listDueFlashcardsParams";
 export * from "./listQuizAttemptsParams";
 export * from "./listResourcesParams";
 export * from "./listTopicsParams";

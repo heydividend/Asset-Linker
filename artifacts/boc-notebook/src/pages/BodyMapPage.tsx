@@ -21,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { AskAiButton } from "@/components/AskAiButton";
 import {
-  AlertTriangle, Activity, Heart, Stethoscope, Eye, EyeOff, RotateCcw, Play,
+  AlertTriangle, Activity, Heart, Stethoscope, Eye, EyeOff, RotateCcw, Play, Brain,
   TrendingUp, TrendingDown, Minus,
 } from "lucide-react";
 import skinImg from "@/assets/anatomy/layer-skin.png";
@@ -217,6 +217,27 @@ export default function BodyMapPage() {
 
   const setLayer = (k: LayerKey, v: number) => setOpacity((o) => ({ ...o, [k]: v }));
   const applyPreset = (name: keyof typeof PRESETS) => setOpacity(PRESETS[name]);
+
+  const onReviewWeakSpots = (region: BodyRegion) => {
+    const ids = region.topicNames
+      .map((n) => topicIdByName.get(n))
+      .filter((v): v is number => typeof v === "number");
+    if (ids.length === 0) {
+      toast({
+        title: "No focused review available yet",
+        description: topicsLoading
+          ? "Topics are still loading — try again in a moment."
+          : "We don't have flashcard topics linked to this region in the seed bank yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const params = new URLSearchParams();
+    params.set("topicIds", ids.join(","));
+    params.set("region", region.name);
+    setSelected(null);
+    navigate(`/flashcards?${params.toString()}`);
+  };
 
   const onQuizRegion = (region: BodyRegion) => {
     const ids = region.topicNames
@@ -443,6 +464,19 @@ export default function BodyMapPage() {
                           <Play className="h-3 w-3 mr-1" /> Drill
                         </Button>
                       </div>
+                      {rm.pct != null && rm.pct < 60 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full border-destructive/50 text-destructive hover:text-destructive"
+                          onClick={() => onReviewWeakSpots(r)}
+                          disabled={topicsLoading}
+                          data-testid={`hover-review-weak-${r.id}`}
+                          title="Jump into a focused flashcard review for this region"
+                        >
+                          <Brain className="h-3 w-3 mr-1" /> Review weak spots
+                        </Button>
+                      )}
                     </div>
                   </HoverCardContent>
                 </HoverCard>
@@ -463,29 +497,46 @@ export default function BodyMapPage() {
               {visible.map((r) => {
                 const rm = regionMastery.get(r.id) ?? { pct: null, attempts: 0, trend: [] as boolean[] };
                 const tone = masteryTone(rm.pct);
+                const isWeak = rm.pct != null && rm.pct < 60;
                 return (
-                  <button
+                  <div
                     key={r.id}
-                    onClick={() => setSelected(r)}
                     onMouseEnter={() => setHovered(r.id)}
                     onMouseLeave={() => setHovered(null)}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between gap-2 hover-elevate ${hovered === r.id ? "bg-sidebar-accent" : ""}`}
-                    data-testid={`region-list-${r.id}`}
-                    title={rm.attempts > 0 ? `${rm.attempts} attempt${rm.attempts === 1 ? "" : "s"} on this region — ${tone.hint.toLowerCase()}` : "No attempts yet"}
+                    className={`rounded-md ${hovered === r.id ? "bg-sidebar-accent" : ""}`}
                   >
-                    <span className="truncate">{r.name}</span>
-                    <span className="flex items-center gap-2 shrink-0">
-                      <Sparkline trend={rm.trend} testId={`region-trend-${r.id}`} />
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] tabular-nums ${tone.cls}`}
-                        data-testid={`region-mastery-${r.id}`}
+                    <button
+                      onClick={() => setSelected(r)}
+                      className="w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between gap-2 hover-elevate"
+                      data-testid={`region-list-${r.id}`}
+                      title={rm.attempts > 0 ? `${rm.attempts} attempt${rm.attempts === 1 ? "" : "s"} on this region — ${tone.hint.toLowerCase()}` : "No attempts yet"}
+                    >
+                      <span className="truncate">{r.name}</span>
+                      <span className="flex items-center gap-2 shrink-0">
+                        <Sparkline trend={rm.trend} testId={`region-trend-${r.id}`} />
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] tabular-nums ${tone.cls}`}
+                          data-testid={`region-mastery-${r.id}`}
+                        >
+                          {tone.label}
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px]">{r.injuries.length}</Badge>
+                      </span>
+                    </button>
+                    {isWeak && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onReviewWeakSpots(r); }}
+                        disabled={topicsLoading}
+                        className="w-full mt-0.5 mb-1 px-3 py-1 text-[11px] rounded-md flex items-center gap-1 text-destructive border border-destructive/30 bg-destructive/5 hover:bg-destructive/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                        data-testid={`region-list-review-${r.id}`}
+                        title="Jump into a focused flashcard review for this region"
                       >
-                        {tone.label}
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px]">{r.injuries.length}</Badge>
-                    </span>
-                  </button>
+                        <Brain className="h-3 w-3" /> Review weak spots
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -510,20 +561,38 @@ export default function BodyMapPage() {
                     label="Ask AI to quiz me"
                   />
                 </div>
-                <Button
-                  size="sm"
-                  className="mt-3 w-full sm:w-auto"
-                  onClick={() => onQuizRegion(selected)}
-                  disabled={startQuiz.isPending || topicsLoading}
-                  data-testid="button-quiz-region"
-                >
-                  <Play className="h-3.5 w-3.5 mr-1.5" />
-                  {startQuiz.isPending
-                    ? "Starting…"
-                    : topicsLoading
-                      ? "Loading topics…"
-                      : "Quiz this region"}
-                </Button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => onQuizRegion(selected)}
+                    disabled={startQuiz.isPending || topicsLoading}
+                    data-testid="button-quiz-region"
+                  >
+                    <Play className="h-3.5 w-3.5 mr-1.5" />
+                    {startQuiz.isPending
+                      ? "Starting…"
+                      : topicsLoading
+                        ? "Loading topics…"
+                        : "Quiz this region"}
+                  </Button>
+                  {(() => {
+                    const rm = regionMastery.get(selected.id) ?? { pct: null, attempts: 0 };
+                    if (rm.pct == null || rm.pct >= 60) return null;
+                    return (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-destructive/50 text-destructive hover:text-destructive"
+                        onClick={() => onReviewWeakSpots(selected)}
+                        disabled={topicsLoading}
+                        data-testid="button-review-weak-region"
+                        title="Jump into a focused flashcard review for this region"
+                      >
+                        <Brain className="h-3.5 w-3.5 mr-1.5" /> Review weak spots
+                      </Button>
+                    );
+                  })()}
+                </div>
               </SheetHeader>
 
               <div className="mt-6 space-y-6">
