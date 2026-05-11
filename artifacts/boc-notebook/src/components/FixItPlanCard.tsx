@@ -1,0 +1,236 @@
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "wouter";
+import {
+  useGetDashboardTopicMastery,
+  useListTopics,
+  getGetDashboardTopicMasteryQueryKey,
+} from "@workspace/api-client-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Sparkles, Target, X, ArrowRight } from "lucide-react";
+import { bodyRegions } from "@/data/bodyRegions";
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const DISMISS_KEY = "boc.fixItPlan.dismissedDate";
+const SNAPSHOT_KEY_PREFIX = "boc.fixItPlan.snapshot.";
+
+type WeakRegion = {
+  id: string;
+  name: string;
+  pct: number;
+  attempts: number;
+  topicIds: number[];
+};
+
+export function FixItPlanCard() {
+  const [, navigate] = useLocation();
+  const { data: mastery = [], isLoading: loadingMastery } =
+    useGetDashboardTopicMastery({
+      query: { queryKey: getGetDashboardTopicMasteryQueryKey() },
+    });
+  const { data: topics = [], isLoading: loadingTopics } = useListTopics();
+  const today = todayStr();
+
+  const [dismissedDate, setDismissedDate] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(DISMISS_KEY);
+  });
+
+  const dismissed = dismissedDate === today;
+
+  const liveWeakest = useMemo<WeakRegion[]>(() => {
+    if (mastery.length === 0 || topics.length === 0) return [];
+    const idByName = new Map<string, number>();
+    for (const t of topics) idByName.set(t.name, t.id);
+    const masteryByTopicId = new Map<
+      number,
+      { mastery: number; attempts: number }
+    >();
+    for (const m of mastery) {
+      masteryByTopicId.set(m.topicId, {
+        mastery: m.mastery,
+        attempts: m.attempts,
+      });
+    }
+    const computed: WeakRegion[] = [];
+    for (const r of bodyRegions) {
+      const ids: number[] = [];
+      let totalAttempts = 0;
+      let totalCorrect = 0;
+      for (const name of r.topicNames) {
+        const tid = idByName.get(name);
+        if (tid == null) continue;
+        if (!ids.includes(tid)) ids.push(tid);
+        const m = masteryByTopicId.get(tid);
+        if (m && m.attempts > 0) {
+          totalAttempts += m.attempts;
+          totalCorrect += m.mastery * m.attempts;
+        }
+      }
+      if (totalAttempts < 1 || ids.length === 0) continue;
+      const pct = (totalCorrect / totalAttempts) * 100;
+      if (pct >= 60) continue;
+      computed.push({
+        id: r.id,
+        name: r.name,
+        pct,
+        attempts: totalAttempts,
+        topicIds: ids,
+      });
+    }
+    // Dedupe by topicId set: when two regions share identical topic IDs (e.g.
+    // mirrored left/right), prefer the one with lower mastery and skip duplicates.
+    computed.sort((a, b) => a.pct - b.pct);
+    const seen = new Set<string>();
+    const deduped: WeakRegion[] = [];
+    for (const r of computed) {
+      const key = [...r.topicIds].sort((a, b) => a - b).join(",");
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(r);
+      if (deduped.length === 3) break;
+    }
+    return deduped;
+  }, [mastery, topics]);
+
+  // Snapshot today's plan so the user works through a stable set even if
+  // mastery shifts mid-day. Naturally regenerates tomorrow.
+  const planRegions = useMemo<WeakRegion[]>(() => {
+    if (typeof window === "undefined") return liveWeakest;
+    const key = SNAPSHOT_KEY_PREFIX + today;
+    const stored = window.localStorage.getItem(key);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as WeakRegion[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {
+        // fall through and re-snapshot
+      }
+    }
+    if (liveWeakest.length > 0) {
+      window.localStorage.setItem(key, JSON.stringify(liveWeakest));
+    }
+    return liveWeakest;
+  }, [liveWeakest, today]);
+
+  // Clean up stale snapshots from previous days.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const keep = SNAPSHOT_KEY_PREFIX + today;
+    for (let i = window.localStorage.length - 1; i >= 0; i--) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith(SNAPSHOT_KEY_PREFIX) && k !== keep) {
+        window.localStorage.removeItem(k);
+      }
+    }
+  }, [today]);
+
+  if (dismissed) return null;
+  if (loadingMastery || loadingTopics) {
+    return (
+      <Card data-testid="fix-it-plan-loading">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Sparkles className="h-4 w-4 text-primary" /> Today's fix-it plan
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-20 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+  if (planRegions.length === 0) return null;
+
+  const allTopicIds = Array.from(
+    new Set(planRegions.flatMap((r) => r.topicIds)),
+  );
+  const regionNames = planRegions.map((r) => r.name);
+
+  const onDismiss = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(DISMISS_KEY, today);
+    }
+    setDismissedDate(today);
+  };
+
+  const onStart = () => {
+    const params = new URLSearchParams();
+    params.set("topicIds", allTopicIds.join(","));
+    params.set("region", `Fix-it: ${regionNames.join(" + ")}`);
+    params.set("regionLabel", "Fix-it plan");
+    params.set("thenQuiz", "1");
+    params.set("quizCount", "10");
+    navigate(`/flashcards?${params.toString()}`);
+  };
+
+  return (
+    <Card
+      className="border-primary/40 bg-gradient-to-br from-primary/5 to-transparent"
+      data-testid="fix-it-plan-card"
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-4 w-4 text-primary" /> Today's fix-it plan
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              A focused flashcard pass + a 10-question mixed quiz across your{" "}
+              {planRegions.length} weakest region
+              {planRegions.length === 1 ? "" : "s"}.
+            </p>
+          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 -mt-1 -mr-1 text-muted-foreground"
+            onClick={onDismiss}
+            data-testid="fix-it-plan-dismiss"
+            title="Dismiss for today"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ul className="space-y-2">
+          {planRegions.map((r) => (
+            <li
+              key={r.id}
+              className="flex items-center justify-between rounded-md border bg-background/60 px-3 py-2 text-sm"
+              data-testid={`fix-it-plan-region-${r.id}`}
+            >
+              <span className="flex items-center gap-2 truncate">
+                <Target className="h-3.5 w-3.5 text-destructive shrink-0" />
+                <span className="font-medium truncate">{r.name}</span>
+              </span>
+              <span className="flex items-center gap-2 shrink-0">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] tabular-nums border-destructive/60 text-destructive"
+                  data-testid={`fix-it-plan-mastery-${r.id}`}
+                >
+                  {Math.round(r.pct)}%
+                </Badge>
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {r.attempts} attempt{r.attempts === 1 ? "" : "s"}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <Button
+          className="w-full"
+          size="lg"
+          onClick={onStart}
+          data-testid="fix-it-plan-start"
+        >
+          Start fix-it plan <ArrowRight className="ml-1 h-4 w-4" />
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}

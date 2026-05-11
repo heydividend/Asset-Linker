@@ -1,31 +1,45 @@
 import { useMemo, useState } from "react";
-import { useListDueFlashcards, useReviewFlashcard, getListDueFlashcardsQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
+import {
+  useListDueFlashcards,
+  useReviewFlashcard,
+  useStartQuiz,
+  getListDueFlashcardsQueryKey,
+  getGetDashboardSummaryQueryKey,
+  getListQuizAttemptsQueryKey,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AskAiButton } from "@/components/AskAiButton";
-import { Brain, Eye, RotateCcw, Sparkles, CheckCheck, Target, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Brain, Eye, RotateCcw, Sparkles, CheckCheck, Target, X, Play } from "lucide-react";
 import { Link, useSearch, useLocation } from "wouter";
 
 export default function FlashcardsReview() {
   const review = useReviewFlashcard();
+  const startQuiz = useStartQuiz();
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [, navigate] = useLocation();
   const search = useSearch();
   const [revealed, setRevealed] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(0);
 
-  const { focusTopicIdsParam, focusRegion } = useMemo(() => {
+  const { focusTopicIdsParam, focusTopicIds, focusRegion, thenQuiz, quizCount } = useMemo(() => {
     const params = new URLSearchParams(search);
     const raw = params.get("topicIds") ?? "";
     const ids = raw
       .split(",")
       .map((s) => Number(s.trim()))
       .filter((n) => Number.isInteger(n) && n > 0);
+    const cnt = Number(params.get("quizCount"));
     return {
       focusTopicIdsParam: ids.length > 0 ? ids.join(",") : undefined,
+      focusTopicIds: ids,
       focusRegion: params.get("region"),
+      thenQuiz: params.get("thenQuiz") === "1",
+      quizCount: Number.isFinite(cnt) && cnt > 0 ? Math.min(50, cnt) : 10,
     };
   }, [search]);
 
@@ -41,6 +55,26 @@ export default function FlashcardsReview() {
   const isFocused = !!focusTopicIdsParam;
 
   const clearFocus = () => navigate("/flashcards");
+
+  const launchMixedQuiz = () => {
+    if (focusTopicIds.length === 0) return;
+    startQuiz.mutate(
+      { data: { mode: "region", count: quizCount, topicIds: focusTopicIds } },
+      {
+        onSuccess: (q) => {
+          qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
+          navigate(`/quiz/${q.id}`);
+        },
+        onError: (e) => {
+          toast({
+            title: "Couldn't start the mixed quiz",
+            description: e instanceof Error ? e.message : "Try again from the quiz hub.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
 
   const submit = (quality: number) => {
     if (!card) return;
@@ -89,16 +123,33 @@ export default function FlashcardsReview() {
                       ? `You reviewed ${reviewedCount} ${focusRegion ?? "focused"} card${reviewedCount === 1 ? "" : "s"}. Nothing else due for this region.`
                       : `No due flashcards are tagged to ${focusRegion ?? "this region"} yet.`}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    Generate flashcards from a notebook and tag them to the region's topics to grow this stack.
-                  </p>
+                  {thenQuiz ? (
+                    <p className="text-sm text-muted-foreground">
+                      Next up: a {quizCount}-question mixed quiz across the same topics.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Generate flashcards from a notebook and tag them to the region's topics to grow this stack.
+                    </p>
+                  )}
                   <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                    {thenQuiz && (
+                      <Button
+                        onClick={launchMixedQuiz}
+                        disabled={startQuiz.isPending}
+                        data-testid="button-launch-mixed-quiz"
+                      >
+                        <Play className="h-4 w-4 mr-1" /> Start {quizCount}-question mixed quiz
+                      </Button>
+                    )}
                     <Button variant="outline" onClick={clearFocus} data-testid="button-empty-clear-focus">
                       Review all due cards
                     </Button>
-                    <Link href="/notebooks">
-                      <Button data-testid="button-go-notebooks">Go to notebooks</Button>
-                    </Link>
+                    {!thenQuiz && (
+                      <Link href="/notebooks">
+                        <Button data-testid="button-go-notebooks">Go to notebooks</Button>
+                      </Link>
+                    )}
                   </div>
                 </>
               ) : (
@@ -131,6 +182,18 @@ export default function FlashcardsReview() {
           )}
         </h1>
         <div className="flex items-center gap-2">
+          {thenQuiz && isFocused && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={launchMixedQuiz}
+              disabled={startQuiz.isPending}
+              data-testid="button-skip-to-quiz"
+              title="Skip ahead and take the mixed quiz now"
+            >
+              <Play className="h-3 w-3 mr-1" /> Skip to quiz
+            </Button>
+          )}
           {isFocused && (
             <Button size="sm" variant="ghost" onClick={clearFocus} data-testid="button-clear-focus">
               <X className="h-3 w-3 mr-1" /> Show all due

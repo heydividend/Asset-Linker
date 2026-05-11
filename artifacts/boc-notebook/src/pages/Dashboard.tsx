@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AskAiButton } from "@/components/AskAiButton";
+import { FixItPlanCard } from "@/components/FixItPlanCard";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BrainCircuit, BookOpen, Clock, Activity, ArrowRight } from "lucide-react";
@@ -97,6 +98,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 space-y-4 min-w-0">
+            <FixItPlanCard />
             <Card>
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-base">Today's Study Plan</CardTitle>
