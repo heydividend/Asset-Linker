@@ -36,12 +36,19 @@ type WeakRegion = {
 export function FixItPlanCard() {
   const [, navigate] = useLocation();
   const [trendWindow] = useTrendWindow("dashboard");
-  const { data: mastery = [], isLoading: loadingMastery } =
+  const { data: masteryData, isLoading: loadingMastery } =
     useGetDashboardTopicMastery(
       { limit: trendWindow },
       { query: { queryKey: getGetDashboardTopicMasteryQueryKey({ limit: trendWindow }) } },
     );
-  const { data: topics = [], isLoading: loadingTopics } = useListTopics();
+  const { data: topicsData, isLoading: loadingTopics } = useListTopics();
+  // Stabilize references so the snapshot effect below doesn't re-run on every
+  // render while data is still loading. Without this, `mastery = []` was
+  // creating a fresh empty array each render, cascading through useMemo →
+  // liveWeakest → effect → setPlanRegions → re-render, which React aborts
+  // with "Maximum update depth exceeded".
+  const mastery = useMemo(() => masteryData ?? [], [masteryData]);
+  const topics = useMemo(() => topicsData ?? [], [topicsData]);
   const today = todayStr();
   const qc = useQueryClient();
 
