@@ -43,7 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       )}
       {!hideChat && chatCollapsed && (
-        <div className="hidden lg:flex fixed bottom-6 right-6 z-40">
+        <div className="flex fixed bottom-6 right-6 z-40">
           <Button
             size="icon"
             className="h-12 w-12 rounded-full shadow-lg"

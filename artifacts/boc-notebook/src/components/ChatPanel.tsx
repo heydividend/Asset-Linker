@@ -104,7 +104,17 @@ export function ChatPanel() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content: trimmed }),
         });
-        if (!res.body) return;
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          toast({ title: "AI error", description: err.error ?? `HTTP ${res.status}`, variant: "destructive" });
+          setStreaming(false);
+          return;
+        }
+        if (!res.body) {
+          toast({ title: "AI error", description: "No response stream", variant: "destructive" });
+          setStreaming(false);
+          return;
+        }
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buf = "";
@@ -196,8 +206,14 @@ export function ChatPanel() {
   };
 
   return (
+    <>
+      <div
+        className="lg:hidden fixed inset-0 bg-black/40 z-40"
+        onClick={() => setChatCollapsed(true)}
+        data-testid="chat-backdrop"
+      />
     <aside
-      className="relative hidden lg:flex flex-col border-l bg-background h-screen sticky top-0 shrink-0"
+      className="flex flex-col border-l bg-background h-screen shrink-0 fixed lg:sticky right-0 top-0 z-50 lg:z-auto shadow-2xl lg:shadow-none max-lg:!w-[min(420px,95vw)]"
       style={{ width: chatWidth }}
     >
       <ResizeHandle
@@ -356,5 +372,6 @@ export function ChatPanel() {
         </form>
       </div>
     </aside>
+    </>
   );
 }
