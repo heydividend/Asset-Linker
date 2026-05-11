@@ -4,24 +4,34 @@ import {
   useListAllFlashcards,
   useReviewFlashcard,
   useStartQuiz,
+  useListNotebooks,
+  useGenerateFlashcards,
   getListDueFlashcardsQueryKey,
   getListAllFlashcardsQueryKey,
   getGetDashboardSummaryQueryKey,
   getListQuizAttemptsQueryKey,
+  getGetNotebookQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { AskAiButton } from "@/components/AskAiButton";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, CheckCheck, Target, X, Play } from "lucide-react";
+import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, CheckCheck, Target, X, Play, Wand2, Loader2 } from "lucide-react";
 import { Link, useSearch, useLocation } from "wouter";
 import { rememberFixItQuizId } from "@/lib/fixItPlan";
 
 export default function FlashcardsReview() {
   const review = useReviewFlashcard();
   const startQuiz = useStartQuiz();
+  const generate = useGenerateFlashcards();
+  const { data: notebooks = [] } = useListNotebooks();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -30,6 +40,109 @@ export default function FlashcardsReview() {
   const [reviewedCount, setReviewedCount] = useState(0);
   const [mode, setMode] = useState<"review" | "browse">("review");
   const [browseIdx, setBrowseIdx] = useState(0);
+  const [genOpen, setGenOpen] = useState(false);
+  const [genForm, setGenForm] = useState({ notebookId: "", count: "10", focus: "" });
+
+  const onGenerate = () => {
+    const nbId = Number(genForm.notebookId);
+    if (!Number.isInteger(nbId) || nbId <= 0) {
+      toast({ title: "Pick a notebook", variant: "destructive" });
+      return;
+    }
+    const count = Math.max(1, Math.min(30, Number(genForm.count) || 10));
+    generate.mutate(
+      {
+        id: nbId,
+        data: { count, focus: genForm.focus.trim() || undefined },
+      },
+      {
+        onSuccess: (cards) => {
+          setGenOpen(false);
+          setGenForm({ notebookId: "", count: "10", focus: "" });
+          qc.invalidateQueries({ queryKey: getListDueFlashcardsQueryKey() });
+          qc.invalidateQueries({ queryKey: getListAllFlashcardsQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetNotebookQueryKey(nbId) });
+          const n = Array.isArray(cards) ? cards.length : 0;
+          toast({ title: `Generated ${n} flashcard${n === 1 ? "" : "s"}` });
+        },
+        onError: (e) =>
+          toast({
+            title: "Couldn't generate flashcards",
+            description: e instanceof Error ? e.message : "Try again in a moment.",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
+
+  const generateDialog = (
+    <Dialog open={genOpen} onOpenChange={setGenOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Generate flashcards</DialogTitle>
+          <DialogDescription>
+            Pick a notebook to draw from. The AI will create cards from its notes and tag each one to a topic.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="gen-notebook">Notebook</Label>
+            <Select
+              value={genForm.notebookId}
+              onValueChange={(v) => setGenForm((f) => ({ ...f, notebookId: v }))}
+            >
+              <SelectTrigger id="gen-notebook" data-testid="select-gen-notebook">
+                <SelectValue placeholder="Choose a notebook" />
+              </SelectTrigger>
+              <SelectContent>
+                {notebooks.map((nb) => (
+                  <SelectItem key={nb.id} value={String(nb.id)}>
+                    {nb.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="gen-count">How many cards?</Label>
+            <Input
+              id="gen-count"
+              type="number"
+              min={1}
+              max={30}
+              value={genForm.count}
+              onChange={(e) => setGenForm((f) => ({ ...f, count: e.target.value }))}
+              data-testid="input-gen-count"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="gen-focus">Focus (optional)</Label>
+            <Textarea
+              id="gen-focus"
+              placeholder="e.g. ankle sprain grading, modalities indications"
+              value={genForm.focus}
+              onChange={(e) => setGenForm((f) => ({ ...f, focus: e.target.value }))}
+              data-testid="input-gen-focus"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setGenOpen(false)} disabled={generate.isPending}>
+            Cancel
+          </Button>
+          <Button onClick={onGenerate} disabled={generate.isPending} data-testid="button-confirm-generate">
+            {generate.isPending ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Wand2 className="h-4 w-4 mr-1" />
+            )}
+            Generate
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   const { focusTopicIdsParam, focusTopicIds, focusRegion, thenQuiz, quizCount, fixIt } = useMemo(() => {
     const params = new URLSearchParams(search);
@@ -103,18 +216,22 @@ export default function FlashcardsReview() {
 
   if (mode === "browse") {
     return (
-      <BrowseMode
-        cards={allCards}
-        isLoading={isLoadingAll}
-        idx={browseIdx}
-        setIdx={setBrowseIdx}
-        revealed={revealed}
-        setRevealed={setRevealed}
-        onExit={() => {
-          setMode("review");
-          setRevealed(false);
-        }}
-      />
+      <>
+        <BrowseMode
+          cards={allCards}
+          isLoading={isLoadingAll}
+          idx={browseIdx}
+          setIdx={setBrowseIdx}
+          revealed={revealed}
+          setRevealed={setRevealed}
+          onExit={() => {
+            setMode("review");
+            setRevealed(false);
+          }}
+          onGenerate={() => setGenOpen(true)}
+        />
+        {generateDialog}
+      </>
     );
   }
 
@@ -123,7 +240,7 @@ export default function FlashcardsReview() {
   if (!card) {
     return (
       <div className="flex flex-col h-full">
-        <header className="h-12 border-b flex items-center justify-between px-4">
+        <header className="h-12 border-b flex items-center justify-between px-4 gap-2">
           <h1 className="text-base font-semibold flex items-center gap-2">
             <Brain className="h-5 w-5" /> Flashcards
             {isFocused && focusRegion && (
@@ -132,11 +249,16 @@ export default function FlashcardsReview() {
               </Badge>
             )}
           </h1>
-          {isFocused && (
-            <Button size="sm" variant="ghost" onClick={clearFocus} data-testid="button-clear-focus">
-              <X className="h-3 w-3 mr-1" /> Show all due
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => setGenOpen(true)} data-testid="button-generate-flashcards-empty">
+              <Wand2 className="h-3 w-3 mr-1" /> Generate
             </Button>
-          )}
+            {isFocused && (
+              <Button size="sm" variant="ghost" onClick={clearFocus} data-testid="button-clear-focus">
+                <X className="h-3 w-3 mr-1" /> Show all due
+              </Button>
+            )}
+          </div>
         </header>
         <div className="flex-1 flex items-center justify-center p-6">
           <Card className="max-w-md text-center">
@@ -172,9 +294,12 @@ export default function FlashcardsReview() {
                     <Button variant="outline" onClick={clearFocus} data-testid="button-empty-clear-focus">
                       Review all due cards
                     </Button>
+                    <Button onClick={() => setGenOpen(true)} data-testid="button-generate-flashcards-empty-focused">
+                      <Wand2 className="h-4 w-4 mr-1" /> Generate flashcards
+                    </Button>
                     {!thenQuiz && (
                       <Link href="/notebooks">
-                        <Button data-testid="button-go-notebooks">Go to notebooks</Button>
+                        <Button variant="outline" data-testid="button-go-notebooks">Go to notebooks</Button>
                       </Link>
                     )}
                   </div>
@@ -193,8 +318,11 @@ export default function FlashcardsReview() {
                     >
                       <Layers className="h-4 w-4 mr-1" /> Browse all cards
                     </Button>
+                    <Button onClick={() => setGenOpen(true)} data-testid="button-generate-flashcards-empty-main">
+                      <Wand2 className="h-4 w-4 mr-1" /> Generate flashcards
+                    </Button>
                     <Link href="/notebooks">
-                      <Button data-testid="button-go-notebooks">Go to notebooks</Button>
+                      <Button variant="outline" data-testid="button-go-notebooks">Go to notebooks</Button>
                     </Link>
                   </div>
                 </>
@@ -202,6 +330,7 @@ export default function FlashcardsReview() {
             </CardContent>
           </Card>
         </div>
+        {generateDialog}
       </div>
     );
   }
@@ -243,6 +372,15 @@ export default function FlashcardsReview() {
             title="Flip through every card without affecting the SRS schedule"
           >
             <Layers className="h-3 w-3 mr-1" /> Browse all
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setGenOpen(true)}
+            data-testid="button-generate-flashcards"
+            title="Generate AI flashcards from a notebook"
+          >
+            <Wand2 className="h-3 w-3 mr-1" /> Generate
           </Button>
           <Badge variant="outline" data-testid="badge-due-count">{cards.length} due{isFocused ? " here" : ""}</Badge>
         </div>
@@ -286,6 +424,7 @@ export default function FlashcardsReview() {
           </CardContent>
         </Card>
       </div>
+      {generateDialog}
     </div>
   );
 }
@@ -299,9 +438,10 @@ interface BrowseModeProps {
   revealed: boolean;
   setRevealed: (b: boolean) => void;
   onExit: () => void;
+  onGenerate: () => void;
 }
 
-function BrowseMode({ cards, isLoading, idx, setIdx, revealed, setRevealed, onExit }: BrowseModeProps) {
+function BrowseMode({ cards, isLoading, idx, setIdx, revealed, setRevealed, onExit, onGenerate }: BrowseModeProps) {
   const safeIdx = cards.length === 0 ? 0 : Math.min(Math.max(0, idx), cards.length - 1);
   const card = cards[safeIdx];
 
@@ -326,6 +466,9 @@ function BrowseMode({ cards, isLoading, idx, setIdx, revealed, setRevealed, onEx
           <Badge variant="outline" data-testid="badge-browse-position">
             {cards.length === 0 ? "0 of 0" : `${safeIdx + 1} of ${cards.length}`}
           </Badge>
+          <Button size="sm" variant="outline" onClick={onGenerate} data-testid="button-generate-flashcards-browse">
+            <Wand2 className="h-3 w-3 mr-1" /> Generate
+          </Button>
           <Button size="sm" variant="ghost" onClick={onExit} data-testid="button-exit-browse">
             <X className="h-3 w-3 mr-1" /> Back to review
           </Button>
@@ -340,9 +483,14 @@ function BrowseMode({ cards, isLoading, idx, setIdx, revealed, setRevealed, onEx
               <Brain className="h-12 w-12 mx-auto text-muted-foreground" />
               <h2 className="text-2xl font-semibold">No cards yet</h2>
               <p className="text-muted-foreground">Generate flashcards from a notebook to start a deck.</p>
-              <Link href="/notebooks">
-                <Button data-testid="button-go-notebooks-browse">Go to notebooks</Button>
-              </Link>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                <Button onClick={onGenerate} data-testid="button-generate-flashcards-browse-empty">
+                  <Wand2 className="h-4 w-4 mr-1" /> Generate flashcards
+                </Button>
+                <Link href="/notebooks">
+                  <Button variant="outline" data-testid="button-go-notebooks-browse">Go to notebooks</Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         ) : (
