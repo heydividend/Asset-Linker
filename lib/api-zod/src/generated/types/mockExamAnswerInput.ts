@@ -10,5 +10,6 @@ export interface MockExamAnswerInput {
   /** @minimum 0 */
   index: number;
   /** @minimum 0 */
-  selectedIndex: number;
+  selectedIndex?: number;
+  selectedIndices?: number[];
 }

@@ -528,8 +528,11 @@ export const GetQuizResponse = zod.object({
       choices: zod.array(zod.string()),
       topicId: zod.number().nullish(),
       domainId: zod.number().nullish(),
+      multiSelect: zod.boolean().optional(),
       selectedIndex: zod.number().nullish(),
+      selectedIndices: zod.array(zod.number()).optional(),
       correctIndex: zod.number().nullish(),
+      correctIndices: zod.array(zod.number()).optional(),
       rationale: zod.string().nullish(),
       sourceUrl: zod.string().nullish(),
     }),
@@ -550,8 +553,12 @@ export const AnswerQuizQuestionParams = zod.object({
 export const answerQuizQuestionBodySelectedIndexMin = 0;
 
 export const AnswerQuizQuestionBody = zod.object({
+  selectedIndices: zod.array(zod.number()).optional(),
   questionId: zod.number(),
-  selectedIndex: zod.number().min(answerQuizQuestionBodySelectedIndexMin),
+  selectedIndex: zod
+    .number()
+    .min(answerQuizQuestionBodySelectedIndexMin)
+    .optional(),
 });
 
 export const AnswerQuizQuestionResponse = zod.object({
@@ -579,8 +586,11 @@ export const FinishQuizResponse = zod.object({
       choices: zod.array(zod.string()),
       topicId: zod.number().nullish(),
       domainId: zod.number().nullish(),
+      multiSelect: zod.boolean().optional(),
       selectedIndex: zod.number().nullish(),
+      selectedIndices: zod.array(zod.number()).optional(),
       correctIndex: zod.number().nullish(),
+      correctIndices: zod.array(zod.number()).optional(),
       rationale: zod.string().nullish(),
       sourceUrl: zod.string().nullish(),
     }),
@@ -637,7 +647,15 @@ export const GetMockExamResponse = zod.object({
       index: zod.number(),
       stem: zod.string(),
       choices: zod.array(zod.string()),
+      topicId: zod.number().nullish(),
+      domainId: zod.number().nullish(),
+      multiSelect: zod.boolean().optional(),
       selectedIndex: zod.number().nullish(),
+      selectedIndices: zod.array(zod.number()).optional(),
+      correctIndex: zod.number().nullish(),
+      correctIndices: zod.array(zod.number()).optional(),
+      rationale: zod.string().nullish(),
+      sourceUrl: zod.string().nullish(),
     }),
   ),
 });
@@ -656,7 +674,11 @@ export const answerMockExamQuestionBodySelectedIndexMin = 0;
 
 export const AnswerMockExamQuestionBody = zod.object({
   index: zod.number().min(answerMockExamQuestionBodyIndexMin),
-  selectedIndex: zod.number().min(answerMockExamQuestionBodySelectedIndexMin),
+  selectedIndex: zod
+    .number()
+    .min(answerMockExamQuestionBodySelectedIndexMin)
+    .optional(),
+  selectedIndices: zod.array(zod.number()).optional(),
 });
 
 export const AnswerMockExamQuestionResponse = zod.object({
@@ -674,7 +696,15 @@ export const AnswerMockExamQuestionResponse = zod.object({
       index: zod.number(),
       stem: zod.string(),
       choices: zod.array(zod.string()),
+      topicId: zod.number().nullish(),
+      domainId: zod.number().nullish(),
+      multiSelect: zod.boolean().optional(),
       selectedIndex: zod.number().nullish(),
+      selectedIndices: zod.array(zod.number()).optional(),
+      correctIndex: zod.number().nullish(),
+      correctIndices: zod.array(zod.number()).optional(),
+      rationale: zod.string().nullish(),
+      sourceUrl: zod.string().nullish(),
     }),
   ),
 });

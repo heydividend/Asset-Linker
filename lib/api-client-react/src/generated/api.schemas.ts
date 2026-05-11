@@ -288,10 +288,13 @@ export interface QuizQuestion {
   topicId?: number | null;
   /** @nullable */
   domainId?: number | null;
+  multiSelect?: boolean;
   /** @nullable */
   selectedIndex?: number | null;
+  selectedIndices?: number[];
   /** @nullable */
   correctIndex?: number | null;
+  correctIndices?: number[];
   /** @nullable */
   rationale?: string | null;
   /** @nullable */
@@ -338,9 +341,10 @@ export interface QuizInput {
 }
 
 export interface QuizAnswerInput {
+  selectedIndices?: number[];
   questionId: number;
   /** @minimum 0 */
-  selectedIndex: number;
+  selectedIndex?: number;
 }
 
 export interface QuizAnswerResult {
@@ -356,7 +360,20 @@ export interface MockExamQuestion {
   stem: string;
   choices: string[];
   /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  domainId?: number | null;
+  multiSelect?: boolean;
+  /** @nullable */
   selectedIndex?: number | null;
+  selectedIndices?: number[];
+  /** @nullable */
+  correctIndex?: number | null;
+  correctIndices?: number[];
+  /** @nullable */
+  rationale?: string | null;
+  /** @nullable */
+  sourceUrl?: string | null;
 }
 
 export interface MockExam {
@@ -397,7 +414,8 @@ export interface MockExamAnswerInput {
   /** @minimum 0 */
   index: number;
   /** @minimum 0 */
-  selectedIndex: number;
+  selectedIndex?: number;
+  selectedIndices?: number[];
 }
 
 export type MockExamHeartbeatInputEvent =

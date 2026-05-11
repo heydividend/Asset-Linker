@@ -101,6 +101,8 @@ async function serializeExam(exam: typeof mockExams.$inferSelect, includeAnswers
     questions: exam.questionIds.map((qid, i) => {
       const q = byId.get(qid);
       const sel = exam.answers[i];
+      const selectedIndex = typeof sel === "number" ? sel : undefined;
+      const selectedIndices = Array.isArray(sel) ? sel : undefined;
       return {
         id: qid,
         questionId: qid,
@@ -108,9 +110,16 @@ async function serializeExam(exam: typeof mockExams.$inferSelect, includeAnswers
         choices: q?.choices ?? [],
         topicId: q?.topicId,
         domainId: q?.domainId,
-        selectedIndex: sel ?? undefined,
+        multiSelect: q?.multiSelect ?? false,
+        selectedIndex,
+        selectedIndices,
         ...(includeAnswers && q
-          ? { correctIndex: q.correctIndex, rationale: q.rationale, sourceUrl: q.sourceUrl }
+          ? {
+              correctIndex: q.correctIndex,
+              correctIndices: q.correctIndices ?? undefined,
+              rationale: q.rationale,
+              sourceUrl: q.sourceUrl,
+            }
           : {}),
       };
     }),
@@ -133,9 +142,15 @@ router.post("/mock-exams/:id/answer", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  const { index, selectedIndex } = req.body ?? {};
-  if (typeof index !== "number" || typeof selectedIndex !== "number") {
-    res.status(400).json({ error: "index and selectedIndex required" });
+  const { index, selectedIndex, selectedIndices } = req.body ?? {};
+  if (typeof index !== "number") {
+    res.status(400).json({ error: "index required" });
+    return;
+  }
+  const hasSingle = typeof selectedIndex === "number";
+  const hasMulti = Array.isArray(selectedIndices);
+  if (!hasSingle && !hasMulti) {
+    res.status(400).json({ error: "selectedIndex or selectedIndices required" });
     return;
   }
   const [exam] = await db.select().from(mockExams).where(eq(mockExams.id, id));
@@ -147,13 +162,11 @@ router.post("/mock-exams/:id/answer", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Exam already submitted" });
     return;
   }
-  // Server-side timer enforcement: refuse late answers.
   const elapsed = Math.floor((Date.now() - new Date(exam.startedAt).getTime()) / 1000);
   if (elapsed > exam.timeLimitSec) {
     res.status(409).json({ error: "Time has expired. Submit the exam." });
     return;
   }
-  // Strict no-back enforcement: only allow answering the current (un-answered) question.
   if (index !== exam.currentIndex) {
     res.status(409).json({ error: "Cannot revisit a previous question." });
     return;
@@ -167,7 +180,9 @@ router.post("/mock-exams/:id/answer", async (req, res): Promise<void> => {
     return;
   }
   const newAnswers = [...exam.answers];
-  newAnswers[index] = selectedIndex;
+  newAnswers[index] = hasMulti
+    ? (selectedIndices as unknown[]).filter((n): n is number => typeof n === "number")
+    : (selectedIndex as number);
   await db
     .update(mockExams)
     .set({ answers: newAnswers, currentIndex: index + 1 })
@@ -203,7 +218,16 @@ async function computeResult(examId: number) {
     const q = byId.get(qid);
     if (!q) return;
     const sel = exam.answers[i];
-    const isCorrect = sel === q.correctIndex;
+    let isCorrect = false;
+    if (q.multiSelect && Array.isArray(q.correctIndices)) {
+      if (Array.isArray(sel)) {
+        const a = [...sel].sort((x, y) => x - y);
+        const b = [...q.correctIndices].sort((x, y) => x - y);
+        isCorrect = a.length === b.length && a.every((v, j) => v === b[j]);
+      }
+    } else {
+      isCorrect = sel === q.correctIndex;
+    }
     if (isCorrect) correct += 1;
     if (q.domainId) {
       const cur = perDomainStats.get(q.domainId) ?? { correct: 0, total: 0 };

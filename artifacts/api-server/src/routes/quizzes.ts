@@ -5,7 +5,7 @@ import { parseId } from "../lib/parseId";
 
 const router: IRouter = Router();
 
-async function buildQuizQuestionView(qids: number[], answers: Map<number, { selectedIndex: number; correct: boolean }>) {
+async function buildQuizQuestionView(qids: number[], answers: Map<number, { selectedIndex: number; selectedIndices: number[] | null; correct: boolean }>) {
   if (qids.length === 0) return [];
   const rows = await db.select().from(questions).where(inArray(questions.id, qids));
   const byId = new Map(rows.map((r) => [r.id, r]));
@@ -21,10 +21,13 @@ async function buildQuizQuestionView(qids: number[], answers: Map<number, { sele
         choices: q.choices,
         topicId: q.topicId,
         domainId: q.domainId,
+        multiSelect: q.multiSelect,
         ...(ans
           ? {
               selectedIndex: ans.selectedIndex,
+              selectedIndices: ans.selectedIndices ?? undefined,
               correctIndex: q.correctIndex,
+              correctIndices: q.correctIndices ?? undefined,
               rationale: q.rationale,
               sourceUrl: q.sourceUrl,
             }
@@ -32,6 +35,13 @@ async function buildQuizQuestionView(qids: number[], answers: Map<number, { sele
       };
     })
     .filter(Boolean);
+}
+
+function arraysEqualAsSets(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort((x, y) => x - y);
+  const sb = [...b].sort((x, y) => x - y);
+  return sa.every((v, i) => v === sb[i]);
 }
 
 router.get("/quizzes", async (req, res): Promise<void> => {
@@ -137,7 +147,7 @@ router.get("/quizzes/:id", async (req, res): Promise<void> => {
     return;
   }
   const ans = await db.select().from(quizAnswers).where(eq(quizAnswers.quizId, id));
-  const ansMap = new Map(ans.map((a) => [a.questionId, { selectedIndex: a.selectedIndex, correct: a.correct }]));
+  const ansMap = new Map(ans.map((a) => [a.questionId, { selectedIndex: a.selectedIndex, selectedIndices: a.selectedIndices, correct: a.correct }]));
   res.json({
     id: quiz.id,
     mode: quiz.mode,
@@ -164,9 +174,9 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  const { questionId, selectedIndex } = req.body ?? {};
-  if (typeof questionId !== "number" || typeof selectedIndex !== "number") {
-    res.status(400).json({ error: "questionId and selectedIndex required" });
+  const { questionId, selectedIndex, selectedIndices } = req.body ?? {};
+  if (typeof questionId !== "number") {
+    res.status(400).json({ error: "questionId required" });
     return;
   }
   const [q] = await db.select().from(questions).where(eq(questions.id, questionId));
@@ -174,8 +184,27 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Question not found" });
     return;
   }
-  const correct = selectedIndex === q.correctIndex;
-  await db.insert(quizAnswers).values({ quizId: id, questionId, selectedIndex, correct });
+  let correct: boolean;
+  let storedIndex: number;
+  let storedIndices: number[] | null = null;
+  if (q.multiSelect && Array.isArray(q.correctIndices)) {
+    if (!Array.isArray(selectedIndices)) {
+      res.status(400).json({ error: "selectedIndices array required for multi-select question" });
+      return;
+    }
+    const cleaned = selectedIndices.filter((n: unknown): n is number => typeof n === "number");
+    storedIndices = cleaned;
+    storedIndex = cleaned[0] ?? -1;
+    correct = arraysEqualAsSets(cleaned, q.correctIndices);
+  } else {
+    if (typeof selectedIndex !== "number") {
+      res.status(400).json({ error: "selectedIndex required" });
+      return;
+    }
+    storedIndex = selectedIndex;
+    correct = selectedIndex === q.correctIndex;
+  }
+  await db.insert(quizAnswers).values({ quizId: id, questionId, selectedIndex: storedIndex, selectedIndices: storedIndices, correct });
   await db
     .update(quizzes)
     .set({ currentIndex: sql`${quizzes.currentIndex} + 1` })
@@ -206,6 +235,8 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
   res.json({
     correct,
     correctIndex: q.correctIndex,
+    correctIndices: q.correctIndices ?? undefined,
+    multiSelect: q.multiSelect,
     rationale: q.rationale,
     sourceUrl: q.sourceUrl,
   });

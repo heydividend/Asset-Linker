@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { AskAiButton } from "@/components/AskAiButton";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, ChevronRight, LogOut, Trophy } from "lucide-react";
+import { AlertTriangle, Check, ChevronRight, LogOut, Trophy } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface MockExamResult {
@@ -45,6 +45,8 @@ export default function MockExamRunner() {
   const { toast } = useToast();
   const [localIdx, setLocalIdx] = useState<number | null>(null);
   const [localPicks, setLocalPicks] = useState<Record<number, number>>({});
+  const [localMultiPicks, setLocalMultiPicks] = useState<Record<number, number[]>>({});
+  const [draftMulti, setDraftMulti] = useState<Record<number, number[]>>({});
   const [pendingAnswerIdx, setPendingAnswerIdx] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
   const submittedRef = useRef(false);
@@ -203,13 +205,24 @@ export default function MockExamRunner() {
 
   if (!q) return <div className="p-6">No question.</div>;
 
-  const pickedIdx = localPicks[idx] ?? q.selectedIndex;
-  const isAnswered = pickedIdx != null;
+  const isMulti = !!q.multiSelect;
+  const pickedIdx = isMulti ? undefined : (localPicks[idx] ?? q.selectedIndex);
+  const pickedMultiSaved = isMulti ? (localMultiPicks[idx] ?? q.selectedIndices) : undefined;
+  const draftPicks = isMulti ? (draftMulti[idx] ?? []) : [];
+  const isAnswered = isMulti ? Array.isArray(pickedMultiSaved) : pickedIdx != null;
   const isPendingHere = pendingAnswerIdx === idx;
   const canAdvance = isAnswered && !isPendingHere;
 
   const onPick = (choiceIdx: number) => {
     if (isAnswered || isPendingHere) return;
+    if (isMulti) {
+      setDraftMulti((d) => {
+        const cur = d[idx] ?? [];
+        const next = cur.includes(choiceIdx) ? cur.filter((c) => c !== choiceIdx) : [...cur, choiceIdx];
+        return { ...d, [idx]: next };
+      });
+      return;
+    }
     const targetIdx = idx;
     setLocalPicks((p) => ({ ...p, [targetIdx]: choiceIdx }));
     setPendingAnswerIdx(targetIdx);
@@ -221,7 +234,6 @@ export default function MockExamRunner() {
           qc.invalidateQueries({ queryKey: getGetMockExamQueryKey(id) });
         },
         onError: (err) => {
-          // Roll back optimistic pick AND any forward navigation past this question.
           setLocalPicks((p) => {
             const next = { ...p };
             delete next[targetIdx];
@@ -237,6 +249,38 @@ export default function MockExamRunner() {
         },
       },
     );
+  };
+
+  const onSubmitMulti = async () => {
+    if (!isMulti || isAnswered || isPendingHere) return;
+    const targetIdx = idx;
+    const picks = draftMulti[targetIdx] ?? [];
+    if (picks.length === 0) return;
+    setLocalMultiPicks((p) => ({ ...p, [targetIdx]: picks }));
+    setPendingAnswerIdx(targetIdx);
+    try {
+      const r = await fetch(`/api/mock-exams/${exam.id}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index: targetIdx, selectedIndices: picks }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Failed to save answer");
+      setPendingAnswerIdx((cur) => (cur === targetIdx ? null : cur));
+      qc.invalidateQueries({ queryKey: getGetMockExamQueryKey(id) });
+    } catch (err) {
+      setLocalMultiPicks((p) => {
+        const next = { ...p };
+        delete next[targetIdx];
+        return next;
+      });
+      setPendingAnswerIdx((cur) => (cur === targetIdx ? null : cur));
+      setLocalIdx((cur) => (cur != null && cur > targetIdx ? targetIdx : cur));
+      toast({
+        title: "Couldn't save your answer",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const submitBlocked = pendingAnswerIdx !== null || answer.isPending || submit.isPending;
@@ -280,8 +324,13 @@ export default function MockExamRunner() {
             <CardTitle className="text-lg leading-relaxed" data-testid="text-mock-stem">{q.stem}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
+            {isMulti && (
+              <p className="text-sm font-medium text-muted-foreground mb-2">Select all that apply.</p>
+            )}
             {q.choices.map((c, ci) => {
-              const picked = pickedIdx === ci;
+              const picked = isMulti
+                ? (Array.isArray(pickedMultiSaved) ? pickedMultiSaved.includes(ci) : draftPicks.includes(ci))
+                : pickedIdx === ci;
               return (
                 <button
                   key={ci}
@@ -290,11 +339,26 @@ export default function MockExamRunner() {
                   className={`w-full text-left p-3 rounded-lg border ${picked ? "border-primary bg-primary/10" : "border-border hover-elevate cursor-pointer"} ${isAnswered && !picked ? "opacity-60" : ""}`}
                   data-testid={`mock-choice-${ci}`}
                 >
+                  {isMulti && (
+                    <span className={`inline-flex items-center justify-center w-5 h-5 mr-2 rounded border align-middle ${picked ? "border-primary bg-primary/20" : "border-border"}`}>
+                      {picked && <Check className="h-3 w-3" />}
+                    </span>
+                  )}
                   <span className="font-medium mr-2">{String.fromCharCode(65 + ci)}.</span>
                   {c}
                 </button>
               );
             })}
+            {isMulti && !isAnswered && (
+              <Button
+                onClick={onSubmitMulti}
+                disabled={draftPicks.length === 0 || isPendingHere}
+                className="mt-2"
+                data-testid="button-mock-submit-multi"
+              >
+                Submit answer
+              </Button>
+            )}
           </CardContent>
         </Card>
         <div className="flex justify-end">

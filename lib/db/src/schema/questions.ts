@@ -7,6 +7,8 @@ export const questions = pgTable("questions", {
   stem: text("stem").notNull(),
   choices: jsonb("choices").$type<string[]>().notNull(),
   correctIndex: integer("correct_index").notNull(),
+  multiSelect: boolean("multi_select").notNull().default(false),
+  correctIndices: jsonb("correct_indices").$type<number[] | null>(),
   rationale: text("rationale").notNull(),
   domainId: integer("domain_id").references(() => domains.id, { onDelete: "set null" }),
   topicId: integer("topic_id").references(() => topics.id, { onDelete: "set null" }),

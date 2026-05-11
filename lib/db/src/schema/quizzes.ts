@@ -19,6 +19,7 @@ export const quizAnswers = pgTable("quiz_answers", {
   quizId: integer("quiz_id").notNull().references(() => quizzes.id, { onDelete: "cascade" }),
   questionId: integer("question_id").notNull(),
   selectedIndex: integer("selected_index").notNull(),
+  selectedIndices: jsonb("selected_indices").$type<number[] | null>(),
   correct: boolean("correct").notNull(),
   answeredAt: timestamp("answered_at", { withTimezone: true }).defaultNow().notNull(),
 });

@@ -22,6 +22,19 @@ import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySpa
 import { Progress } from "@/components/ui/progress";
 import { Check, ChevronRight, ExternalLink, LogOut, Trophy, X } from "lucide-react";
 
+function arraysEqualAsSets(a: number[] | null | undefined, b: number[] | null | undefined): boolean {
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort((x, y) => x - y);
+  const sb = [...b].sort((x, y) => x - y);
+  return sa.every((v, i) => v === sb[i]);
+}
+
+function isQuestionCorrect(qq: { multiSelect?: boolean; selectedIndex?: number | null; correctIndex?: number | null; selectedIndices?: number[] | null; correctIndices?: number[] | null }): boolean {
+  if (qq.multiSelect) return arraysEqualAsSets(qq.selectedIndices ?? null, qq.correctIndices ?? null);
+  return qq.selectedIndex != null && qq.selectedIndex === qq.correctIndex;
+}
+
 export default function QuizRunner() {
   const params = useParams();
   const id = Number(params.id);
@@ -30,6 +43,8 @@ export default function QuizRunner() {
   const answer = useAnswerQuizQuestion();
   const finish = useFinishQuiz();
   const [localIdx, setLocalIdx] = useState<number | null>(null);
+  const [multiPicks, setMultiPicks] = useState<Record<number, number[]>>({});
+  const [submittingMulti, setSubmittingMulti] = useState(false);
   const [, navigate] = useLocation();
 
   const onExit = () => {
@@ -45,15 +60,50 @@ export default function QuizRunner() {
   // clamp to the last valid index so the user can still see the rationale and finish.
   const idx = Math.min(Math.max(0, rawIdx), Math.max(0, total - 1));
   const q = quiz.questions[idx];
-  const allAnswered = quiz.questions.every((qq) => qq.selectedIndex != null);
+  const isAnsweredQuestion = (qq: { multiSelect?: boolean; selectedIndex?: number | null; selectedIndices?: number[] | null }) => {
+    if (qq.multiSelect) return Array.isArray(qq.selectedIndices);
+    return qq.selectedIndex != null;
+  };
+  const allAnswered = quiz.questions.every((qq) => isAnsweredQuestion(qq));
   const finished = quiz.finished;
 
+  const isAnsweredQ = (qq: typeof q) => {
+    if (!qq) return false;
+    if (qq.multiSelect) return Array.isArray(qq.selectedIndices);
+    return qq.selectedIndex != null;
+  };
+
   const onPick = (choiceIdx: number) => {
-    if (!q || q.selectedIndex != null) return;
+    if (!q || isAnsweredQ(q)) return;
+    if (q.multiSelect) {
+      setMultiPicks((p) => {
+        const cur = p[q.questionId] ?? [];
+        const next = cur.includes(choiceIdx) ? cur.filter((c) => c !== choiceIdx) : [...cur, choiceIdx];
+        return { ...p, [q.questionId]: next };
+      });
+      return;
+    }
     answer.mutate(
       { id: quiz.id, data: { questionId: q.questionId, selectedIndex: choiceIdx } },
       { onSuccess: () => qc.invalidateQueries({ queryKey: getGetQuizQueryKey(id) }) },
     );
+  };
+
+  const onSubmitMulti = async () => {
+    if (!q || !q.multiSelect || isAnsweredQ(q)) return;
+    const picks = multiPicks[q.questionId] ?? [];
+    if (picks.length === 0) return;
+    setSubmittingMulti(true);
+    try {
+      await fetch(`/api/quizzes/${quiz.id}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId: q.questionId, selectedIndices: picks }),
+      });
+      await qc.invalidateQueries({ queryKey: getGetQuizQueryKey(id) });
+    } finally {
+      setSubmittingMulti(false);
+    }
   };
 
   const onFinish = () => {
@@ -76,15 +126,16 @@ export default function QuizRunner() {
   };
 
   if (finished) {
-    const correct = quiz.questions.filter((qq) => qq.selectedIndex === qq.correctIndex).length;
+    const correct = quiz.questions.filter((qq) => isQuestionCorrect(qq)).length;
     const pct = Math.round((correct / total) * 100);
     return <FinishedQuizView quiz={quiz} correct={correct} pct={pct} total={total} />;
   }
 
   if (!q) return <div className="p-6">No question.</div>;
 
-  const answered = q.selectedIndex != null;
-  const isCorrect = answered && q.selectedIndex === q.correctIndex;
+  const answered = isAnsweredQuestion(q);
+  const currentMultiPicks = q.multiSelect ? (multiPicks[q.questionId] ?? []) : [];
+  const isCorrect = answered && isQuestionCorrect(q);
 
   return (
     <div className="flex flex-col h-full">
@@ -112,9 +163,17 @@ export default function QuizRunner() {
             <CardTitle className="text-lg leading-relaxed" data-testid="text-question-stem">{q.stem}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
+            {q.multiSelect && (
+              <p className="text-sm font-medium text-muted-foreground mb-2">Select all that apply.</p>
+            )}
             {q.choices.map((c, ci) => {
-              const showCorrect = answered && ci === q.correctIndex;
-              const showWrong = answered && ci === q.selectedIndex && ci !== q.correctIndex;
+              const correctSet = q.multiSelect ? (q.correctIndices ?? []) : [q.correctIndex];
+              const pickedSet = q.multiSelect ? (q.selectedIndices ?? currentMultiPicks) : [q.selectedIndex];
+              const isPicked = pickedSet.includes(ci);
+              const isCorrectChoice = correctSet.includes(ci);
+              const showCorrect = answered && isCorrectChoice;
+              const showWrong = answered && isPicked && !isCorrectChoice;
+              const showPickedPreview = !answered && q.multiSelect && currentMultiPicks.includes(ci);
               return (
                 <button
                   key={ci}
@@ -127,15 +186,32 @@ export default function QuizRunner() {
                         ? "border-destructive bg-destructive/10"
                         : answered
                           ? "border-border opacity-60"
-                          : "border-border hover-elevate cursor-pointer"
+                          : showPickedPreview
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover-elevate cursor-pointer"
                   }`}
                   data-testid={`choice-${ci}`}
                 >
+                  {q.multiSelect && (
+                    <span className={`inline-flex items-center justify-center w-5 h-5 mr-2 rounded border ${showPickedPreview || showCorrect || (answered && isPicked) ? "border-primary bg-primary/20" : "border-border"}`}>
+                      {(showPickedPreview || (answered && isPicked) || showCorrect) && <Check className="h-3 w-3" />}
+                    </span>
+                  )}
                   <span className="font-medium mr-2">{String.fromCharCode(65 + ci)}.</span>
                   {c}
                 </button>
               );
             })}
+            {q.multiSelect && !answered && (
+              <Button
+                onClick={onSubmitMulti}
+                disabled={currentMultiPicks.length === 0 || submittingMulti}
+                className="mt-2"
+                data-testid="button-submit-multi"
+              >
+                Submit answer
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -256,7 +332,9 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
             </CardContent>
           </Card>
           {quiz.questions.map((qq, i) => {
-            const isCorrect = qq.selectedIndex === qq.correctIndex;
+            const isCorrect = isQuestionCorrect(qq);
+            const correctSet: number[] = qq.multiSelect ? (qq.correctIndices ?? []) : [qq.correctIndex as number];
+            const pickedSet: number[] = qq.multiSelect ? (qq.selectedIndices ?? []) : (qq.selectedIndex != null ? [qq.selectedIndex] : []);
             const topicInfo = qq.topicId != null ? topicInfoById.get(qq.topicId) : undefined;
             const showTrend = !isCorrect && !!topicInfo && topicInfo.attempts.length > 0;
             const isFocused = focusQuestionId != null && qq.questionId === focusQuestionId;
@@ -280,14 +358,26 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
-                  {qq.choices.map((c, ci) => (
-                    <div
-                      key={ci}
-                      className={`p-2 rounded border ${ci === qq.correctIndex ? "border-primary bg-primary/10" : ci === qq.selectedIndex ? "border-destructive bg-destructive/10" : "border-border"}`}
-                    >
-                      {String.fromCharCode(65 + ci)}. {c}
-                    </div>
-                  ))}
+                  {qq.multiSelect && (
+                    <p className="text-xs text-muted-foreground">Select all that apply.</p>
+                  )}
+                  {qq.choices.map((c, ci) => {
+                    const isCorrectChoice = correctSet.includes(ci);
+                    const isPicked = pickedSet.includes(ci);
+                    return (
+                      <div
+                        key={ci}
+                        className={`p-2 rounded border ${isCorrectChoice ? "border-primary bg-primary/10" : isPicked ? "border-destructive bg-destructive/10" : "border-border"}`}
+                      >
+                        {qq.multiSelect && (
+                          <span className={`inline-flex items-center justify-center w-4 h-4 mr-2 rounded border align-middle ${isCorrectChoice ? "border-primary bg-primary/20" : isPicked ? "border-destructive bg-destructive/20" : "border-border"}`}>
+                            {(isCorrectChoice || isPicked) && <Check className="h-3 w-3" />}
+                          </span>
+                        )}
+                        {String.fromCharCode(65 + ci)}. {c}
+                      </div>
+                    );
+                  })}
                   {qq.rationale && <p className="text-muted-foreground"><strong>Rationale:</strong> {qq.rationale}</p>}
                   <div className="flex items-center gap-2 flex-wrap">
                     {qq.sourceUrl && (

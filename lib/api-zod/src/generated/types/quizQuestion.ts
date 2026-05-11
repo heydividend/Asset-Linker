@@ -15,10 +15,13 @@ export interface QuizQuestion {
   topicId?: number | null;
   /** @nullable */
   domainId?: number | null;
+  multiSelect?: boolean;
   /** @nullable */
   selectedIndex?: number | null;
+  selectedIndices?: number[];
   /** @nullable */
   correctIndex?: number | null;
+  correctIndices?: number[];
   /** @nullable */
   rationale?: string | null;
   /** @nullable */

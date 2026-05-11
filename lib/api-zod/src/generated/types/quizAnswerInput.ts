@@ -7,7 +7,8 @@
  */
 
 export interface QuizAnswerInput {
+  selectedIndices?: number[];
   questionId: number;
   /** @minimum 0 */
-  selectedIndex: number;
+  selectedIndex?: number;
 }

@@ -11,5 +11,18 @@ export interface MockExamQuestion {
   stem: string;
   choices: string[];
   /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  domainId?: number | null;
+  multiSelect?: boolean;
+  /** @nullable */
   selectedIndex?: number | null;
+  selectedIndices?: number[];
+  /** @nullable */
+  correctIndex?: number | null;
+  correctIndices?: number[];
+  /** @nullable */
+  rationale?: string | null;
+  /** @nullable */
+  sourceUrl?: string | null;
 }
