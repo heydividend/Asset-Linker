@@ -329,19 +329,6 @@ export function ChatPanel() {
       </header>
 
       <div className="flex-1 min-h-0 overflow-hidden relative">
-        {!atBottom && (
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            onClick={scrollToLatest}
-            data-testid="button-scroll-to-latest"
-            className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 h-7 px-2.5 text-xs shadow-lg rounded-full"
-          >
-            <ArrowDown className="h-3.5 w-3.5 mr-1" />
-            {streaming ? "Jump to latest" : "Scroll to latest"}
-          </Button>
-        )}
         <ScrollArea className="h-full" ref={scrollRef}>
           <div className="flex flex-col gap-3 p-4 pb-2">
             {messages.length === 0 && !streamingMessage && !pendingUserMessage && (
@@ -413,7 +400,20 @@ export function ChatPanel() {
         </ScrollArea>
       </div>
 
-      <div className="p-3 border-t bg-background space-y-2 shrink-0">
+      <div className="relative p-3 border-t bg-background space-y-2 shrink-0">
+        {!atBottom && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={scrollToLatest}
+            data-testid="button-scroll-to-latest"
+            className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 h-7 px-2.5 text-xs shadow-lg rounded-full"
+          >
+            <ArrowDown className="h-3.5 w-3.5 mr-1" />
+            {streaming ? "Jump to latest" : "Scroll to latest"}
+          </Button>
+        )}
         {pendingFile && (
           <div className="flex flex-col gap-2 rounded-md border bg-muted/50 p-2">
             <div className="flex items-center justify-between gap-2 min-w-0">
