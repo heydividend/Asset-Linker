@@ -361,6 +361,145 @@
           "image": "/games/gon/gon_39.jpg"
         }
       ]
+    },
+    {
+      "id": "ch7-equipment",
+      "title": "Ch 7: Protective Equipment",
+      "description": "Match each piece of protective equipment from the textbook to its name.",
+      "pairs": [
+        {
+          "label": "Football helmets",
+          "image": "/games/ch7-equipment/eq_02_00.jpg"
+        },
+        {
+          "label": "Ice hockey helmets",
+          "image": "/games/ch7-equipment/eq_03_00.jpg"
+        },
+        {
+          "label": "Baseball/softball batting helmets and catcher's equipment",
+          "image": "/games/ch7-equipment/eq_03_01.jpg"
+        },
+        {
+          "label": "Cycling helmet",
+          "image": "/games/ch7-equipment/eq_03_02.jpg"
+        },
+        {
+          "label": "Men's lacrosse helmet components",
+          "image": "/games/ch7-equipment/eq_04_00.jpg"
+        },
+        {
+          "label": "Fencing athlete demonstrating complete face protection",
+          "image": "/games/ch7-equipment/eq_04_01.jpg"
+        },
+        {
+          "label": "Face masks",
+          "image": "/games/ch7-equipment/eq_04_02.jpg"
+        },
+        {
+          "label": "Throat protectors",
+          "image": "/games/ch7-equipment/eq_05_00.jpg"
+        },
+        {
+          "label": "Mouth guards",
+          "image": "/games/ch7-equipment/eq_05_01.jpg"
+        },
+        {
+          "label": "Headgear/ear guards",
+          "image": "/games/ch7-equipment/eq_05_02.jpg"
+        },
+        {
+          "label": "Eye and glasses guards",
+          "image": "/games/ch7-equipment/eq_05_03.jpg"
+        },
+        {
+          "label": "Eye guards and face shields for sports",
+          "image": "/games/ch7-equipment/eq_06_00.jpg"
+        },
+        {
+          "label": "Chest and thorax protectors",
+          "image": "/games/ch7-equipment/eq_06_01.jpg"
+        },
+        {
+          "label": "Football shoulder pads",
+          "image": "/games/ch7-equipment/eq_06_02.jpg"
+        },
+        {
+          "label": "Customized foam on underside of shoulder pad for acromioclavicular joint protection and cowboy collar attached to shoulder pad",
+          "image": "/games/ch7-equipment/eq_06_04.jpg"
+        },
+        {
+          "label": "Sports bras",
+          "image": "/games/ch7-equipment/eq_07_00.jpg"
+        },
+        {
+          "label": "Protective rib belts",
+          "image": "/games/ch7-equipment/eq_07_01.jpg"
+        },
+        {
+          "label": "Girdle-style hip and coccygeal pads and hexpads",
+          "image": "/games/ch7-equipment/eq_07_02.jpg"
+        },
+        {
+          "label": "Lacing techniques for shoes",
+          "image": "/games/ch7-equipment/eq_09_00.jpg"
+        },
+        {
+          "label": "Variations in cleated shoes - four styles",
+          "image": "/games/ch7-equipment/eq_09_01.jpg"
+        },
+        {
+          "label": "Commercially manufactured orthotic devices - top and bottom views of four sets",
+          "image": "/games/ch7-equipment/eq_09_02.jpg"
+        },
+        {
+          "label": "Different styles of heel cups",
+          "image": "/games/ch7-equipment/eq_09_03.jpg"
+        },
+        {
+          "label": "Commercial ankle braces",
+          "image": "/games/ch7-equipment/eq_10_00.jpg"
+        },
+        {
+          "label": "Soccer shin guards in various styles and colors",
+          "image": "/games/ch7-equipment/eq_10_01.jpg"
+        },
+        {
+          "label": "Thigh and upper leg protection",
+          "image": "/games/ch7-equipment/eq_10_02.jpg"
+        },
+        {
+          "label": "Knee braces",
+          "image": "/games/ch7-equipment/eq_10_03.jpg"
+        },
+        {
+          "label": "Elbow protective equipment",
+          "image": "/games/ch7-equipment/eq_11_00.jpg"
+        },
+        {
+          "label": "Hand and wrist protective gloves",
+          "image": "/games/ch7-equipment/eq_11_01.jpg"
+        },
+        {
+          "label": "Soft materials",
+          "image": "/games/ch7-equipment/eq_11_03.jpg"
+        },
+        {
+          "label": "Foam padding",
+          "image": "/games/ch7-equipment/eq_11_04.jpg"
+        },
+        {
+          "label": "Thermomoldable plastics",
+          "image": "/games/ch7-equipment/eq_12_01.jpg"
+        },
+        {
+          "label": "Casting materials and saw",
+          "image": "/games/ch7-equipment/eq_12_02.jpg"
+        },
+        {
+          "label": "Hard-shell pad wrapped on the thigh",
+          "image": "/games/ch7-equipment/eq_12_03.jpg"
+        }
+      ]
     }
   ]
 }
