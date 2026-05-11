@@ -1,14 +1,16 @@
 import { useParams, Link } from "wouter";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { forgetFixItQuizId, isTodayFixItQuiz, markCompletedToday } from "@/lib/fixItPlan";
 import {
   useGetQuiz,
   useAnswerQuizQuestion,
   useFinishQuiz,
+  useGetDashboardTopicMastery,
   getGetQuizQueryKey,
   getGetDashboardTopicMasteryQueryKey,
   getGetDashboardSummaryQueryKey,
   getGetFixItStreakQueryKey,
+  type GetQuizQueryResult,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AskAiButton } from "@/components/AskAiButton";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
+import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySparkline";
 import { Progress } from "@/components/ui/progress";
 import { Check, ChevronRight, ExternalLink, Trophy, X } from "lucide-react";
 
@@ -69,57 +72,7 @@ export default function QuizRunner() {
   if (finished) {
     const correct = quiz.questions.filter((qq) => qq.selectedIndex === qq.correctIndex).length;
     const pct = Math.round((correct / total) * 100);
-    return (
-      <div className="flex flex-col h-full">
-        <header className="h-14 border-b flex items-center px-6">
-          <h1 className="text-lg font-semibold">Quiz Results</h1>
-        </header>
-        <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full space-y-6">
-          <Card className="bg-primary text-primary-foreground border-none">
-            <CardContent className="p-8 text-center">
-              <Trophy className="h-10 w-10 mx-auto mb-2" />
-              <p className="text-5xl font-bold" data-testid="text-final-score">{pct}%</p>
-              <p className="opacity-90 mt-1">{correct} of {total} correct</p>
-            </CardContent>
-          </Card>
-          {quiz.questions.map((qq, i) => {
-            const isCorrect = qq.selectedIndex === qq.correctIndex;
-            return (
-              <Card key={qq.id}>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-start gap-2">
-                    {isCorrect ? <Check className="h-5 w-5 text-primary mt-0.5" /> : <X className="h-5 w-5 text-destructive mt-0.5" />}
-                    <span>Q{i + 1}. {qq.stem}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  {qq.choices.map((c, ci) => (
-                    <div
-                      key={ci}
-                      className={`p-2 rounded border ${ci === qq.correctIndex ? "border-primary bg-primary/10" : ci === qq.selectedIndex ? "border-destructive bg-destructive/10" : "border-border"}`}
-                    >
-                      {String.fromCharCode(65 + ci)}. {c}
-                    </div>
-                  ))}
-                  {qq.rationale && <p className="text-muted-foreground"><strong>Rationale:</strong> {qq.rationale}</p>}
-                  <div className="flex items-center gap-2">
-                    {qq.sourceUrl && (
-                      <a href={qq.sourceUrl} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">
-                        <ExternalLink className="h-3 w-3" /> Source
-                      </a>
-                    )}
-                    <AskAiButton context={`Help me understand this quiz question I missed:\nQ: ${qq.stem}\nMy answer: ${qq.choices[qq.selectedIndex ?? 0] ?? "n/a"}\nCorrect: ${qq.choices[qq.correctIndex ?? 0]}\nRationale: ${qq.rationale ?? "n/a"}`} size="sm" />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-          <div className="flex justify-end">
-            <Link href="/quiz"><Button data-testid="button-new-quiz">New quiz</Button></Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <FinishedQuizView quiz={quiz} correct={correct} pct={pct} total={total} />;
   }
 
   if (!q) return <div className="p-6">No question.</div>;
@@ -217,3 +170,106 @@ export default function QuizRunner() {
     </div>
   );
 }
+
+interface FinishedQuizViewProps {
+  quiz: GetQuizQueryResult;
+  correct: number;
+  pct: number;
+  total: number;
+}
+
+function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) {
+  // Pull recent attempts per topic so each missed question can show its own
+  // trend popover, mirroring the one Task #40 added on the Dashboard side.
+  const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery({ limit: 5 });
+  const topicInfoById = useMemo(() => {
+    const m = new Map<
+      number,
+      { name: string; attempts: SparklineAttempt[]; trend: boolean[] }
+    >();
+    for (const row of topicMasteryRows) {
+      const recent = row.recentAttempts ?? [];
+      m.set(row.topicId, {
+        name: row.name,
+        attempts: recent.map((a) => ({
+          correct: a.correct,
+          answeredAt: a.answeredAt,
+          topicName: row.name,
+          quizId: a.quizId,
+        })),
+        trend: recent.map((a) => a.correct),
+      });
+    }
+    return m;
+  }, [topicMasteryRows]);
+
+  return (
+      <div className="flex flex-col h-full">
+        <header className="h-14 border-b flex items-center px-6">
+          <h1 className="text-lg font-semibold">Quiz Results</h1>
+        </header>
+        <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full space-y-6">
+          <Card className="bg-primary text-primary-foreground border-none">
+            <CardContent className="p-8 text-center">
+              <Trophy className="h-10 w-10 mx-auto mb-2" />
+              <p className="text-5xl font-bold" data-testid="text-final-score">{pct}%</p>
+              <p className="opacity-90 mt-1">{correct} of {total} correct</p>
+            </CardContent>
+          </Card>
+          {quiz.questions.map((qq, i) => {
+            const isCorrect = qq.selectedIndex === qq.correctIndex;
+            const topicInfo = qq.topicId != null ? topicInfoById.get(qq.topicId) : undefined;
+            const showTrend = !isCorrect && !!topicInfo && topicInfo.attempts.length > 0;
+            return (
+              <Card key={qq.id}>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-start gap-2">
+                    {isCorrect ? <Check className="h-5 w-5 text-primary mt-0.5" /> : <X className="h-5 w-5 text-destructive mt-0.5" />}
+                    <span>Q{i + 1}. {qq.stem}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  {qq.choices.map((c, ci) => (
+                    <div
+                      key={ci}
+                      className={`p-2 rounded border ${ci === qq.correctIndex ? "border-primary bg-primary/10" : ci === qq.selectedIndex ? "border-destructive bg-destructive/10" : "border-border"}`}
+                    >
+                      {String.fromCharCode(65 + ci)}. {c}
+                    </div>
+                  ))}
+                  {qq.rationale && <p className="text-muted-foreground"><strong>Rationale:</strong> {qq.rationale}</p>}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {qq.sourceUrl && (
+                      <a href={qq.sourceUrl} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">
+                        <ExternalLink className="h-3 w-3" /> Source
+                      </a>
+                    )}
+                    <AskAiButton context={`Help me understand this quiz question I missed:\nQ: ${qq.stem}\nMy answer: ${qq.choices[qq.selectedIndex ?? 0] ?? "n/a"}\nCorrect: ${qq.choices[qq.correctIndex ?? 0]}\nRationale: ${qq.rationale ?? "n/a"}`} size="sm" />
+                  </div>
+                  {showTrend && (
+                    <div
+                      className="flex items-center gap-2 pt-1 text-[11px] text-muted-foreground"
+                      data-testid={`results-trend-${qq.id}`}
+                    >
+                      <span className="font-medium text-foreground">{topicInfo!.name}:</span>
+                      <MasterySparkline
+                        trend={topicInfo!.trend}
+                        attempts={topicInfo!.attempts}
+                        popoverTitle={`Recent attempts on ${topicInfo!.name}`}
+                        popoverTestId={`results-trend-popover-${qq.id}`}
+                        testId={`results-trend-spark-${qq.id}`}
+                        caption={`last ${topicInfo!.attempts.length}`}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+          <div className="flex justify-end">
+            <Link href="/quiz"><Button data-testid="button-new-quiz">New quiz</Button></Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
