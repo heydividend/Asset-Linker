@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { MarkdownMessage } from "./MarkdownMessage";
 
 function FollowupChips({ items, onPick }: { items: string[]; onPick: (q: string) => void }) {
   return (
@@ -277,7 +278,11 @@ export function ChatPanel() {
                     className={`max-w-[88%] min-w-0 rounded-lg px-3 py-2 ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                     data-testid={`chat-msg-${m.role}`}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
+                    {m.role === "user" ? (
+                      <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
+                    ) : (
+                      <MarkdownMessage content={m.content} className="text-sm" />
+                    )}
                   </div>
                   {showFollowups && activeConvId && (
                     <FollowupChips
@@ -291,7 +296,7 @@ export function ChatPanel() {
             {streamingMessage && (
               <div className="flex justify-start">
                 <div className="max-w-[88%] min-w-0 rounded-lg px-3 py-2 bg-muted">
-                  <p className="text-sm whitespace-pre-wrap break-words">{streamingMessage}</p>
+                  <MarkdownMessage content={streamingMessage} className="text-sm" />
                 </div>
               </div>
             )}

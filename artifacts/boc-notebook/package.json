@@ -75,7 +75,11 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "katex": "^0.16.45",
     "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "zustand": "^5.0.13"
   }
 }

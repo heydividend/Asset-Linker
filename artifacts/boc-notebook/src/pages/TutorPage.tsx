@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Plus, Send, Trash2, Loader2, Paperclip, Eraser } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
 
 export default function TutorPage() {
   const qc = useQueryClient();
@@ -279,15 +280,19 @@ export default function TutorPage() {
             {!activeId && <p className="text-muted-foreground text-center py-8">Pick or start a conversation.</p>}
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[80%] rounded-lg px-4 py-2 ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                  <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
+                <div className={`max-w-[80%] min-w-0 rounded-lg px-4 py-2 ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                  {m.role === "user" ? (
+                    <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
+                  ) : (
+                    <MarkdownMessage content={m.content} className="text-sm" />
+                  )}
                 </div>
               </div>
             ))}
             {streaming && (
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-lg px-4 py-2 bg-muted">
-                  <p className="text-sm whitespace-pre-wrap break-words">{streaming}</p>
+                <div className="max-w-[80%] min-w-0 rounded-lg px-4 py-2 bg-muted">
+                  <MarkdownMessage content={streaming} className="text-sm" />
                 </div>
               </div>
             )}
