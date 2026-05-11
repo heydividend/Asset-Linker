@@ -435,6 +435,11 @@ export interface MockExamResult {
   weakTopics: TopicScore[];
 }
 
+export interface RecentAttempt {
+  correct: boolean;
+  answeredAt: string;
+}
+
 export interface TopicMasteryEntry {
   topicId: number;
   name: string;
@@ -442,6 +447,8 @@ export interface TopicMasteryEntry {
   mastery: number;
   attempts: number;
   correct: number;
+  /** Up to the last 5 quiz answers for this topic, oldest first. */
+  recentAttempts: RecentAttempt[];
 }
 
 export interface OpenaiConversation {

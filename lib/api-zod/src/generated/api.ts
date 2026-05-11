@@ -912,6 +912,14 @@ export const GetDashboardTopicMasteryResponseItem = zod.object({
   mastery: zod.number().describe("0..1 fraction correct"),
   attempts: zod.number(),
   correct: zod.number(),
+  recentAttempts: zod
+    .array(
+      zod.object({
+        correct: zod.boolean(),
+        answeredAt: zod.coerce.date(),
+      }),
+    )
+    .describe("Up to the last 5 quiz answers for this topic, oldest first."),
 });
 export const GetDashboardTopicMasteryResponse = zod.array(
   GetDashboardTopicMasteryResponseItem,

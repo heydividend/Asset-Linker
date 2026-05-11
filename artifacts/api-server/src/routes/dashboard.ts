@@ -108,6 +108,35 @@ router.get("/dashboard/topic-mastery", async (_req, res): Promise<void> => {
   const mastery = await db.select().from(topicMastery);
   const tRows = await db.select().from(topics);
   const masteryByTopic = new Map(mastery.map((m) => [m.topicId, m]));
+
+  // Last 5 quiz answers per topic (joined via questions.topic_id), newest first.
+  const recentRows = (await db.execute(sql`
+    SELECT topic_id, correct, answered_at FROM (
+      SELECT q.topic_id AS topic_id,
+             qa.correct AS correct,
+             qa.answered_at AS answered_at,
+             ROW_NUMBER() OVER (PARTITION BY q.topic_id ORDER BY qa.answered_at DESC) AS rn
+      FROM quiz_answers qa
+      JOIN questions q ON q.id = qa.question_id
+      WHERE q.topic_id IS NOT NULL
+    ) t
+    WHERE rn <= 5
+    ORDER BY topic_id ASC, answered_at ASC
+  `)) as unknown as { rows: Array<{ topic_id: number; correct: boolean; answered_at: string | Date }> };
+
+  const recentByTopic = new Map<number, Array<{ correct: boolean; answeredAt: string }>>();
+  for (const row of recentRows.rows) {
+    const arr = recentByTopic.get(row.topic_id) ?? [];
+    arr.push({
+      correct: row.correct,
+      answeredAt:
+        row.answered_at instanceof Date
+          ? row.answered_at.toISOString()
+          : new Date(row.answered_at).toISOString(),
+    });
+    recentByTopic.set(row.topic_id, arr);
+  }
+
   const result = tRows.map((t) => {
     const m = masteryByTopic.get(t.id);
     return {
@@ -116,6 +145,7 @@ router.get("/dashboard/topic-mastery", async (_req, res): Promise<void> => {
       mastery: m?.mastery ?? 0,
       attempts: m?.attempts ?? 0,
       correct: m?.correct ?? 0,
+      recentAttempts: recentByTopic.get(t.id) ?? [],
     };
   });
   res.json(result);

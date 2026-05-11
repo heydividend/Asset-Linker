@@ -5,6 +5,7 @@
  * BOC Study Notebook API
  * OpenAPI spec version: 0.1.0
  */
+import type { RecentAttempt } from "./recentAttempt";
 
 export interface TopicMasteryEntry {
   topicId: number;
@@ -13,4 +14,6 @@ export interface TopicMasteryEntry {
   mastery: number;
   attempts: number;
   correct: number;
+  /** Up to the last 5 quiz answers for this topic, oldest first. */
+  recentAttempts: RecentAttempt[];
 }

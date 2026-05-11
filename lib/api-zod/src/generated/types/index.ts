@@ -56,6 +56,7 @@ export * from "./quizMode";
 export * from "./quizQuestion";
 export * from "./quizSummary";
 export * from "./quizSummaryMode";
+export * from "./recentAttempt";
 export * from "./resource";
 export * from "./resourceInput";
 export * from "./resourceInputKind";

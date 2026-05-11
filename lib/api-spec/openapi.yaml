@@ -1163,13 +1163,23 @@ components:
         mastery: { type: number }
     TopicMasteryEntry:
       type: object
-      required: [topicId, name, mastery, attempts, correct]
+      required: [topicId, name, mastery, attempts, correct, recentAttempts]
       properties:
         topicId: { type: integer }
         name: { type: string }
         mastery: { type: number, description: "0..1 fraction correct" }
         attempts: { type: integer }
         correct: { type: integer }
+        recentAttempts:
+          type: array
+          description: "Up to the last 5 quiz answers for this topic, oldest first."
+          items: { $ref: "#/components/schemas/RecentAttempt" }
+    RecentAttempt:
+      type: object
+      required: [correct, answeredAt]
+      properties:
+        correct: { type: boolean }
+        answeredAt: { type: string, format: date-time }
 
     OpenaiConversation:
       type: object

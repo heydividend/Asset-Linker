@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AskAiButton } from "@/components/AskAiButton";
 import {
   AlertTriangle, Activity, Heart, Stethoscope, Eye, EyeOff, RotateCcw, Play,
+  TrendingUp, TrendingDown, Minus,
 } from "lucide-react";
 import skinImg from "@/assets/anatomy/layer-skin.png";
 import muscleImg from "@/assets/anatomy/layer-muscle.png";
@@ -80,34 +81,131 @@ export default function BodyMapPage() {
     return m;
   }, [topics]);
 
-  // name → {mastery, attempts} lookup for surfacing per-region mastery badges.
+  // name → {mastery, attempts, recent} lookup for surfacing per-region mastery + trend.
   const masteryByName = useMemo(() => {
-    const m = new Map<string, { mastery: number; attempts: number }>();
+    const m = new Map<
+      string,
+      {
+        mastery: number;
+        attempts: number;
+        recent: { correct: boolean; answeredAt: string }[];
+      }
+    >();
     for (const row of topicMasteryRows) {
-      m.set(row.name, { mastery: row.mastery, attempts: row.attempts });
+      m.set(row.name, {
+        mastery: row.mastery,
+        attempts: row.attempts,
+        recent: row.recentAttempts ?? [],
+      });
     }
     return m;
   }, [topicMasteryRows]);
 
-  // Aggregate mastery across all of a region's seeded topics, weighted by attempts.
+  // Aggregate mastery + recent trend across all of a region's seeded topics.
   const regionMastery = useMemo(() => {
-    const out = new Map<string, { pct: number | null; attempts: number }>();
+    const out = new Map<
+      string,
+      { pct: number | null; attempts: number; trend: boolean[] }
+    >();
     for (const r of bodyRegions) {
       let totalAttempts = 0;
       let totalCorrect = 0;
+      const merged: { correct: boolean; answeredAt: string }[] = [];
       for (const name of r.topicNames) {
         const m = masteryByName.get(name);
-        if (!m || m.attempts === 0) continue;
-        totalAttempts += m.attempts;
-        totalCorrect += m.mastery * m.attempts;
+        if (!m) continue;
+        if (m.attempts > 0) {
+          totalAttempts += m.attempts;
+          totalCorrect += m.mastery * m.attempts;
+        }
+        for (const a of m.recent) merged.push(a);
       }
+      // Most recent 5 across all the region's topics, then chronological for the spark.
+      merged.sort((a, b) => b.answeredAt.localeCompare(a.answeredAt));
+      const trend = merged.slice(0, 5).reverse().map((a) => a.correct);
       out.set(r.id, {
         pct: totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : null,
         attempts: totalAttempts,
+        trend,
       });
     }
     return out;
   }, [masteryByName]);
+
+  // Direction of the most recent attempts vs. the prior ones in the window.
+  const trendDelta = (trend: boolean[]): { dir: "up" | "down" | "flat"; delta: number } => {
+    if (trend.length < 2) return { dir: "flat", delta: 0 };
+    const half = Math.max(1, Math.floor(trend.length / 2));
+    const recent = trend.slice(-half);
+    const prior = trend.slice(0, trend.length - half);
+    const avg = (a: boolean[]) => (a.length ? a.filter(Boolean).length / a.length : 0);
+    const delta = Math.round((avg(recent) - avg(prior)) * 100);
+    if (delta > 5) return { dir: "up", delta };
+    if (delta < -5) return { dir: "down", delta };
+    return { dir: "flat", delta };
+  };
+
+  const Sparkline = ({ trend, testId }: { trend: boolean[]; testId?: string }) => {
+    if (trend.length === 0) {
+      return (
+        <span
+          className="text-[10px] text-muted-foreground"
+          data-testid={testId}
+        >
+          no attempts
+        </span>
+      );
+    }
+    const w = 44;
+    const h = 14;
+    const step = trend.length > 1 ? w / (trend.length - 1) : 0;
+    const pts = trend
+      .map((c, i) => `${(i * step).toFixed(1)},${(c ? 2 : h - 2).toFixed(1)}`)
+      .join(" ");
+    const { dir, delta } = trendDelta(trend);
+    const Icon = dir === "up" ? TrendingUp : dir === "down" ? TrendingDown : Minus;
+    const iconCls =
+      dir === "up"
+        ? "text-primary"
+        : dir === "down"
+          ? "text-destructive"
+          : "text-muted-foreground";
+    return (
+      <span
+        className="inline-flex items-center gap-1"
+        data-testid={testId}
+        title={`Last ${trend.length} attempt${trend.length === 1 ? "" : "s"}: ${trend
+          .map((c) => (c ? "✓" : "✗"))
+          .join(" ")}${dir !== "flat" ? ` (${delta > 0 ? "+" : ""}${delta}%)` : ""}`}
+      >
+        <svg
+          width={w}
+          height={h}
+          viewBox={`0 0 ${w} ${h}`}
+          className="overflow-visible"
+        >
+          <polyline
+            points={pts}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          {trend.map((c, i) => (
+            <circle
+              key={i}
+              cx={i * step}
+              cy={c ? 2 : h - 2}
+              r={1.6}
+              fill={c ? "hsl(var(--primary))" : "hsl(var(--destructive))"}
+            />
+          ))}
+        </svg>
+        <Icon className={`h-3 w-3 ${iconCls}`} />
+      </span>
+    );
+  };
 
   const masteryTone = (pct: number | null): { label: string; cls: string; hint: string } => {
     if (pct == null) return { label: "—", cls: "border-muted text-muted-foreground", hint: "No attempts yet" };
@@ -272,7 +370,7 @@ export default function BodyMapPage() {
                 borderRadius = "0.4rem";
               }
 
-              const rm = regionMastery.get(r.id) ?? { pct: null, attempts: 0 };
+              const rm = regionMastery.get(r.id) ?? { pct: null, attempts: 0, trend: [] as boolean[] };
               const tone = masteryTone(rm.pct);
               return (
                 <HoverCard key={r.id} openDelay={120} closeDelay={50}>
@@ -317,6 +415,13 @@ export default function BodyMapPage() {
                           <span className="text-[10px] opacity-80">{tone.hint}</span>
                         </span>
                       </div>
+                      <div
+                        className="flex items-center justify-between rounded-md border bg-muted/40 px-2 py-1.5 text-xs"
+                        data-testid={`hover-trend-${r.id}`}
+                      >
+                        <span className="font-medium">Recent trend</span>
+                        <Sparkline trend={rm.trend} testId={`hover-spark-${r.id}`} />
+                      </div>
                       <p className="text-xs text-muted-foreground">{r.blurb}</p>
                       <div className="text-xs space-y-0.5">
                         <p className="font-medium">Common injuries:</p>
@@ -356,7 +461,7 @@ export default function BodyMapPage() {
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
               {visible.map((r) => {
-                const rm = regionMastery.get(r.id) ?? { pct: null, attempts: 0 };
+                const rm = regionMastery.get(r.id) ?? { pct: null, attempts: 0, trend: [] as boolean[] };
                 const tone = masteryTone(rm.pct);
                 return (
                   <button
@@ -369,7 +474,8 @@ export default function BodyMapPage() {
                     title={rm.attempts > 0 ? `${rm.attempts} attempt${rm.attempts === 1 ? "" : "s"} on this region — ${tone.hint.toLowerCase()}` : "No attempts yet"}
                   >
                     <span className="truncate">{r.name}</span>
-                    <span className="flex items-center gap-1 shrink-0">
+                    <span className="flex items-center gap-2 shrink-0">
+                      <Sparkline trend={rm.trend} testId={`region-trend-${r.id}`} />
                       <Badge
                         variant="outline"
                         className={`text-[10px] tabular-nums ${tone.cls}`}
