@@ -2,7 +2,7 @@ import { useChatStore } from "@/hooks/use-chat";
 import { useLayoutStore } from "@/hooks/use-layout";
 import { ResizeHandle } from "./ResizeHandle";
 import { Button } from "@/components/ui/button";
-import { Bot, Send, Paperclip, X, Loader2, BookmarkPlus, Plus, ChevronRight } from "lucide-react";
+import { Bot, Send, Paperclip, X, Loader2, BookmarkPlus, Plus, ChevronRight, ArrowDown } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   useListOpenaiMessages,
@@ -59,6 +59,15 @@ export function ChatPanel() {
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  // Radix <ScrollArea> renders an internal viewport that is the actual
+  // scrollable element; the outer ref points to the root wrapper. Resolve the
+  // viewport once so scroll reads/writes hit the right node.
+  const getViewport = useCallback((): HTMLElement | null => {
+    const root = scrollRef.current;
+    if (!root) return null;
+    return root.querySelector<HTMLElement>("[data-radix-scroll-area-viewport]");
+  }, []);
+  const [atBottom, setAtBottom] = useState(true);
 
   useEffect(() => {
     const el = chatInputRef.current;
@@ -239,11 +248,35 @@ export function ChatPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, activeConvId]);
 
+  // Track whether the user is pinned to the bottom. If they scroll up to
+  // re-read context, we stop auto-scrolling and surface a "scroll to latest"
+  // pill instead.
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, displayedStream, pendingUserMessage]);
+    const vp = getViewport();
+    if (!vp) return;
+    const onScroll = () => {
+      const distance = vp.scrollHeight - vp.scrollTop - vp.clientHeight;
+      setAtBottom(distance < 60);
+    };
+    vp.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => vp.removeEventListener("scroll", onScroll);
+  }, [getViewport, activeConvId]);
+
+  // Auto-scroll only when user is already at the bottom — never yank them
+  // away from older content they're reading.
+  useEffect(() => {
+    if (!atBottom) return;
+    const vp = getViewport();
+    if (vp) vp.scrollTop = vp.scrollHeight;
+  }, [messages, displayedStream, pendingUserMessage, atBottom, getViewport]);
+
+  const scrollToLatest = useCallback(() => {
+    const vp = getViewport();
+    if (!vp) return;
+    vp.scrollTo({ top: vp.scrollHeight, behavior: "smooth" });
+    setAtBottom(true);
+  }, [getViewport]);
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -296,6 +329,19 @@ export function ChatPanel() {
       </header>
 
       <div className="flex-1 min-h-0 overflow-hidden relative">
+        {!atBottom && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={scrollToLatest}
+            data-testid="button-scroll-to-latest"
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 h-7 px-2.5 text-xs shadow-lg rounded-full"
+          >
+            <ArrowDown className="h-3.5 w-3.5 mr-1" />
+            {streaming ? "Jump to latest" : "Scroll to latest"}
+          </Button>
+        )}
         <ScrollArea className="h-full" ref={scrollRef}>
           <div className="flex flex-col gap-3 p-4 pb-2">
             {messages.length === 0 && !streamingMessage && !pendingUserMessage && (
