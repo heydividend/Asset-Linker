@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BookText, Brain, LayoutDashboard, Library, Stethoscope, Bot, ClipboardList, PenTool, Activity, ChevronLeft } from "lucide-react";
+import { BookText, Brain, LayoutDashboard, Library, Stethoscope, Bot, ClipboardList, PenTool, Activity, ChevronLeft, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ResizeHandle } from "./ResizeHandle";
@@ -7,6 +7,7 @@ import { useLayoutStore } from "@/hooks/use-layout";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/schedule", label: "Schedule", icon: CalendarDays },
   { href: "/notebooks", label: "Notebooks", icon: BookText },
   { href: "/flashcards", label: "Flashcards", icon: Brain },
   { href: "/quiz", label: "Practice Quizzes", icon: ClipboardList },
@@ -15,7 +16,6 @@ const navItems = [
   { href: "/resources", label: "Resources", icon: Library },
   { href: "/scraper", label: "Import Content", icon: PenTool },
   { href: "/tutor", label: "AI Tutor", icon: Bot },
-  { href: "/schedule", label: "Schedule", icon: BookText },
 ];
 
 export function Sidebar() {
