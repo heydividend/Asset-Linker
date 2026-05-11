@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { ChatPanel } from "./ChatPanel";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { sidebarCollapsed, setSidebarCollapsed, chatCollapsed, setChatCollapsed } = useLayoutStore();
   const { startTour } = useTour();
   const [tourFabOpen, setTourFabOpen] = useState(false);
+
+  // Auto-collapse the global sidebar on the crowded notebook detail page
+  // (which already has its own Sources column + AI Tutor chat). Restore the
+  // user's prior sidebar state when leaving.
+  const inNotebookDetail = /^\/notebooks\/\d+/.test(location);
+  const sidebarBeforeAutoCollapse = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (inNotebookDetail) {
+      if (sidebarBeforeAutoCollapse.current === null) {
+        sidebarBeforeAutoCollapse.current = sidebarCollapsed;
+        if (!sidebarCollapsed) setSidebarCollapsed(true);
+      }
+    } else if (sidebarBeforeAutoCollapse.current !== null) {
+      const prev = sidebarBeforeAutoCollapse.current;
+      sidebarBeforeAutoCollapse.current = null;
+      if (sidebarCollapsed && !prev) setSidebarCollapsed(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inNotebookDetail]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
