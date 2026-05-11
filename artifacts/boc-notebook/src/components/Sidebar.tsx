@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones, Compass, MapPin, FileText, RotateCcw } from "lucide-react";
+import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones, Compass, MapPin, FileText, RotateCcw, HelpCircle } from "lucide-react";
+import { HelpDialog } from "./HelpDialog";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -70,7 +71,21 @@ export function Sidebar() {
         })}
       </div>
 
-      <div className="border-t border-sidebar-border px-1.5 py-2">
+      <div className="border-t border-sidebar-border px-1.5 py-2 space-y-0.5">
+        <HelpDialog
+          trigger={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-left font-medium min-w-0 h-8 px-2 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/50"
+              title="How to use this app"
+              data-testid="button-help"
+            >
+              <HelpCircle className="h-3.5 w-3.5 mr-2 shrink-0" />
+              <span className="truncate">Help</span>
+            </Button>
+          }
+        />
         <Popover open={tourMenuOpen} onOpenChange={setTourMenuOpen}>
           <PopoverTrigger asChild>
             <Button
