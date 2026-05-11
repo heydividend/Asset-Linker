@@ -107,6 +107,27 @@ export default function Dashboard() {
     );
   };
 
+  const onQuizDomain = (domainId: number, domainName: string) => {
+    startQuiz.mutate(
+      { data: { mode: "domain", count: 10, domainId } },
+      {
+        onSuccess: (q) => {
+          qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetDashboardTopicMasteryQueryKey() });
+          qc.invalidateQueries({ queryKey: [`/api/dashboard/topic-history`] });
+          navigate(`/quiz/${q.id}`);
+        },
+        onError: (e) => {
+          toast({
+            title: `Couldn't start quiz on ${domainName}`,
+            description: e instanceof Error ? e.message : "Try another domain.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
   // topicId → chronological correctness of last ≤5 attempts, for the sparkline.
   const trendByTopicId = useMemo(() => {
     const m = new Map<number, boolean[]>();
@@ -438,15 +459,29 @@ export default function Dashboard() {
                     {summary?.domainMastery?.map(domain => {
                       const percent = domain.total > 0 ? Math.round((domain.correct / domain.total) * 100) : 0;
                       const trend = trendByDomainId.get(domain.domainId) ?? [];
+                      const isStartingThis =
+                        startQuiz.isPending &&
+                        startQuiz.variables?.data?.mode === "domain" &&
+                        startQuiz.variables?.data?.domainId === domain.domainId;
                       return (
-                        <div
+                        <button
                           key={domain.domainId}
-                          className="space-y-1 min-w-0"
-                          data-testid={`domain-mastery-${domain.domainId}`}
+                          type="button"
+                          onClick={() => onQuizDomain(domain.domainId, domain.name)}
+                          disabled={startQuiz.isPending}
+                          title={`Start a quiz on ${domain.name}`}
+                          aria-label={`Start a quiz on ${domain.name}`}
+                          data-testid={`domain-mastery-quiz-${domain.domainId}`}
+                          className="w-full text-left space-y-1 min-w-0 rounded-md p-1.5 -m-1.5 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed group"
                         >
-                          <div className="flex justify-between gap-2 text-xs min-w-0">
+                          <div className="flex justify-between items-center gap-2 text-xs min-w-0">
                             <span className="font-medium truncate flex-1 min-w-0" title={domain.name}>{domain.name}</span>
-                            <span className="text-muted-foreground shrink-0">{percent}%</span>
+                            {isStartingThis ? (
+                              <span className="text-[10px] text-muted-foreground shrink-0">Starting…</span>
+                            ) : (
+                              <Play className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 shrink-0 transition-opacity" />
+                            )}
+                            <span className="text-muted-foreground shrink-0 tabular-nums">{percent}%</span>
                           </div>
                           <Progress value={percent} className="h-1.5" />
                           <div className="text-muted-foreground">
@@ -455,7 +490,7 @@ export default function Dashboard() {
                               testId={`domain-trend-${domain.domainId}`}
                             />
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
