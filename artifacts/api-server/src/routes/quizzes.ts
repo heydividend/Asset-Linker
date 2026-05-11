@@ -52,10 +52,14 @@ router.get("/quizzes", async (req, res): Promise<void> => {
 });
 
 router.post("/quizzes", async (req, res): Promise<void> => {
-  const { mode = "adaptive", count = 10, notebookId, topicId, domainId } = req.body ?? {};
+  const { mode = "adaptive", count = 10, notebookId, topicId, topicIds, domainId } = req.body ?? {};
 
   const conditions = [eq(questions.enabled, true)];
-  if (topicId) conditions.push(eq(questions.topicId, topicId));
+  if (Array.isArray(topicIds) && topicIds.length > 0) {
+    conditions.push(inArray(questions.topicId, topicIds));
+  } else if (topicId) {
+    conditions.push(eq(questions.topicId, topicId));
+  }
   if (domainId) conditions.push(eq(questions.domainId, domainId));
 
   let qrows = await db

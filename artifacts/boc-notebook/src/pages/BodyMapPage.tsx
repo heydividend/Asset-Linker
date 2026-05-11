@@ -1,15 +1,26 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useListTopics,
+  useStartQuiz,
+  getListQuizAttemptsQueryKey,
+} from "@workspace/api-client-react";
 import { bodyRegions, type BodyRegion } from "@/data/bodyRegions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 import { AskAiButton } from "@/components/AskAiButton";
-import { AlertTriangle, Activity, Heart, Stethoscope, Eye, EyeOff, RotateCcw } from "lucide-react";
+import {
+  AlertTriangle, Activity, Heart, Stethoscope, Eye, EyeOff, RotateCcw, Play,
+} from "lucide-react";
 import skinImg from "@/assets/anatomy/layer-skin.png";
 import muscleImg from "@/assets/anatomy/layer-muscle.png";
 import skeletonImg from "@/assets/anatomy/layer-skeleton.png";
@@ -34,25 +45,194 @@ const PRESETS: Record<string, Record<LayerKey, number>> = {
   "X-ray": { skin: 0.5, muscle: 0.6, skeleton: 0.9 },
 };
 
+type ViewKey = "anterior" | "posterior";
+
+/**
+ * Posterior silhouette rendered inline as SVG so it stays sharp at any size and
+ * shares the same 200×500 coordinate space as the anterior PNG layers — that way
+ * the hot-zone overlay math (in %) works without modification.
+ */
+function PosteriorSilhouette({ opacity }: { opacity: Record<LayerKey, number> }) {
+  // Skin uses warm tones, muscle uses red, skeleton uses cool gray-blue. We blend
+  // by stacking three semi-transparent SVGs so the existing layer sliders apply.
+  return (
+    <div className="absolute inset-0">
+      {/* Skin / surface */}
+      <svg
+        viewBox="0 0 200 500"
+        className="absolute inset-0 w-full h-full transition-opacity duration-200"
+        style={{ opacity: opacity.skin }}
+        aria-label="Posterior surface anatomy"
+      >
+        <defs>
+          <radialGradient id="skinGrad" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" stopColor="#f4cfb1" />
+            <stop offset="100%" stopColor="#c89274" />
+          </radialGradient>
+        </defs>
+        {/* head */}
+        <ellipse cx="100" cy="42" rx="28" ry="32" fill="url(#skinGrad)" />
+        {/* neck */}
+        <rect x="88" y="70" width="24" height="18" rx="6" fill="url(#skinGrad)" />
+        {/* torso (back) */}
+        <path
+          d="M55 95 Q60 88 75 88 L125 88 Q140 88 145 95 L150 215 Q150 225 140 230 L60 230 Q50 225 50 215 Z"
+          fill="url(#skinGrad)"
+        />
+        {/* glutes / pelvis */}
+        <path d="M58 230 L142 230 L138 260 Q100 275 62 260 Z" fill="url(#skinGrad)" />
+        {/* arms */}
+        <path d="M50 100 Q35 110 33 145 L40 200 L48 245 L40 248 L30 200 L25 150 Q28 105 50 95 Z" fill="url(#skinGrad)" />
+        <path d="M150 100 Q165 110 167 145 L160 200 L152 245 L160 248 L170 200 L175 150 Q172 105 150 95 Z" fill="url(#skinGrad)" />
+        {/* legs */}
+        <path d="M62 260 L98 260 L96 420 L88 460 L78 460 L72 420 Z" fill="url(#skinGrad)" />
+        <path d="M138 260 L102 260 L104 420 L112 460 L122 460 L128 420 Z" fill="url(#skinGrad)" />
+        {/* feet (back) */}
+        <ellipse cx="83" cy="468" rx="12" ry="6" fill="url(#skinGrad)" />
+        <ellipse cx="117" cy="468" rx="12" ry="6" fill="url(#skinGrad)" />
+      </svg>
+
+      {/* Muscle layer — traps, lats, glutes, hamstrings, calves */}
+      <svg
+        viewBox="0 0 200 500"
+        className="absolute inset-0 w-full h-full transition-opacity duration-200"
+        style={{ opacity: opacity.muscle }}
+        aria-label="Posterior muscular system"
+      >
+        <g fill="#a83232" opacity="0.85" stroke="#5a1818" strokeWidth="0.8">
+          {/* trapezius */}
+          <path d="M88 78 L112 78 L140 130 L100 160 L60 130 Z" />
+          {/* lats */}
+          <path d="M62 130 L92 130 L96 215 L70 215 Z" />
+          <path d="M138 130 L108 130 L104 215 L130 215 Z" />
+          {/* deltoids (posterior) */}
+          <ellipse cx="58" cy="105" rx="14" ry="11" />
+          <ellipse cx="142" cy="105" rx="14" ry="11" />
+          {/* glutes */}
+          <ellipse cx="82" cy="245" rx="20" ry="16" />
+          <ellipse cx="118" cy="245" rx="20" ry="16" />
+          {/* hamstrings */}
+          <path d="M70 270 L94 270 L92 360 L74 360 Z" />
+          <path d="M130 270 L106 270 L108 360 L126 360 Z" />
+          {/* calves (gastroc) */}
+          <ellipse cx="84" cy="385" rx="11" ry="22" />
+          <ellipse cx="116" cy="385" rx="11" ry="22" />
+        </g>
+      </svg>
+
+      {/* Skeleton layer — spine, scapulae, pelvis, femurs, tibias */}
+      <svg
+        viewBox="0 0 200 500"
+        className="absolute inset-0 w-full h-full transition-opacity duration-200"
+        style={{ opacity: opacity.skeleton }}
+        aria-label="Posterior skeleton"
+      >
+        <g fill="#e8eef5" stroke="#6b7c92" strokeWidth="0.9">
+          {/* skull (back) */}
+          <ellipse cx="100" cy="42" rx="22" ry="26" />
+          {/* cervical + thoracic + lumbar spine vertebrae */}
+          {Array.from({ length: 22 }).map((_, i) => (
+            <rect key={i} x="96" y={75 + i * 7} width="8" height="5" rx="1.2" />
+          ))}
+          {/* scapulae */}
+          <path d="M62 100 L92 100 L88 145 L66 140 Z" />
+          <path d="M138 100 L108 100 L112 145 L134 140 Z" />
+          {/* ribs hint */}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <g key={i} opacity="0.5">
+              <path d={`M70 ${120 + i * 12} Q100 ${128 + i * 12} 130 ${120 + i * 12}`} fill="none" />
+            </g>
+          ))}
+          {/* pelvis */}
+          <path d="M58 230 L142 230 L136 268 Q100 280 64 268 Z" />
+          {/* femurs */}
+          <rect x="78" y="270" width="10" height="120" rx="3" />
+          <rect x="112" y="270" width="10" height="120" rx="3" />
+          {/* tibias / fibulas */}
+          <rect x="80" y="395" width="6" height="65" rx="2" />
+          <rect x="114" y="395" width="6" height="65" rx="2" />
+          <rect x="88" y="395" width="3" height="60" rx="1" opacity="0.7" />
+          <rect x="109" y="395" width="3" height="60" rx="1" opacity="0.7" />
+          {/* calcaneus hint */}
+          <ellipse cx="83" cy="468" rx="8" ry="4" />
+          <ellipse cx="117" cy="468" rx="8" ry="4" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 export default function BodyMapPage() {
+  const [, navigate] = useLocation();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data: topics = [], isLoading: topicsLoading } = useListTopics();
+  const startQuiz = useStartQuiz();
+
+  const [view, setView] = useState<ViewKey>("anterior");
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<BodyRegion | null>(null);
   const [opacity, setOpacity] = useState<Record<LayerKey, number>>({ skin: 1, muscle: 0, skeleton: 0 });
   const [showHotspots, setShowHotspots] = useState(true);
 
-  // Only "front" + "both" regions overlay these anterior images.
-  const visible = bodyRegions.filter((r) => r.side === "front" || r.side === "both");
+  const visible = useMemo(() => {
+    const wantSide = view === "anterior" ? "front" : "back";
+    return bodyRegions.filter((r) => r.side === wantSide || r.side === "both");
+  }, [view]);
+
+  // name → id lookup so each region's `topicNames` resolves to seeded topic IDs.
+  const topicIdByName = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const t of topics) m.set(t.name, t.id);
+    return m;
+  }, [topics]);
 
   const setLayer = (k: LayerKey, v: number) => setOpacity((o) => ({ ...o, [k]: v }));
   const applyPreset = (name: keyof typeof PRESETS) => setOpacity(PRESETS[name]);
 
+  const onQuizRegion = (region: BodyRegion) => {
+    const ids = region.topicNames
+      .map((n) => topicIdByName.get(n))
+      .filter((v): v is number => typeof v === "number");
+    if (ids.length === 0) {
+      toast({
+        title: "No quiz available yet",
+        description: "We don't have practice questions linked to this region in the seed bank yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+    startQuiz.mutate(
+      { data: { mode: "region", count: 10, topicIds: ids } },
+      {
+        onSuccess: (q) => {
+          qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
+          setSelected(null);
+          navigate(`/quiz/${q.id}`);
+        },
+        onError: (e) => {
+          toast({
+            title: "Couldn't start quiz",
+            description: e instanceof Error ? e.message : "Try a different region.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
   return (
     <div className="flex flex-col h-full">
       <header className="h-14 border-b flex items-center justify-between px-6 gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Activity className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-semibold">Clinical Body Map</h1>
-          <Badge variant="outline" className="ml-2 text-xs">Anterior view</Badge>
+          <Tabs value={view} onValueChange={(v) => setView(v as ViewKey)}>
+            <TabsList className="h-8">
+              <TabsTrigger value="anterior" className="text-xs px-3" data-testid="tab-anterior">Anterior</TabsTrigger>
+              <TabsTrigger value="posterior" className="text-xs px-3" data-testid="tab-posterior">Posterior</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
         <div className="flex items-center gap-2">
           {(Object.keys(PRESETS) as (keyof typeof PRESETS)[]).map((name) => (
@@ -127,22 +307,24 @@ export default function BodyMapPage() {
         {/* Body viewer */}
         <div className="overflow-auto p-6 flex justify-center bg-muted/20">
           <div className="relative w-full max-w-md aspect-[3/4]" data-testid="body-viewer">
-            {/* Stacked anatomical images */}
-            {LAYERS.map((l) => (
-              <img
-                key={l.key}
-                src={l.src}
-                alt={l.label}
-                draggable={false}
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none transition-opacity duration-200"
-                style={{ opacity: opacity[l.key] }}
-              />
-            ))}
+            {view === "anterior" ? (
+              LAYERS.map((l) => (
+                <img
+                  key={l.key}
+                  src={l.src}
+                  alt={l.label}
+                  draggable={false}
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none transition-opacity duration-200"
+                  style={{ opacity: opacity[l.key] }}
+                />
+              ))
+            ) : (
+              <PosteriorSilhouette opacity={opacity} />
+            )}
 
             {/* Hot-zone overlay (positioned in % so it tracks any image size) */}
             {showHotspots && visible.map((r) => {
               const isHover = hovered === r.id;
-              // Compute bounding-box style from the original SVG primitive
               let left = "50%", top = "50%", width = "8%", height = "5%", borderRadius = "9999px";
               if (r.shape === "ellipse" && r.cx != null && r.cy != null && r.rx != null && r.ry != null) {
                 left = pct(r.cx, VB_W);
@@ -216,7 +398,9 @@ export default function BodyMapPage() {
         {/* Region list */}
         <aside className="border-l bg-sidebar overflow-hidden flex flex-col">
           <div className="h-12 border-b flex items-center px-4">
-            <span className="text-sm font-semibold">Regions ({visible.length})</span>
+            <span className="text-sm font-semibold">
+              {view === "anterior" ? "Anterior" : "Posterior"} regions ({visible.length})
+            </span>
           </div>
           <ScrollArea className="flex-1">
             <div className="p-2 space-y-1">
@@ -238,7 +422,7 @@ export default function BodyMapPage() {
         </aside>
       </div>
 
-      {/* Detail sheet (unchanged) */}
+      {/* Detail sheet */}
       <Sheet open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
           {selected && (
@@ -255,6 +439,20 @@ export default function BodyMapPage() {
                     label="Ask AI to quiz me"
                   />
                 </div>
+                <Button
+                  size="sm"
+                  className="mt-3 w-full sm:w-auto"
+                  onClick={() => onQuizRegion(selected)}
+                  disabled={startQuiz.isPending || topicsLoading}
+                  data-testid="button-quiz-region"
+                >
+                  <Play className="h-3.5 w-3.5 mr-1.5" />
+                  {startQuiz.isPending
+                    ? "Starting…"
+                    : topicsLoading
+                      ? "Loading topics…"
+                      : "Quiz this region"}
+                </Button>
               </SheetHeader>
 
               <div className="mt-6 space-y-6">

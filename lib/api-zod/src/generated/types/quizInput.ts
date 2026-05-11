@@ -16,5 +16,6 @@ export interface QuizInput {
   count: number;
   notebookId?: number;
   topicId?: number;
+  topicIds?: number[];
   domainId?: number;
 }

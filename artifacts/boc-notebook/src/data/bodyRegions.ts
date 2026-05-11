@@ -26,6 +26,12 @@ export type BodyRegion = {
   blurb: string;
   injuries: Injury[];
   highYield: string[];
+  /**
+   * BOC topic names this region drills into. Resolved at runtime via the
+   * topics API to seeded topic IDs, so the "Quiz this region" CTA can fire
+   * `POST /api/quizzes` with concrete topic IDs.
+   */
+  topicNames: string[];
 };
 
 export const bodyRegions: BodyRegion[] = [
@@ -60,6 +66,7 @@ export const bodyRegions: BodyRegion[] = [
       "Second-impact syndrome → diffuse cerebral edema, often fatal.",
       "EAP must specify spine-board, AED, EMS activation.",
     ],
+    topicNames: ["Concussion Assessment", "Emergency Action Plans"],
   },
   {
     id: "cspine",
@@ -93,6 +100,7 @@ export const bodyRegions: BodyRegion[] = [
       "Bilateral upper-extremity sx after impact = c-spine until proven otherwise.",
       "Catastrophic injury management is consistently tested on the BOC.",
     ],
+    topicNames: ["Spine Evaluation", "Spinal Injury Management"],
   },
   {
     id: "shoulder-r",
@@ -133,6 +141,7 @@ export const bodyRegions: BodyRegion[] = [
       "Drop-arm test → full-thickness supraspinatus tear.",
       "Sulcus sign → inferior / multidirectional instability.",
     ],
+    topicNames: ["Upper Extremity Special Tests"],
   },
   {
     id: "shoulder-l",
@@ -149,6 +158,7 @@ export const bodyRegions: BodyRegion[] = [
       },
     ],
     highYield: ["Always assess bilaterally for symmetry."],
+    topicNames: ["Upper Extremity Special Tests"],
   },
   {
     id: "chest",
@@ -175,6 +185,7 @@ export const bodyRegions: BodyRegion[] = [
       "AED < 3 min from collapse = >90% survival in commotio cordis.",
       "Every venue EAP must define AED location and time-to-shock target.",
     ],
+    topicNames: ["Cardiopulmonary Emergencies", "Emergency Action Plans"],
   },
   {
     id: "abdomen",
@@ -192,6 +203,7 @@ export const bodyRegions: BodyRegion[] = [
       },
     ],
     highYield: ["Mono → no contact for ≥3 wk from sx onset; spleen palpation unreliable, US imaging preferred."],
+    topicNames: ["Cardiopulmonary Emergencies"],
   },
   {
     id: "elbow-r",
@@ -213,6 +225,7 @@ export const bodyRegions: BodyRegion[] = [
       },
     ],
     highYield: ["Pediatric: 'Little Leaguer's elbow' = medial epicondyle apophysitis (Salter-Harris risk)."],
+    topicNames: ["Upper Extremity Special Tests", "Therapeutic Exercise"],
   },
   {
     id: "elbow-l",
@@ -223,6 +236,7 @@ export const bodyRegions: BodyRegion[] = [
     blurb: "Mirror of right elbow.",
     injuries: [{ name: "See Right Elbow", evaluation: ["Bilateral comparison required."], treatment: ["Same protocols."] }],
     highYield: ["Always assess proximal & distal joints (kinetic chain)."],
+    topicNames: ["Upper Extremity Special Tests"],
   },
   {
     id: "wrist-r",
@@ -245,6 +259,7 @@ export const bodyRegions: BodyRegion[] = [
       },
     ],
     highYield: ["Snuffbox tenderness = scaphoid fx until proven otherwise — splint and refer."],
+    topicNames: ["Upper Extremity Special Tests"],
   },
   {
     id: "wrist-l",
@@ -255,6 +270,7 @@ export const bodyRegions: BodyRegion[] = [
     blurb: "Mirror of right wrist & hand.",
     injuries: [{ name: "See Right Wrist & Hand", evaluation: ["Same eval."], treatment: ["Same."] }],
     highYield: ["Splint in position of function."],
+    topicNames: ["Upper Extremity Special Tests"],
   },
   {
     id: "lowback",
@@ -277,6 +293,7 @@ export const bodyRegions: BodyRegion[] = [
       },
     ],
     highYield: ["Cauda equina is a SURGICAL emergency — recognize and refer."],
+    topicNames: ["Spine Evaluation", "Therapeutic Exercise"],
   },
   {
     id: "hip",
@@ -298,6 +315,7 @@ export const bodyRegions: BodyRegion[] = [
       },
     ],
     highYield: ["SCFE = adolescent hip / knee pain — non-weight-bearing referral."],
+    topicNames: ["Lower Extremity Special Tests"],
   },
   {
     id: "thigh",
@@ -319,6 +337,7 @@ export const bodyRegions: BodyRegion[] = [
       },
     ],
     highYield: ["Wrap quad contusion in 120° flexion immediately to prevent myositis ossificans."],
+    topicNames: ["Lower Extremity Special Tests", "Therapeutic Exercise"],
   },
   {
     id: "knee-r",
@@ -357,6 +376,7 @@ export const bodyRegions: BodyRegion[] = [
       "Lachman > anterior drawer for acute ACL (no guarding).",
       "Female athletes: 4–6× ACL risk → neuromuscular training programs (FIFA 11+).",
     ],
+    topicNames: ["Lower Extremity Special Tests", "Therapeutic Exercise"],
   },
   {
     id: "knee-l",
@@ -367,6 +387,7 @@ export const bodyRegions: BodyRegion[] = [
     blurb: "Mirror of right knee — bilateral comparison essential.",
     injuries: [{ name: "See Right Knee", evaluation: ["Same special tests."], treatment: ["Same protocols."] }],
     highYield: ["Always compare to uninvolved side."],
+    topicNames: ["Lower Extremity Special Tests"],
   },
   {
     id: "shin",
@@ -389,6 +410,7 @@ export const bodyRegions: BodyRegion[] = [
       },
     ],
     highYield: ["Anterior tibia stress fx = high-risk; female athlete triad screen."],
+    topicNames: ["Lower Extremity Special Tests", "Therapeutic Modalities"],
   },
   {
     id: "ankle-r",
@@ -415,6 +437,7 @@ export const bodyRegions: BodyRegion[] = [
       },
     ],
     highYield: ["Ottawa ankle rules: bony tenderness at posterior 6 cm of either malleolus OR navicular OR base of 5th MT OR inability to bear weight 4 steps → image."],
+    topicNames: ["Lower Extremity Special Tests"],
   },
   {
     id: "ankle-l",
@@ -425,6 +448,7 @@ export const bodyRegions: BodyRegion[] = [
     blurb: "Mirror of right ankle.",
     injuries: [{ name: "See Right Ankle", evaluation: ["Same tests."], treatment: ["Same."] }],
     highYield: ["Bilateral evaluation always."],
+    topicNames: ["Lower Extremity Special Tests"],
   },
   {
     id: "foot",
@@ -452,5 +476,234 @@ export const bodyRegions: BodyRegion[] = [
       },
     ],
     highYield: ["Plantar ecchymosis = Lisfranc until proven otherwise."],
+    topicNames: ["Lower Extremity Special Tests"],
+  },
+
+  // ===== POSTERIOR-ONLY REGIONS =====
+  {
+    id: "scapula",
+    name: "Scapula & Posterior Shoulder",
+    domain: "Assessment, Evaluation & Diagnosis",
+    shape: "rect", x: 60, y: 100, width: 80, height: 30,
+    labelX: 14, labelY: 115, side: "back",
+    blurb: "Scapular dyskinesis, posterior RTC, snapping scapula.",
+    injuries: [
+      {
+        name: "Scapular dyskinesis",
+        evaluation: [
+          "Observe scapulohumeral rhythm during forward flexion / abduction.",
+          "Scapular Assistance Test (SAT) and Scapular Retraction Test (SRT).",
+          "Kibler classification: Type I (inferior angle), II (medial border), III (superior).",
+        ],
+        treatment: [
+          "Posterior capsule stretch (sleeper / cross-body).",
+          "Serratus anterior + lower trap activation (wall slides, Y/T/W, prone Y).",
+          "Address thoracic mobility and pec minor length.",
+        ],
+      },
+      {
+        name: "Infraspinatus / teres minor strain",
+        evaluation: ["Resisted external rotation at 0° and 90° abduction.", "Posterior shoulder palpation tenderness."],
+        treatment: ["Eccentric ER strengthening, scapular stabilization, gradual loading."],
+      },
+    ],
+    highYield: [
+      "Scapular dyskinesis predisposes to subacromial impingement and SLAP lesions.",
+      "Always assess scapular control before progressing overhead athletes.",
+    ],
+    topicNames: ["Upper Extremity Special Tests", "Therapeutic Exercise"],
+  },
+  {
+    id: "tspine",
+    name: "Thoracic Spine",
+    domain: "Therapeutic Intervention",
+    shape: "rect", x: 88, y: 130, width: 24, height: 60,
+    labelX: 145, labelY: 160, side: "back",
+    blurb: "T-spine hypomobility, Scheuermann's, rib dysfunction.",
+    injuries: [
+      {
+        name: "Thoracic hypomobility",
+        evaluation: [
+          "Seated rotation ROM (target ≥45° each side).",
+          "Prone press-up segmental extension assessment.",
+        ],
+        treatment: [
+          "Foam roller extension mobilizations, open-book rotations, quadruped thread-the-needle.",
+          "Address downstream effects on shoulder and lumbar mechanics.",
+        ],
+      },
+      {
+        name: "Rib dysfunction (post-trauma)",
+        redFlags: ["sharp pleuritic pain", "dyspnea", "decreased breath sounds (rule out pneumothorax)"],
+        evaluation: ["Palpate for step-off / crepitus.", "Compression test (AP and lateral)."],
+        treatment: ["Pain control, deep breathing to prevent atelectasis; refer for imaging if red flags."],
+      },
+    ],
+    highYield: [
+      "T-spine mobility is a prerequisite for healthy overhead motion.",
+      "Sudden chest pain after blunt thoracic trauma — rule out pneumothorax.",
+    ],
+    topicNames: ["Spine Evaluation", "Manual Therapy"],
+  },
+  {
+    id: "glutes",
+    name: "Glutes & SI Joint",
+    domain: "Therapeutic Intervention",
+    shape: "rect", x: 70, y: 220, width: 60, height: 30,
+    labelX: 14, labelY: 235, side: "back",
+    blurb: "Glute weakness, SI dysfunction, piriformis syndrome.",
+    injuries: [
+      {
+        name: "Gluteus medius weakness / Trendelenburg",
+        evaluation: [
+          "Single-leg stance: contralateral pelvic drop = positive Trendelenburg.",
+          "Side-lying hip ABD MMT.",
+        ],
+        treatment: [
+          "Side-lying clamshells, side-plank with hip ABD, monster walks, single-leg deadlift.",
+          "Address lumbopelvic control and foot mechanics.",
+        ],
+      },
+      {
+        name: "Piriformis syndrome",
+        evaluation: ["Deep buttock pain, +FAIR test (flexion, ADD, IR).", "Rule out lumbar radiculopathy first."],
+        treatment: ["Piriformis stretch, soft-tissue release, glute and core strengthening."],
+      },
+      {
+        name: "Sacroiliac joint dysfunction",
+        evaluation: ["Cluster: distraction, compression, thigh thrust, Gaenslen's, sacral thrust — ≥3 positive."],
+        treatment: ["Manual therapy, SI belt, lumbopelvic stabilization."],
+      },
+    ],
+    highYield: [
+      "Weak glute med drives a cascade of LE injury (PFPS, ITB, ankle).",
+      "SI cluster requires ≥3 positive provocation tests for clinical relevance.",
+    ],
+    topicNames: ["Lower Extremity Special Tests", "Therapeutic Exercise", "Manual Therapy"],
+  },
+  {
+    id: "hamstring-r",
+    name: "Right Hamstring",
+    domain: "Therapeutic Intervention",
+    shape: "ellipse", cx: 84, cy: 285, rx: 14, ry: 30,
+    labelX: 14, labelY: 285, side: "back",
+    blurb: "Hamstring strain — sprinter (long head BF) vs stretch type.",
+    injuries: [
+      {
+        name: "Hamstring strain (acute)",
+        evaluation: [
+          "Mechanism: high-speed running (BF long head) or extreme stretch (semimem).",
+          "Palpate for defect, ecchymosis; resisted knee flexion + hip extension.",
+          "Askling H-test for stretch-type injury.",
+        ],
+        treatment: [
+          "Acute: PRICE 24–72 h, gentle ROM as tolerated.",
+          "Eccentric Nordic hamstring program — best evidence for reinjury prevention.",
+          "Progressive running: jog → stride → sprint with criterion-based progression.",
+        ],
+        rtp: "Painless full-effort sprint, ≥95% strength symmetry, completion of high-speed running progression.",
+      },
+    ],
+    highYield: [
+      "Reinjury rate is highest in first 2 weeks back — do NOT rush RTP.",
+      "Nordic hamstring exercise reduces injury risk by ~50% across cohorts.",
+    ],
+    topicNames: ["Lower Extremity Special Tests", "Therapeutic Exercise"],
+  },
+  {
+    id: "hamstring-l",
+    name: "Left Hamstring",
+    domain: "Therapeutic Intervention",
+    shape: "ellipse", cx: 116, cy: 285, rx: 14, ry: 30,
+    labelX: 186, labelY: 285, side: "back",
+    blurb: "Mirror of right hamstring.",
+    injuries: [{ name: "See Right Hamstring", evaluation: ["Same evaluation."], treatment: ["Same protocol."] }],
+    highYield: ["Always compare to uninvolved side; symmetry is the RTP gate."],
+    topicNames: ["Lower Extremity Special Tests", "Therapeutic Exercise"],
+  },
+  {
+    id: "calf-r",
+    name: "Right Calf",
+    domain: "Therapeutic Intervention",
+    shape: "ellipse", cx: 84, cy: 380, rx: 12, ry: 25,
+    labelX: 14, labelY: 380, side: "back",
+    blurb: "Gastroc strain, soleus strain, DVT screen.",
+    injuries: [
+      {
+        name: "Gastrocnemius strain ('tennis leg')",
+        evaluation: [
+          "Sudden 'kicked in the calf' sensation, often medial gastroc.",
+          "Palpable defect, +Thompson differentiates from Achilles rupture.",
+          "Pain w/ resisted plantarflexion + knee extended.",
+        ],
+        treatment: [
+          "Acute: PRICE, heel lift, crutches PRN.",
+          "Progress to eccentric calf loading; gradual return to running.",
+        ],
+      },
+      {
+        name: "Deep vein thrombosis (DVT)",
+        redFlags: ["unilateral calf swelling, warmth, redness", "Wells score ≥2", "recent immobilization / surgery"],
+        evaluation: ["Wells criteria, NOT Homan's sign (low sensitivity).", "Refer for compression US."],
+        treatment: ["Do NOT massage. Refer immediately for medical evaluation."],
+      },
+    ],
+    highYield: [
+      "Always rule out DVT in unilateral calf pain with swelling — Wells score guides referral.",
+      "Thompson test (+ = no plantarflexion w/ calf squeeze) = Achilles rupture, NOT calf strain.",
+    ],
+    topicNames: ["Lower Extremity Special Tests"],
+  },
+  {
+    id: "calf-l",
+    name: "Left Calf",
+    domain: "Therapeutic Intervention",
+    shape: "ellipse", cx: 116, cy: 380, rx: 12, ry: 25,
+    labelX: 186, labelY: 380, side: "back",
+    blurb: "Mirror of right calf.",
+    injuries: [{ name: "See Right Calf", evaluation: ["Same evaluation."], treatment: ["Same protocol."] }],
+    highYield: ["Bilateral comparison essential; rule out DVT for unilateral swelling."],
+    topicNames: ["Lower Extremity Special Tests"],
+  },
+  {
+    id: "achilles",
+    name: "Achilles Tendon",
+    domain: "Therapeutic Intervention",
+    shape: "rect", x: 75, y: 425, width: 50, height: 16,
+    labelX: 14, labelY: 433, side: "back",
+    blurb: "Achilles tendinopathy, rupture, retrocalcaneal bursitis.",
+    injuries: [
+      {
+        name: "Achilles tendinopathy",
+        evaluation: [
+          "Insertional vs mid-portion (2–6 cm above calcaneus) — different rehab.",
+          "VISA-A score for severity tracking.",
+          "Painful arc with palpation; pain w/ single-leg heel raise.",
+        ],
+        treatment: [
+          "Mid-portion: Alfredson eccentric heel-drop protocol (3×15 bent + straight knee, BID, 12 wk).",
+          "Insertional: Silbernagel program (avoid full dorsiflexion); heel lift.",
+          "Address calf flexibility, foot mechanics, training load.",
+        ],
+      },
+      {
+        name: "Achilles rupture",
+        redFlags: ["audible 'pop'", "sudden severe calf pain", "inability to rise on toes"],
+        evaluation: [
+          "+Thompson test (no plantarflexion w/ calf squeeze) — most reliable.",
+          "Palpable gap 2–6 cm above insertion.",
+        ],
+        treatment: [
+          "Equinus immobilization, NWB, urgent orthopedic referral.",
+          "Surgical vs conservative — both with early functional rehab improve outcomes.",
+        ],
+        rtp: "9–12 mo; symmetric calf circumference, single-leg heel-raise endurance, hop tests.",
+      },
+    ],
+    highYield: [
+      "Thompson test is the most sensitive Achilles rupture test — don't rely on ROM alone (FHL can mimic).",
+      "Eccentric loading (Alfredson) is the gold-standard tendinopathy protocol.",
+    ],
+    topicNames: ["Lower Extremity Special Tests", "Therapeutic Exercise"],
   },
 ];

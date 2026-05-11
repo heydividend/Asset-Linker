@@ -13,4 +13,5 @@ export const QuizInputMode = {
   topic: "topic",
   domain: "domain",
   weakness: "weakness",
+  region: "region",
 } as const;
