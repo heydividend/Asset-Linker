@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AskAiButton } from "@/components/AskAiButton";
+import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { Progress } from "@/components/ui/progress";
 import { Check, ChevronRight, ExternalLink, Trophy, X } from "lucide-react";
 
@@ -111,6 +112,17 @@ export default function QuizRunner() {
         <Progress value={((idx + 1) / total) * 100} className="flex-1 h-2 max-w-xs" />
       </header>
       <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full space-y-6">
+        {!answered && <StudyCoachTip context="quiz-pick" />}
+        {answered && (
+          <StudyCoachTip
+            context={isCorrect ? "quiz-review-right" : "quiz-review-wrong"}
+            askAiContext={
+              isCorrect
+                ? `I answered this BOC quiz item correctly. Stress-test my reasoning — could the distractors trick me on a similar item?\nQ: ${q.stem}\nMy answer: ${q.choices[q.selectedIndex ?? 0]}\nRationale: ${q.rationale ?? "n/a"}`
+                : `I missed this BOC quiz item. Name the trap I fell for and give me a one-line cue I can use next time.\nQ: ${q.stem}\nMy answer: ${q.choices[q.selectedIndex ?? 0]}\nCorrect: ${q.choices[q.correctIndex ?? 0]}\nRationale: ${q.rationale ?? "n/a"}`
+            }
+          />
+        )}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg leading-relaxed" data-testid="text-question-stem">{q.stem}</CardTitle>

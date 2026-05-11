@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AskAiButton } from "@/components/AskAiButton";
+import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { AlertTriangle, ChevronRight, Trophy } from "lucide-react";
 
 interface MockExamResult {
@@ -78,15 +79,33 @@ export default function MockExamRunner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exam?.id, exam?.submitted]);
 
-  // Auto-submit when timer hits 0
+  // Auto-submit when timer hits 0. Use plain fetch with `auto:true` body so the
+  // server records this as auto-submitted (the generated client has no body param).
   const remaining = exam ? Math.max(0, exam.timeLimitSec - Math.floor((now - new Date(exam.startedAt).getTime()) / 1000)) : 0;
   useEffect(() => {
     if (!exam || exam.submitted || submittedRef.current) return;
     if (remaining <= 0) {
       submittedRef.current = true;
-      submit.mutate({ id: exam.id }, { onSuccess: () => qc.invalidateQueries({ queryKey: getGetMockExamQueryKey(id) }) });
+      void fetch(`/api/mock-exams/${exam.id}/submit?auto=true`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ auto: true }),
+      })
+        .catch(() => {})
+        .finally(() => qc.invalidateQueries({ queryKey: getGetMockExamQueryKey(id) }));
     }
-  }, [remaining, exam, submit, qc, id]);
+  }, [remaining, exam, qc, id]);
+
+  // Block accidental tab close / refresh while exam is live.
+  useEffect(() => {
+    if (!exam || exam.submitted) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [exam?.id, exam?.submitted]);
 
   // Fetch result once submitted
   const { data: result } = useQuery<MockExamResult>({
@@ -180,7 +199,7 @@ export default function MockExamRunner() {
   };
 
   return (
-    <div className="fixed inset-0 z-40 bg-background flex flex-col">
+    <div className="fixed inset-0 z-[60] bg-background flex flex-col">
       <header className="h-14 border-b flex items-center justify-between px-6">
         <div className="flex items-center gap-3">
           <Stethoscope />
@@ -195,6 +214,8 @@ export default function MockExamRunner() {
         </div>
       </header>
       <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full space-y-6">
+        {idx === 0 && <StudyCoachTip context="mock-pacing" />}
+        {idx > 0 && idx % 25 === 0 && <StudyCoachTip context="mock-stuck" />}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg leading-relaxed" data-testid="text-mock-stem">{q.stem}</CardTitle>

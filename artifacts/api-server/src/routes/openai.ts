@@ -5,6 +5,7 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 import { parseId } from "../lib/parseId";
 import multer from "multer";
 import { PDFParse } from "pdf-parse";
+import { COACHING_STRATEGIES } from "../lib/coachingStrategies";
 
 async function extractPdfText(buf: Buffer): Promise<string> {
   const parser = new PDFParse({ data: new Uint8Array(buf) });
@@ -62,7 +63,9 @@ Be warm, precise, and clinically accurate. Use the BOC's 5 domains as your frame
 3) Critical Incident Management
 4) Therapeutic Intervention
 5) Healthcare Administration & Professional Responsibility
-When the user asks about a flashcard, quiz question, note, or weak topic, anchor your answer in the supplied context. Use Markdown. Be concise but thorough; favor mechanism, indication, contraindication, and red-flag callouts.`;
+When the user asks about a flashcard, quiz question, note, or weak topic, anchor your answer in the supplied context. Use Markdown. Be concise but thorough; favor mechanism, indication, contraindication, and red-flag callouts.
+
+${COACHING_STRATEGIES}`;
 
 router.get("/openai/conversations", async (_req, res): Promise<void> => {
   const rows = await db.select().from(conversations).orderBy(desc(conversations.createdAt));

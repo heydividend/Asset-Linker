@@ -137,11 +137,30 @@ router.post("/mock-exams/:id/answer", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Exam already submitted" });
     return;
   }
+  // Server-side timer enforcement: refuse late answers.
+  const elapsed = Math.floor((Date.now() - new Date(exam.startedAt).getTime()) / 1000);
+  if (elapsed > exam.timeLimitSec) {
+    res.status(409).json({ error: "Time has expired. Submit the exam." });
+    return;
+  }
+  // Strict no-back enforcement: only allow answering the current (un-answered) question.
+  if (index !== exam.currentIndex) {
+    res.status(409).json({ error: "Cannot revisit a previous question." });
+    return;
+  }
+  if (exam.answers[index] != null) {
+    res.status(409).json({ error: "Question already answered." });
+    return;
+  }
+  if (index < 0 || index >= exam.questionIds.length) {
+    res.status(400).json({ error: "index out of range" });
+    return;
+  }
   const newAnswers = [...exam.answers];
   newAnswers[index] = selectedIndex;
   await db
     .update(mockExams)
-    .set({ answers: newAnswers, currentIndex: Math.max(exam.currentIndex, index + 1) })
+    .set({ answers: newAnswers, currentIndex: index + 1 })
     .where(eq(mockExams.id, id));
   res.sendStatus(204);
 });
@@ -162,18 +181,9 @@ router.post("/mock-exams/:id/heartbeat", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-router.post("/mock-exams/:id/submit", async (req, res): Promise<void> => {
-  const id = parseId(req);
-  if (id == null) {
-    res.status(400).json({ error: "invalid id" });
-    return;
-  }
-  const auto = req.body?.auto === true;
-  const [exam] = await db.select().from(mockExams).where(eq(mockExams.id, id));
-  if (!exam) {
-    res.status(404).json({ error: "Not found" });
-    return;
-  }
+async function computeResult(examId: number) {
+  const [exam] = await db.select().from(mockExams).where(eq(mockExams.id, examId));
+  if (!exam) return null;
   const qs = await db.select().from(questions).where(inArray(questions.id, exam.questionIds));
   const byId = new Map(qs.map((q) => [q.id, q]));
   let correct = 0;
@@ -199,51 +209,101 @@ router.post("/mock-exams/:id/submit", async (req, res): Promise<void> => {
     }
   });
   const scorePercent = exam.totalQuestions === 0 ? 0 : (correct / exam.totalQuestions) * 100;
-
-  await db
-    .update(mockExams)
-    .set({ submitted: true, autoSubmitted: auto, submittedAt: new Date(), scorePercent })
-    .where(eq(mockExams.id, id));
-
   const dRows = await db.select().from(domains);
   const tRows = await db.select().from(topics);
-
   const domainBreakdown = Array.from(perDomainStats.entries()).map(([did, s]) => {
     const d = dRows.find((x) => x.id === did);
     return {
       domainId: did,
-      domainName: d?.name ?? "Unknown",
+      code: d?.code ?? "",
+      name: d?.name ?? "Unknown",
       correct: s.correct,
       total: s.total,
-      percent: s.total === 0 ? 0 : (s.correct / s.total) * 100,
     };
   });
   const weakTopics = Array.from(perTopicStats.entries())
     .map(([tid, s]) => {
       const t = tRows.find((x) => x.id === tid);
-      return {
-        topicId: tid,
-        topicName: t?.name ?? "Unknown",
-        correct: s.correct,
-        total: s.total,
-        percent: s.total === 0 ? 0 : (s.correct / s.total) * 100,
-      };
+      const mastery = s.total === 0 ? 0 : (s.correct / s.total) * 100;
+      return { topicId: tid, name: t?.name ?? "Unknown", mastery, total: s.total };
     })
-    .filter((t) => t.percent < 70 && t.total >= 1)
-    .sort((a, b) => a.percent - b.percent)
-    .slice(0, 8);
+    .filter((t) => t.mastery < 70 && t.total >= 1)
+    .sort((a, b) => a.mastery - b.mastery)
+    .slice(0, 8)
+    .map(({ topicId, name, mastery }) => ({ topicId, name, mastery }));
+  return {
+    exam,
+    payload: {
+      examId,
+      scorePercent,
+      passed: scorePercent >= PASS,
+      correct,
+      totalQuestions: exam.totalQuestions,
+      autoSubmitted: exam.autoSubmitted,
+      visibilityBreaks: exam.visibilityBreaks,
+      domainBreakdown,
+      weakTopics,
+    },
+  };
+}
 
-  res.json({
-    examId: id,
-    scorePercent,
-    passed: scorePercent >= PASS,
-    correct,
-    totalQuestions: exam.totalQuestions,
-    autoSubmitted: auto,
-    visibilityBreaks: exam.visibilityBreaks,
-    domainBreakdown,
-    weakTopics,
-  });
+router.post("/mock-exams/:id/submit", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const [existing] = await db.select().from(mockExams).where(eq(mockExams.id, id));
+  if (!existing) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  // Server-authoritative auto-submit: if the timer has expired, treat as auto regardless of client.
+  const elapsed = Math.floor((Date.now() - new Date(existing.startedAt).getTime()) / 1000);
+  const timeExpired = elapsed > existing.timeLimitSec;
+  const clientAuto =
+    req.body?.auto === true ||
+    req.query?.auto === "true" ||
+    req.query?.auto === "1";
+  const auto = clientAuto || timeExpired;
+
+  if (!existing.submitted) {
+    await db
+      .update(mockExams)
+      .set({ submitted: true, autoSubmitted: auto, submittedAt: new Date() })
+      .where(eq(mockExams.id, id));
+  }
+
+  const computed = await computeResult(id);
+  if (!computed) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  if (!existing.submitted) {
+    await db
+      .update(mockExams)
+      .set({ scorePercent: computed.payload.scorePercent })
+      .where(eq(mockExams.id, id));
+  }
+  res.json(computed.payload);
+});
+
+router.get("/mock-exams/:id/result", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const computed = await computeResult(id);
+  if (!computed) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  if (!computed.exam.submitted) {
+    res.status(409).json({ error: "Exam has not been submitted." });
+    return;
+  }
+  res.json(computed.payload);
 });
 
 export default router;
