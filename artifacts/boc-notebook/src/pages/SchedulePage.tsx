@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { AskAiButton } from "@/components/AskAiButton";
 import { Calendar, CalendarDays, Clock, Flame, GraduationCap, Sparkles, Pencil } from "lucide-react";
 import { useState } from "react";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 interface DayItem {
@@ -16,6 +17,8 @@ interface DayItem {
   description?: string;
   estMinutes: number;
   domainId?: number | null;
+  topicId?: number | null;
+  link?: string;
 }
 interface DayPlan {
   date: string;
@@ -196,11 +199,23 @@ export default function SchedulePage() {
                       {d.items.map((it, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm" data-testid={`day-item-${d.date}-${i}`}>
                           <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <span className="font-medium">{it.title}</span>
                             {it.description && <span className="text-muted-foreground"> — {it.description}</span>}
                             <span className="text-xs text-muted-foreground ml-2">~{it.estMinutes}m</span>
                           </div>
+                          {it.link && (
+                            <Link href={it.link}>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="h-7 px-2.5 text-xs shrink-0"
+                                data-testid={`day-item-start-${d.date}-${i}`}
+                              >
+                                Start
+                              </Button>
+                            </Link>
+                          )}
                         </li>
                       ))}
                     </ul>
