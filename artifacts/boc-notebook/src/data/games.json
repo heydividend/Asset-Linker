@@ -1659,6 +1659,311 @@
           "image": "/games/ch21-hip/fig_15_12.jpg"
         }
       ]
+    },
+    {
+      "id": "ch23-elbow",
+      "title": "Ch 23: The Elbow",
+      "description": "Match each elbow condition, test, or technique to its name.",
+      "pairs": [
+        {
+          "label": "UCL (ulnar collateral) test",
+          "image": "/games/ch23-elbow/fig_03_03.jpg"
+        },
+        {
+          "label": "RCL (radial collateral) test",
+          "image": "/games/ch23-elbow/fig_03_04.jpg"
+        },
+        {
+          "label": "Cozen's test (lateral epicondylitis)",
+          "image": "/games/ch23-elbow/fig_04_00.jpg"
+        },
+        {
+          "label": "Pinch grip test (AIN)",
+          "image": "/games/ch23-elbow/fig_04_01.jpg"
+        },
+        {
+          "label": "Pronator teres syndrome test",
+          "image": "/games/ch23-elbow/fig_04_02.jpg"
+        },
+        {
+          "label": "Moving valgus stress test (UCL)",
+          "image": "/games/ch23-elbow/fig_04_03.jpg"
+        },
+        {
+          "label": "Tinel's sign (cubital tunnel)",
+          "image": "/games/ch23-elbow/fig_04_06.jpg"
+        },
+        {
+          "label": "Olecranon bursitis",
+          "image": "/games/ch23-elbow/fig_06_00.jpg"
+        },
+        {
+          "label": "Counterforce (epicondylitis) brace",
+          "image": "/games/ch23-elbow/fig_07_04.jpg"
+        },
+        {
+          "label": "Posterior elbow dislocation (X-ray)",
+          "image": "/games/ch23-elbow/fig_08_00.jpg"
+        },
+        {
+          "label": "Dynamic ROM elbow splint",
+          "image": "/games/ch23-elbow/fig_08_01.jpg"
+        },
+        {
+          "label": "Volkmann's contracture",
+          "image": "/games/ch23-elbow/fig_09_01.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ch24-wrist",
+      "title": "Ch 24: Forearm, Wrist, Hand & Fingers",
+      "description": "Match each wrist/hand/finger condition or test to its name.",
+      "pairs": [
+        {
+          "label": "Finkelstein / Eichhoff tests (de Quervain)",
+          "image": "/games/ch24-wrist/fig_06_00.jpg"
+        },
+        {
+          "label": "Phalen's test (carpal tunnel)",
+          "image": "/games/ch24-wrist/fig_06_01.jpg"
+        },
+        {
+          "label": "Tinel's sign (median nerve at wrist)",
+          "image": "/games/ch24-wrist/fig_06_02.jpg"
+        },
+        {
+          "label": "Wrist / IP joint varus-valgus stress test",
+          "image": "/games/ch24-wrist/fig_06_03.jpg"
+        },
+        {
+          "label": "Lunotriquetral ballottement test",
+          "image": "/games/ch24-wrist/fig_06_04.jpg"
+        },
+        {
+          "label": "Allen's test (vascular)",
+          "image": "/games/ch24-wrist/fig_06_05.jpg"
+        },
+        {
+          "label": "TFCC tear",
+          "image": "/games/ch24-wrist/fig_07_01.jpg"
+        },
+        {
+          "label": "Benediction (bishop's) deformity",
+          "image": "/games/ch24-wrist/fig_08_00.jpg"
+        },
+        {
+          "label": "Claw hand (ulnar nerve)",
+          "image": "/games/ch24-wrist/fig_08_01.jpg"
+        },
+        {
+          "label": "Wrist drop (radial nerve)",
+          "image": "/games/ch24-wrist/fig_08_02.jpg"
+        },
+        {
+          "label": "Ape hand (median nerve)",
+          "image": "/games/ch24-wrist/fig_08_03.jpg"
+        },
+        {
+          "label": "de Quervain's tenosynovitis",
+          "image": "/games/ch24-wrist/fig_08_05.jpg"
+        },
+        {
+          "label": "Lunate dislocation (X-ray)",
+          "image": "/games/ch24-wrist/fig_09_00.jpg"
+        },
+        {
+          "label": "Anatomical snuffbox",
+          "image": "/games/ch24-wrist/fig_09_01.jpg"
+        },
+        {
+          "label": "Scaphoid fracture (X-ray)",
+          "image": "/games/ch24-wrist/fig_09_02.jpg"
+        },
+        {
+          "label": "Hook of hamate fracture (location)",
+          "image": "/games/ch24-wrist/fig_10_00.jpg"
+        },
+        {
+          "label": "Hamate fracture (X-ray)",
+          "image": "/games/ch24-wrist/fig_10_01.jpg"
+        },
+        {
+          "label": "Wrist ganglion cyst",
+          "image": "/games/ch24-wrist/fig_10_02.jpg"
+        },
+        {
+          "label": "Subungual hematoma",
+          "image": "/games/ch24-wrist/fig_10_03.jpg"
+        },
+        {
+          "label": "Mallet finger + stack splint",
+          "image": "/games/ch24-wrist/fig_11_00.jpg"
+        },
+        {
+          "label": "Jersey finger",
+          "image": "/games/ch24-wrist/fig_11_05.jpg"
+        },
+        {
+          "label": "Dupuytren's contracture",
+          "image": "/games/ch24-wrist/fig_12_00.jpg"
+        },
+        {
+          "label": "Gamekeeper's (skier's) thumb",
+          "image": "/games/ch24-wrist/fig_12_01.jpg"
+        },
+        {
+          "label": "Swan-neck deformity",
+          "image": "/games/ch24-wrist/fig_12_02.jpg"
+        },
+        {
+          "label": "Thumb PIP dislocation (X-ray)",
+          "image": "/games/ch24-wrist/fig_12_03.jpg"
+        },
+        {
+          "label": "Boxer's fracture (5th MC)",
+          "image": "/games/ch24-wrist/fig_13_00.jpg"
+        },
+        {
+          "label": "Power web (hand strengthening)",
+          "image": "/games/ch24-wrist/fig_15_08.jpg"
+        },
+        {
+          "label": "Digital hand dynamometer",
+          "image": "/games/ch24-wrist/fig_15_12.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ch22-shoulder",
+      "title": "Ch 22: The Shoulder Complex",
+      "description": "Match each shoulder condition, test, or technique to its name.",
+      "pairs": [
+        {
+          "label": "Sternoclavicular stability test",
+          "image": "/games/ch22-shoulder/fig_05_00.jpg"
+        },
+        {
+          "label": "Acromioclavicular stability test",
+          "image": "/games/ch22-shoulder/fig_05_01.jpg"
+        },
+        {
+          "label": "Load-and-shift test",
+          "image": "/games/ch22-shoulder/fig_05_02.jpg"
+        },
+        {
+          "label": "Shoulder anterior drawer test",
+          "image": "/games/ch22-shoulder/fig_05_03.jpg"
+        },
+        {
+          "label": "Shoulder posterior drawer test",
+          "image": "/games/ch22-shoulder/fig_05_04.jpg"
+        },
+        {
+          "label": "Sulcus sign (inferior instability)",
+          "image": "/games/ch22-shoulder/fig_06_00.jpg"
+        },
+        {
+          "label": "Clunk test (labral)",
+          "image": "/games/ch22-shoulder/fig_06_01.jpg"
+        },
+        {
+          "label": "O'Brien's test (SLAP)",
+          "image": "/games/ch22-shoulder/fig_06_02.jpg"
+        },
+        {
+          "label": "Drop-arm / full-can tests",
+          "image": "/games/ch22-shoulder/fig_07_00.jpg"
+        },
+        {
+          "label": "Bear-hug / lift-off tests",
+          "image": "/games/ch22-shoulder/fig_07_01.jpg"
+        },
+        {
+          "label": "Wall push-up test (serratus anterior)",
+          "image": "/games/ch22-shoulder/fig_07_02.jpg"
+        },
+        {
+          "label": "Winged scapula",
+          "image": "/games/ch22-shoulder/fig_07_03.jpg"
+        },
+        {
+          "label": "Yergason / Speed's / Ludington's tests",
+          "image": "/games/ch22-shoulder/fig_07_04.jpg"
+        },
+        {
+          "label": "Adson's test (TOS)",
+          "image": "/games/ch22-shoulder/fig_08_00.jpg"
+        },
+        {
+          "label": "Hyperabduction test (TOS)",
+          "image": "/games/ch22-shoulder/fig_08_01.jpg"
+        },
+        {
+          "label": "Military brace test (TOS)",
+          "image": "/games/ch22-shoulder/fig_08_02.jpg"
+        },
+        {
+          "label": "Costoclavicular syndrome test",
+          "image": "/games/ch22-shoulder/fig_08_03.jpg"
+        },
+        {
+          "label": "Clavicle fracture (deformity)",
+          "image": "/games/ch22-shoulder/fig_08_05.jpg"
+        },
+        {
+          "label": "Clavicle fracture (X-ray)",
+          "image": "/games/ch22-shoulder/fig_08_06.jpg"
+        },
+        {
+          "label": "Figure-8 clavicle brace",
+          "image": "/games/ch22-shoulder/fig_08_07.jpg"
+        },
+        {
+          "label": "Scapula fracture (X-ray)",
+          "image": "/games/ch22-shoulder/fig_09_00.jpg"
+        },
+        {
+          "label": "Humeral fracture",
+          "image": "/games/ch22-shoulder/fig_09_01.jpg"
+        },
+        {
+          "label": "AC joint sprain mechanism",
+          "image": "/games/ch22-shoulder/fig_09_03.jpg"
+        },
+        {
+          "label": "Anterior shoulder dislocation",
+          "image": "/games/ch22-shoulder/fig_10_00.jpg"
+        },
+        {
+          "label": "Shoulder impingement (coracoacromial arch)",
+          "image": "/games/ch22-shoulder/fig_12_00.jpg"
+        },
+        {
+          "label": "Biceps brachii rupture (Popeye sign)",
+          "image": "/games/ch22-shoulder/fig_14_00.jpg"
+        },
+        {
+          "label": "Throwing \u2014 windup phase",
+          "image": "/games/ch22-shoulder/fig_14_01.jpg"
+        },
+        {
+          "label": "Throwing \u2014 cocking phase",
+          "image": "/games/ch22-shoulder/fig_14_02.jpg"
+        },
+        {
+          "label": "Throwing \u2014 acceleration phase",
+          "image": "/games/ch22-shoulder/fig_14_03.jpg"
+        },
+        {
+          "label": "Throwing \u2014 deceleration phase",
+          "image": "/games/ch22-shoulder/fig_14_04.jpg"
+        },
+        {
+          "label": "Throwing \u2014 follow-through phase",
+          "image": "/games/ch22-shoulder/fig_14_05.jpg"
+        }
+      ]
     }
   ]
 }
