@@ -7,6 +7,7 @@ import {
   useStartQuiz,
   getListQuizAttemptsQueryKey,
   getGetDashboardTopicMasteryQueryKey,
+  useListTopics,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +66,7 @@ export default function Dashboard() {
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: plan, isLoading: loadingPlan } = useGetStudyPlanToday();
   const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery();
+  const { data: topicsList = [] } = useListTopics();
   const { data: schedule, isLoading: loadingSchedule } = useQuery<Schedule>({
     queryKey: ["plan-schedule"],
     queryFn: () => fetch("/api/plan/schedule").then((r) => r.json()),
@@ -116,6 +118,32 @@ export default function Dashboard() {
     }
     return m;
   }, [topicMasteryRows]);
+
+  // topicId → domainId, so we can group recent attempts up to the domain level.
+  const domainIdByTopicId = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const t of topicsList) m.set(t.id, t.domainId);
+    return m;
+  }, [topicsList]);
+
+  // domainId → chronological correctness of the most recent 5 attempts across
+  // all topics in that domain. Mirrors the per-region merge in BodyMapPage.
+  const trendByDomainId = useMemo(() => {
+    const byDomain = new Map<number, { correct: boolean; answeredAt: string }[]>();
+    for (const row of topicMasteryRows) {
+      const dId = domainIdByTopicId.get(row.topicId);
+      if (dId == null) continue;
+      const bucket = byDomain.get(dId) ?? [];
+      for (const a of row.recentAttempts ?? []) bucket.push(a);
+      byDomain.set(dId, bucket);
+    }
+    const out = new Map<number, boolean[]>();
+    for (const [dId, attempts] of byDomain) {
+      attempts.sort((a, b) => b.answeredAt.localeCompare(a.answeredAt));
+      out.set(dId, attempts.slice(0, 5).reverse().map((a) => a.correct));
+    }
+    return out;
+  }, [topicMasteryRows, domainIdByTopicId]);
 
   return (
     <div className="flex flex-col h-full">
@@ -409,13 +437,24 @@ export default function Dashboard() {
                   <div className="space-y-3">
                     {summary?.domainMastery?.map(domain => {
                       const percent = domain.total > 0 ? Math.round((domain.correct / domain.total) * 100) : 0;
+                      const trend = trendByDomainId.get(domain.domainId) ?? [];
                       return (
-                        <div key={domain.domainId} className="space-y-1 min-w-0">
+                        <div
+                          key={domain.domainId}
+                          className="space-y-1 min-w-0"
+                          data-testid={`domain-mastery-${domain.domainId}`}
+                        >
                           <div className="flex justify-between gap-2 text-xs min-w-0">
                             <span className="font-medium truncate flex-1 min-w-0" title={domain.name}>{domain.name}</span>
                             <span className="text-muted-foreground shrink-0">{percent}%</span>
                           </div>
                           <Progress value={percent} className="h-1.5" />
+                          <div className="text-muted-foreground">
+                            <MasterySparkline
+                              trend={trend}
+                              testId={`domain-trend-${domain.domainId}`}
+                            />
+                          </div>
                         </div>
                       );
                     })}
