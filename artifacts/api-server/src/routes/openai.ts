@@ -18,7 +18,32 @@ async function extractPdfText(buf: Buffer): Promise<string> {
 }
 
 const router: IRouter = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 40 * 1024 * 1024 } });
+
+async function extractTextFromImage(file: Express.Multer.File): Promise<string> {
+  // Use OpenAI vision to read the image (study guide pages, screenshots, diagrams).
+  const b64 = file.buffer.toString("base64");
+  const mime = file.mimetype || "image/png";
+  const dataUrl = `data:${mime};base64,${b64}`;
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content:
+          "You extract study material from images for an Athletic Training BOC exam student. Output the readable text faithfully (preserve headings, bullet lists, numbered lists). If the image is a diagram or photo with no text, write a concise clinical description of what is shown. Do not add commentary. Do not reformat tables into prose if avoidable.",
+      },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: `Extract all readable study content from this image (file: ${file.originalname}).` },
+          { type: "image_url", image_url: { url: dataUrl } },
+        ] as never,
+      },
+    ],
+  });
+  return completion.choices[0]?.message?.content?.trim() ?? "";
+}
 
 async function extractText(file: Express.Multer.File): Promise<string> {
   const mime = file.mimetype || "";
@@ -34,7 +59,13 @@ async function extractText(file: Express.Multer.File): Promise<string> {
     return file.buffer.toString("utf8");
   }
   if (mime.startsWith("image/")) {
-    return `[Image attached: ${name}. The student wants you to discuss this image visually if relevant; ask them to describe what they see if you cannot interpret it directly.]`;
+    try {
+      const visionText = await extractTextFromImage(file);
+      if (visionText) return visionText;
+    } catch {
+      // fall through to placeholder
+    }
+    return `[Image attached: ${name}. Could not auto-extract text — please describe what you see and I'll help.]`;
   }
   return file.buffer.toString("utf8").slice(0, 200_000);
 }
