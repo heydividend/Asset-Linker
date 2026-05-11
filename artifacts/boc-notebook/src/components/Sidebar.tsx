@@ -1,9 +1,12 @@
 import { Link, useLocation } from "wouter";
-import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones } from "lucide-react";
+import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones, Compass, MapPin, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ResizeHandle } from "./ResizeHandle";
 import { useLayoutStore } from "@/hooks/use-layout";
+import { useTour } from "./TourProvider";
+import { useState } from "react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -21,6 +24,8 @@ const navItems = [
 export function Sidebar() {
   const [location] = useLocation();
   const { sidebarWidth, setSidebarWidth, toggleSidebar } = useLayoutStore();
+  const { startTour } = useTour();
+  const [tourMenuOpen, setTourMenuOpen] = useState(false);
 
   return (
     <div
@@ -42,7 +47,7 @@ export function Sidebar() {
         </Button>
       </div>
 
-      <div className="flex-1 py-2 flex flex-col gap-0.5 px-1.5 overflow-y-auto">
+      <div className="flex-1 py-2 flex flex-col gap-0.5 px-1.5 overflow-y-auto" data-tour="sidebar-nav">
         {navItems.map((item) => {
           const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
           return (
@@ -63,6 +68,60 @@ export function Sidebar() {
             </Link>
           );
         })}
+      </div>
+
+      <div className="border-t border-sidebar-border px-1.5 py-2">
+        <Popover open={tourMenuOpen} onOpenChange={setTourMenuOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-left font-medium min-w-0 h-8 px-2 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/50"
+              title="Take a guided tour"
+              data-tour="sidebar-take-tour"
+              data-testid="button-take-tour"
+            >
+              <Compass className="h-3.5 w-3.5 mr-2 shrink-0" />
+              <span className="truncate">Take a Tour</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="right" align="end" className="w-60 p-1.5">
+            <div className="space-y-0.5">
+              <p className="px-2 pt-1.5 pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                Guided tour
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-[13px]"
+                onClick={() => {
+                  setTourMenuOpen(false);
+                  startTour("page");
+                }}
+                data-testid="menu-tour-this-page"
+              >
+                <MapPin className="h-3.5 w-3.5 mr-2 shrink-0" />
+                Tour this page
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-[13px]"
+                onClick={() => {
+                  setTourMenuOpen(false);
+                  startTour("all");
+                }}
+                data-testid="menu-tour-whole-app"
+              >
+                <FileText className="h-3.5 w-3.5 mr-2 shrink-0" />
+                Tour the whole app
+              </Button>
+              <p className="px-2 pt-1 pb-1 text-[11px] text-muted-foreground">
+                Press <kbd className="rounded border bg-muted px-1 text-[10px]">Esc</kbd> to exit anytime.
+              </p>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <ResizeHandle

@@ -183,7 +183,7 @@ export default function QuizHub() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-tour="quiz-recent">
           <CardHeader className="p-4 pb-2"><CardTitle className="text-base">Recent attempts</CardTitle></CardHeader>
           <CardContent className="p-4 pt-0">
             {attempts.length === 0 ? (

@@ -127,7 +127,7 @@ export default function SchedulePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <header className="h-12 border-b flex items-center justify-between px-4 gap-2 bg-background flex-wrap">
+      <header className="h-12 border-b flex items-center justify-between px-4 gap-2 bg-background flex-wrap" data-tour="schedule-header">
         <h1 className="text-base font-semibold flex items-center gap-2">
           <CalendarDays className="h-5 w-5" /> Study Schedule
         </h1>
@@ -188,7 +188,7 @@ export default function SchedulePage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="schedule-days">
           {data.days.map((d) => {
             const isToday = d.date === data.today;
             const isPast = d.date < data.today;
@@ -233,7 +233,7 @@ export default function SchedulePage() {
                 </CardHeader>
                 {d.items.length > 0 && (
                   <CardContent className="pt-0">
-                    <ul className="space-y-2">
+                    <ul className="space-y-2" data-tour="schedule-day-items">
                       {d.items.map((it, i) => {
                         const link = deriveLink(it);
                         return (

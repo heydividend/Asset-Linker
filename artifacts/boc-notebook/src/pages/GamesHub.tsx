@@ -44,7 +44,7 @@ export default function GamesHub() {
             </Card>
           )}
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4" data-tour="games-grid">
             {games.games.map((g) => {
               const s = summaryByGame.get(g.id);
               const isToday = g.id === todaysGameId;

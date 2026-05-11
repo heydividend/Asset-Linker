@@ -169,7 +169,7 @@ export default function NotebookDetail() {
   return (
     <div className="flex h-full">
       {/* LEFT: Sources */}
-      <aside className="w-72 border-r bg-sidebar flex flex-col">
+      <aside className="w-72 border-r bg-sidebar flex flex-col" data-tour="notebook-sources">
         <div className="h-14 border-b flex items-center justify-between px-4">
           <span className="font-semibold text-sm flex items-center gap-2"><BookOpen className="h-4 w-4" /> Sources</span>
           <Dialog open={noteOpen} onOpenChange={setNoteOpen}>
@@ -243,7 +243,7 @@ export default function NotebookDetail() {
         </header>
 
         <Tabs defaultValue="notes" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="mx-4 mt-2 self-start">
+          <TabsList className="mx-4 mt-2 self-start" data-tour="notebook-tabs">
             <TabsTrigger value="notes" data-testid="tab-notes">Notes</TabsTrigger>
             <TabsTrigger value="flashcards" data-testid="tab-flashcards">Flashcards ({notebook.flashcards?.length ?? 0})</TabsTrigger>
             <TabsTrigger value="guides" data-testid="tab-guides">Study guides ({notebook.studyGuides?.length ?? 0})</TabsTrigger>

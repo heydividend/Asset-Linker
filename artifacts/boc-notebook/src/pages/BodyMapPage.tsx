@@ -317,7 +317,7 @@ export default function BodyMapPage() {
             </TabsList>
           </Tabs>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-tour="bodymap-presets">
           <TrendWindowSelector
             value={trendWindow}
             onChange={setTrendWindow}
@@ -349,7 +349,7 @@ export default function BodyMapPage() {
 
       <div className="flex-1 overflow-hidden grid lg:grid-cols-[260px_1fr_360px]">
         {/* Layer controls */}
-        <aside className="border-r bg-sidebar overflow-y-auto p-4 space-y-5">
+        <aside className="border-r bg-sidebar overflow-y-auto p-4 space-y-5" data-tour="bodymap-layers">
           <div>
             <p className="text-sm font-semibold mb-1">Anatomical layers</p>
             <p className="text-xs text-muted-foreground">
@@ -543,7 +543,7 @@ export default function BodyMapPage() {
         </div>
 
         {/* Region list */}
-        <aside className="border-l bg-sidebar overflow-hidden flex flex-col">
+        <aside className="border-l bg-sidebar overflow-hidden flex flex-col" data-tour="bodymap-region-list">
           <div className="h-12 border-b flex items-center px-4">
             <span className="text-sm font-semibold">
               {view === "anterior" ? "Anterior" : "Posterior"} regions ({visible.length})

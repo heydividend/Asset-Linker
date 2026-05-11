@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/Layout";
+import { TourProvider } from "@/components/TourProvider";
 import Dashboard from "@/pages/Dashboard";
 import NotebooksList from "@/pages/NotebooksList";
 import NotebookDetail from "@/pages/NotebookDetail";
@@ -25,8 +26,9 @@ const queryClient = new QueryClient();
 
 function Router() {
   return (
-    <Layout>
-      <Switch>
+    <TourProvider>
+      <Layout>
+        <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/notebooks" component={NotebooksList} />
         <Route path="/notebooks/:id" component={NotebookDetail} />
@@ -44,7 +46,8 @@ function Router() {
         <Route path="/study-guides/:id" component={StudyGuideDetail} />
         <Route component={NotFound} />
       </Switch>
-    </Layout>
+      </Layout>
+    </TourProvider>
   );
 }
 

@@ -23,6 +23,8 @@ import { TrendWindowSelector } from "@/components/TrendWindowSelector";
 import { useTrendWindow } from "@/hooks/use-trend-window";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useTour } from "@/components/TourProvider";
+import { TOUR_SEEN_KEY } from "@/lib/tour";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -74,6 +76,25 @@ const phaseStyles: Record<string, { label: string; className: string }> = {
 };
 
 export default function Dashboard() {
+  const { startTour } = useTour();
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (window.localStorage.getItem(TOUR_SEEN_KEY)) return;
+    } catch {
+      return;
+    }
+    const t = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(TOUR_SEEN_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+      startTour("all");
+    }, 800);
+    return () => window.clearTimeout(t);
+  }, [startTour]);
+
   const [trendWindow, setTrendWindow] = useTrendWindow("dashboard");
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
   const { data: plan, isLoading: loadingPlan } = useGetStudyPlanToday();
@@ -337,7 +358,7 @@ export default function Dashboard() {
         {loadingSchedule ? (
           <Skeleton className="h-24 w-full" />
         ) : schedule ? (
-          <Card className="bg-primary text-primary-foreground border-none">
+          <Card className="bg-primary text-primary-foreground border-none" data-tour="dashboard-countdown">
             <CardContent className="p-4 flex items-center gap-4 flex-wrap">
               <CalendarDays className="h-6 w-6 opacity-90 shrink-0" />
               <div className="flex-1 min-w-0">
@@ -416,7 +437,7 @@ export default function Dashboard() {
         ) : null}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-          <Card className="bg-primary text-primary-foreground border-none">
+          <Card className="bg-primary text-primary-foreground border-none" data-tour="dashboard-readiness">
             <CardContent className="p-4 min-w-0">
               <div className="flex items-center justify-between gap-2 min-w-0">
                 <p className="text-xs font-medium opacity-90 truncate">BOC Readiness</p>
@@ -433,7 +454,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card data-tour="dashboard-streak">
             <CardContent className="p-4 min-w-0">
               <div className="flex items-center justify-between gap-2 text-muted-foreground min-w-0">
                 <p className="text-xs font-medium truncate">Study Streak</p>
@@ -492,7 +513,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 space-y-4 min-w-0">
             <FixItPlanCard />
-            <Card>
+            <Card data-tour="dashboard-today-plan">
               <CardHeader className="p-4 pb-2 space-y-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <CardTitle className="text-base">Today's Study Plan</CardTitle>
@@ -764,7 +785,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card data-tour="dashboard-domain-mastery">
               <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between gap-2 space-y-0">
                 <CardTitle className="text-base">Domain Mastery</CardTitle>
                 <TrendWindowSelector

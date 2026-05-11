@@ -55,7 +55,7 @@ export default function MockExamLanding() {
         </h1>
       </header>
       <div className="flex-1 overflow-y-auto p-4 max-w-4xl mx-auto w-full space-y-4">
-        <Card>
+        <Card data-tour="mock-howitworks">
           <CardHeader>
             <CardTitle>How the mock exam works</CardTitle>
           </CardHeader>

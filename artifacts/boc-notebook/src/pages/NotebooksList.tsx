@@ -261,7 +261,7 @@ export default function NotebooksList() {
       {isLoading ? (
         <div>Loading...</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3" data-tour="notebooks-grid">
           {notebooks.map((nb) => (
             <div key={nb.id} className="relative group">
               <Link href={`/notebooks/${nb.id}`}>
