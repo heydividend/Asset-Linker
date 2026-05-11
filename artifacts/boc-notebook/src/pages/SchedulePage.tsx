@@ -18,7 +18,34 @@ interface DayItem {
   estMinutes: number;
   domainId?: number | null;
   topicId?: number | null;
+  notebookId?: number | null;
   link?: string;
+}
+
+function deriveLink(it: DayItem): string | null {
+  if (it.link) return it.link;
+  switch (it.kind) {
+    case "flashcards":
+      return "/flashcards";
+    case "quiz": {
+      const q = new URLSearchParams();
+      if (it.domainId) q.set("domain", String(it.domainId));
+      if (it.topicId) q.set("topic", String(it.topicId));
+      const s = q.toString();
+      return s ? `/quiz?${s}` : "/quiz";
+    }
+    case "study_guide":
+    case "review":
+      return it.notebookId ? `/notebooks/${it.notebookId}` : "/notebooks";
+    case "audio":
+      return it.notebookId ? `/notebooks/${it.notebookId}` : "/notebooks";
+    case "mock_exam":
+      return "/mock-exam";
+    case "resource":
+      return "/notebooks";
+    default:
+      return null;
+  }
 }
 interface DayPlan {
   date: string;
@@ -85,7 +112,9 @@ export default function SchedulePage() {
     return <div className="p-6">Loading schedule…</div>;
   }
 
-  const progress = data.totalDays > 0 ? Math.round((data.daysCompleted / data.totalDays) * 100) : 0;
+  const todayIdx = data.days.findIndex((d) => d.date === data.today);
+  const completed = todayIdx < 0 ? data.totalDays : todayIdx;
+  const progress = data.totalDays > 0 ? Math.round((completed / data.totalDays) * 100) : 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -196,28 +225,31 @@ export default function SchedulePage() {
                 {d.items.length > 0 && (
                   <CardContent className="pt-0">
                     <ul className="space-y-2">
-                      {d.items.map((it, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm" data-testid={`day-item-${d.date}-${i}`}>
-                          <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <span className="font-medium">{it.title}</span>
-                            {it.description && <span className="text-muted-foreground"> — {it.description}</span>}
-                            <span className="text-xs text-muted-foreground ml-2">~{it.estMinutes}m</span>
-                          </div>
-                          {it.link && (
-                            <Link href={it.link}>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                className="h-7 px-2.5 text-xs shrink-0"
-                                data-testid={`day-item-start-${d.date}-${i}`}
-                              >
-                                Start
-                              </Button>
-                            </Link>
-                          )}
-                        </li>
-                      ))}
+                      {d.items.map((it, i) => {
+                        const link = deriveLink(it);
+                        return (
+                          <li key={i} className="flex items-start gap-2 text-sm" data-testid={`day-item-${d.date}-${i}`}>
+                            <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium">{it.title}</span>
+                              {it.description && <span className="text-muted-foreground"> — {it.description}</span>}
+                              <span className="text-xs text-muted-foreground ml-2">~{it.estMinutes}m</span>
+                            </div>
+                            {link && (
+                              <Link href={link}>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="h-7 px-2.5 text-xs shrink-0"
+                                  data-testid={`day-item-start-${d.date}-${i}`}
+                                >
+                                  Start
+                                </Button>
+                              </Link>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </CardContent>
                 )}

@@ -14,6 +14,8 @@ import QuizRunner from "@/pages/QuizRunner";
 import MockExamLanding from "@/pages/MockExamLanding";
 import MockExamRunner from "@/pages/MockExamRunner";
 import TutorPage from "@/pages/TutorPage";
+import GamesHub from "@/pages/GamesHub";
+import MatchingGame from "@/pages/MatchingGame";
 import SchedulePage from "@/pages/SchedulePage";
 import BodyMapPage from "@/pages/BodyMapPage";
 
@@ -32,6 +34,8 @@ function Router() {
         <Route path="/mock-exam" component={MockExamLanding} />
         <Route path="/mock-exam/:id" component={MockExamRunner} />
         <Route path="/tutor" component={TutorPage} />
+        <Route path="/games" component={GamesHub} />
+        <Route path="/games/:id" component={MatchingGame} />
         <Route path="/schedule" component={SchedulePage} />
         <Route path="/body-map" component={BodyMapPage} />
         <Route component={NotFound} />

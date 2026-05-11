@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import { useLocation, useSearch } from "wouter";
 import {
   useListQuizAttempts,
   useStartQuiz,
@@ -55,6 +55,22 @@ export default function QuizHub() {
   const [domainId, setDomainId] = useState<string>("");
   const [topicId, setTopicId] = useState<string>("");
   const [notebookId, setNotebookId] = useState<string>("");
+
+  const search = useSearch();
+  useEffect(() => {
+    const p = new URLSearchParams(search);
+    const d = p.get("domain");
+    const t = p.get("topic");
+    const nb = p.get("notebook");
+    if (t) {
+      setMode("topic");
+      setTopicId(t);
+    } else if (d) {
+      setMode("domain");
+      setDomainId(d);
+    }
+    if (nb) setNotebookId(nb);
+  }, [search]);
 
   const needsDomain = mode === "domain" && !domainId;
   const needsTopic = mode === "topic" && !topicId;
