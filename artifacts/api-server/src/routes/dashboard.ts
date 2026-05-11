@@ -141,11 +141,12 @@ router.get("/dashboard/topic-mastery", async (req, res): Promise<void> => {
 
   // Last `limit` quiz answers per topic (joined via questions.topic_id), newest first.
   const recentRows = (await db.execute(sql`
-    SELECT topic_id, correct, answered_at, quiz_id FROM (
+    SELECT topic_id, correct, answered_at, quiz_id, question_id FROM (
       SELECT q.topic_id AS topic_id,
              qa.correct AS correct,
              qa.answered_at AS answered_at,
              qa.quiz_id AS quiz_id,
+             qa.question_id AS question_id,
              ROW_NUMBER() OVER (PARTITION BY q.topic_id ORDER BY qa.answered_at DESC) AS rn
       FROM quiz_answers qa
       JOIN questions q ON q.id = qa.question_id
@@ -153,9 +154,9 @@ router.get("/dashboard/topic-mastery", async (req, res): Promise<void> => {
     ) t
     WHERE rn <= ${limit}
     ORDER BY topic_id ASC, answered_at ASC
-  `)) as unknown as { rows: Array<{ topic_id: number; correct: boolean; answered_at: string | Date; quiz_id: number }> };
+  `)) as unknown as { rows: Array<{ topic_id: number; correct: boolean; answered_at: string | Date; quiz_id: number; question_id: number }> };
 
-  const recentByTopic = new Map<number, Array<{ correct: boolean; answeredAt: string; quizId: number }>>();
+  const recentByTopic = new Map<number, Array<{ correct: boolean; answeredAt: string; quizId: number; questionId: number }>>();
   for (const row of recentRows.rows) {
     const arr = recentByTopic.get(row.topic_id) ?? [];
     arr.push({
@@ -165,6 +166,7 @@ router.get("/dashboard/topic-mastery", async (req, res): Promise<void> => {
           ? row.answered_at.toISOString()
           : new Date(row.answered_at).toISOString(),
       quizId: row.quiz_id,
+      questionId: row.question_id,
     });
     recentByTopic.set(row.topic_id, arr);
   }
@@ -198,17 +200,18 @@ router.get("/dashboard/topic-history", async (req, res): Promise<void> => {
     SELECT q.topic_id AS topic_id,
            qa.correct AS correct,
            qa.answered_at AS answered_at,
-           qa.quiz_id AS quiz_id
+           qa.quiz_id AS quiz_id,
+           qa.question_id AS question_id
     FROM quiz_answers qa
     JOIN questions q ON q.id = qa.question_id
     WHERE q.topic_id IS NOT NULL
     ${filterClause}
     ORDER BY q.topic_id ASC, qa.answered_at ASC
   `)) as unknown as {
-    rows: Array<{ topic_id: number; correct: boolean; answered_at: string | Date; quiz_id: number }>;
+    rows: Array<{ topic_id: number; correct: boolean; answered_at: string | Date; quiz_id: number; question_id: number }>;
   };
 
-  const byTopic = new Map<number, Array<{ correct: boolean; answeredAt: string; quizId: number }>>();
+  const byTopic = new Map<number, Array<{ correct: boolean; answeredAt: string; quizId: number; questionId: number }>>();
   const ensureTopic = (id: number) => {
     if (!byTopic.has(id)) byTopic.set(id, []);
     return byTopic.get(id)!;
@@ -222,6 +225,7 @@ router.get("/dashboard/topic-history", async (req, res): Promise<void> => {
           ? row.answered_at.toISOString()
           : new Date(row.answered_at).toISOString(),
       quizId: row.quiz_id,
+      questionId: row.question_id,
     });
   }
 

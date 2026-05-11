@@ -104,7 +104,7 @@ export default function BodyMapPage() {
       {
         mastery: number;
         attempts: number;
-        recent: { correct: boolean; answeredAt: string; quizId: number }[];
+        recent: { correct: boolean; answeredAt: string; quizId: number; questionId: number }[];
       }
     >();
     for (const row of topicMasteryRows) {
@@ -131,14 +131,14 @@ export default function BodyMapPage() {
         contributingTopics: number;
         totalTopics: number;
         latest: string | null;
-        recentAttempts: { correct: boolean; answeredAt: string; topicName: string; quizId: number }[];
+        recentAttempts: { correct: boolean; answeredAt: string; topicName: string; quizId: number; questionId: number }[];
       }
     >();
     for (const r of bodyRegions) {
       let totalAttempts = 0;
       let totalCorrect = 0;
       let contributingTopics = 0;
-      const merged: { correct: boolean; answeredAt: string; topicName: string; quizId: number }[] = [];
+      const merged: { correct: boolean; answeredAt: string; topicName: string; quizId: number; questionId: number }[] = [];
       for (const name of r.topicNames) {
         const m = masteryByName.get(name);
         if (!m) continue;
@@ -439,7 +439,7 @@ export default function BodyMapPage() {
                   contributingTopics: 0,
                   totalTopics: r.topicNames.length,
                   latest: null,
-                  recentAttempts: [] as { correct: boolean; answeredAt: string; topicName: string; quizId: number }[],
+                  recentAttempts: [] as { correct: boolean; answeredAt: string; topicName: string; quizId: number; questionId: number }[],
                 };
               const tone = masteryTone(rm.pct);
               return (
@@ -561,7 +561,7 @@ export default function BodyMapPage() {
                     contributingTopics: 0,
                     totalTopics: r.topicNames.length,
                     latest: null,
-                    recentAttempts: [] as { correct: boolean; answeredAt: string; topicName: string; quizId: number }[],
+                    recentAttempts: [] as { correct: boolean; answeredAt: string; topicName: string; quizId: number; questionId: number }[],
                   };
                 const tone = masteryTone(rm.pct);
                 const isWeak = rm.pct != null && rm.pct < 60;

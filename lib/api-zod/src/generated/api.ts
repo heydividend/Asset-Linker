@@ -970,6 +970,11 @@ export const GetDashboardTopicMasteryResponseItem = zod.object({
         quizId: zod
           .number()
           .describe("Quiz attempt ID this answer belonged to."),
+        questionId: zod
+          .number()
+          .describe(
+            "Question ID that was answered, used to deep-link reviews.",
+          ),
       }),
     )
     .describe("Up to the last 5 quiz answers for this topic, oldest first."),
@@ -998,6 +1003,11 @@ export const GetDashboardTopicHistoryResponseItem = zod.object({
         quizId: zod
           .number()
           .describe("Quiz attempt ID this answer belonged to."),
+        questionId: zod
+          .number()
+          .describe(
+            "Question ID that was answered, used to deep-link reviews.",
+          ),
       }),
     )
     .describe("All quiz answers for this topic, oldest first."),

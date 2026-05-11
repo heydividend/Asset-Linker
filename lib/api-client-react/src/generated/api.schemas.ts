@@ -442,6 +442,8 @@ export interface RecentAttempt {
   answeredAt: string;
   /** Quiz attempt ID this answer belonged to. */
   quizId: number;
+  /** Question ID that was answered, used to deep-link reviews. */
+  questionId: number;
 }
 
 export interface TopicMasteryEntry {

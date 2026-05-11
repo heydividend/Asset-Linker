@@ -45,6 +45,8 @@ export interface SparklineAttempt {
   topicName?: string;
   /** When provided, the row becomes a link that opens this quiz attempt's review. */
   quizId?: number;
+  /** When provided alongside quizId, the review scrolls to and highlights this question. */
+  questionId?: number;
 }
 
 interface MasterySparklineProps {
@@ -254,13 +256,18 @@ function InteractiveSparkline({
                 );
                 if (a.quizId != null) {
                   const qid = a.quizId;
+                  const questionId = a.questionId;
                   return (
                     <li key={`${a.answeredAt}-${i}`}>
                       <button
                         type="button"
                         onClick={() => {
                           setOpen(false);
-                          navigate(`/quiz/${qid}`);
+                          navigate(
+                            questionId != null
+                              ? `/quiz/${qid}?q=${questionId}`
+                              : `/quiz/${qid}`,
+                          );
                         }}
                         className="w-full flex items-start gap-2 text-xs rounded-sm px-1.5 py-1 -mx-1.5 hover-elevate active-elevate-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         data-testid={itemTestId}

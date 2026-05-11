@@ -189,11 +189,13 @@ export default function Dashboard() {
   // topicId → recent attempts (with timestamps) so the Weak Topic sparkline
   // can open the same date/result popover used elsewhere.
   const recentAttemptsByTopicId = useMemo(() => {
-    const m = new Map<number, { correct: boolean; answeredAt: string }[]>();
+    const m = new Map<number, { correct: boolean; answeredAt: string; quizId: number; questionId: number }[]>();
     for (const row of topicMasteryRows) {
       m.set(row.topicId, (row.recentAttempts ?? []).map((a) => ({
         correct: a.correct,
         answeredAt: a.answeredAt,
+        quizId: a.quizId,
+        questionId: a.questionId,
       })));
     }
     return m;
@@ -258,7 +260,7 @@ export default function Dashboard() {
     const byDomain = new Map<
       number,
       {
-        merged: { correct: boolean; answeredAt: string; topicId: number; quizId: number }[];
+        merged: { correct: boolean; answeredAt: string; topicId: number; quizId: number; questionId: number }[];
         totalAttempts: number;
         topicsWithAttempts: Set<number>;
       }
@@ -289,7 +291,7 @@ export default function Dashboard() {
         contributingTopics: number;
         totalTopics: number;
         latest: string | null;
-        attempts: { correct: boolean; answeredAt: string; topicName: string; quizId: number }[];
+        attempts: { correct: boolean; answeredAt: string; topicName: string; quizId: number; questionId: number }[];
       }
     >();
     for (const [dId, b] of byDomain) {
@@ -302,6 +304,7 @@ export default function Dashboard() {
         answeredAt: a.answeredAt,
         topicName: topicNameById.get(a.topicId) ?? "Unknown topic",
         quizId: a.quizId,
+        questionId: a.questionId,
       }));
       out.set(dId, {
         trend,
@@ -543,6 +546,8 @@ export default function Dashboard() {
                         correct: a.correct,
                         answeredAt: a.answeredAt,
                         topicName: topic.name,
+                        quizId: a.quizId,
+                        questionId: a.questionId,
                       }));
                       const masteryPct = Math.round((topic.mastery ?? 0) * 100);
                       const isStartingThis =

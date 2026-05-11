@@ -1246,11 +1246,12 @@ components:
           items: { $ref: "#/components/schemas/RecentAttempt" }
     RecentAttempt:
       type: object
-      required: [correct, answeredAt, quizId]
+      required: [correct, answeredAt, quizId, questionId]
       properties:
         correct: { type: boolean }
         answeredAt: { type: string, format: date-time }
         quizId: { type: integer, description: "Quiz attempt ID this answer belonged to." }
+        questionId: { type: integer, description: "Question ID that was answered, used to deep-link reviews." }
     TopicHistoryEntry:
       type: object
       required: [topicId, attempts]

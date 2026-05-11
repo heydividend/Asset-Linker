@@ -1,5 +1,5 @@
-import { useParams, Link } from "wouter";
-import { useMemo, useState } from "react";
+import { useParams, Link, useSearch } from "wouter";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { forgetFixItQuizId, isTodayFixItQuiz, markCompletedToday } from "@/lib/fixItPlan";
 import {
   useGetQuiz,
@@ -179,6 +179,35 @@ interface FinishedQuizViewProps {
 }
 
 function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) {
+  // When the user opens this attempt from a recent-trend popover, the URL
+  // carries `?q=<questionId>` so we can scroll to and briefly highlight the
+  // exact question they tapped (Task #45).
+  const search = useSearch();
+  const focusQuestionId = (() => {
+    const raw = new URLSearchParams(search).get("q");
+    const n = raw == null ? NaN : Number(raw);
+    return Number.isFinite(n) ? n : null;
+  })();
+  const focusedRef = useRef<HTMLDivElement | null>(null);
+  const [highlightedQuestionId, setHighlightedQuestionId] = useState<number | null>(null);
+  const lastScrolledKey = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (focusQuestionId == null) return;
+    const exists = quiz.questions.some((qq) => qq.questionId === focusQuestionId);
+    if (!exists) return;
+    const key = `${quiz.id}:${focusQuestionId}`;
+    if (lastScrolledKey.current === key) return;
+    lastScrolledKey.current = key;
+    const node = focusedRef.current;
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    setHighlightedQuestionId(focusQuestionId);
+    const t = window.setTimeout(() => setHighlightedQuestionId(null), 2400);
+    return () => window.clearTimeout(t);
+  }, [quiz.id, quiz.questions, focusQuestionId]);
+
   // Pull recent attempts per topic so each missed question can show its own
   // trend popover, mirroring the one Task #40 added on the Dashboard side.
   const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery({ limit: 5 });
@@ -196,6 +225,7 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
           answeredAt: a.answeredAt,
           topicName: row.name,
           quizId: a.quizId,
+          questionId: a.questionId,
         })),
         trend: recent.map((a) => a.correct),
       });
@@ -220,8 +250,20 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
             const isCorrect = qq.selectedIndex === qq.correctIndex;
             const topicInfo = qq.topicId != null ? topicInfoById.get(qq.topicId) : undefined;
             const showTrend = !isCorrect && !!topicInfo && topicInfo.attempts.length > 0;
+            const isFocused = focusQuestionId != null && qq.questionId === focusQuestionId;
+            const isHighlighted = highlightedQuestionId != null && qq.questionId === highlightedQuestionId;
             return (
-              <Card key={qq.id}>
+              <Card
+                key={qq.id}
+                ref={isFocused ? focusedRef : undefined}
+                data-testid={`results-question-${qq.questionId}`}
+                data-focused={isFocused ? "true" : undefined}
+                className={
+                  isHighlighted
+                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background transition-all duration-500"
+                    : "transition-all duration-500"
+                }
+              >
                 <CardHeader>
                   <CardTitle className="text-base flex items-start gap-2">
                     {isCorrect ? <Check className="h-5 w-5 text-primary mt-0.5" /> : <X className="h-5 w-5 text-destructive mt-0.5" />}
