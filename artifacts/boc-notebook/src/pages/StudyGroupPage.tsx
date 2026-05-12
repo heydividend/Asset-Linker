@@ -358,6 +358,28 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
   }, [detail, session.pendingExtractionRound]);
   const canResume = incompleteRound != null && !streaming;
 
+  // Auto-resume the live stream when a session is reopened mid-turn so the
+  // user doesn't have to click "Resume round" to keep watching the partial
+  // grow. We only auto-trigger once per detected incomplete round, and skip
+  // when the session is paused (manual override) or when a turn explicitly
+  // failed — in those cases the user should click Retry/Resume themselves.
+  const autoResumedRoundRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (incompleteRound == null) {
+      autoResumedRoundRef.current = null;
+      return;
+    }
+    if (streaming) return;
+    if (session.status === "paused") return;
+    if (hasFailed) return;
+    if (autoResumedRoundRef.current === incompleteRound) return;
+    autoResumedRoundRef.current = incompleteRound;
+    void handleStartRound();
+    // handleStartRound is intentionally omitted — it's a stable closure within
+    // this component and including it would re-fire the effect every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incompleteRound, streaming, hasFailed, session.status, session.id]);
+
   useEffect(() => {
     if (transcriptRef.current) {
       transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
