@@ -9,6 +9,7 @@ import {
   useCreateStudyGroupSession,
   useUpdateStudyGroupSession,
   useDeleteStudyGroupSession,
+  useDismissStudyGroupTimeout,
   usePromoteStudyGroupArtifact,
   useGetStudyGroupLearningSignal,
   useGetStudyGroupLibrary,
@@ -1243,8 +1244,31 @@ export default function StudyGroupPage() {
     if (params.get("tab") === "library") setTab("library");
   }, [search]);
   const del = useDeleteStudyGroupSession();
+  const dismissTimeout = useDismissStudyGroupTimeout();
   const qc = useQueryClient();
   const { toast } = useToast();
+
+  function dismissSessionTimeout(id: number, title: string) {
+    dismissTimeout.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getListStudyGroupSessionsQueryKey() });
+          toast({
+            title: "Timeout warning dismissed",
+            description: `"${title}" — your transcript is still here.`,
+          });
+        },
+        onError: (e) => {
+          toast({
+            title: "Couldn't dismiss",
+            description: e instanceof Error ? e.message : "Try again in a moment.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  }
 
   useEffect(() => {
     if (activeId == null && sessions.length > 0) setActiveId(sessions[0].id);
@@ -1339,10 +1363,28 @@ export default function StudyGroupPage() {
                   </div>
                   {isStuck ? (
                     <div
-                      className="text-[11px] text-amber-700 dark:text-amber-300 font-medium"
+                      className="text-[11px] text-amber-700 dark:text-amber-300 font-medium flex items-center gap-1.5 flex-wrap"
                       data-testid={`sg-stuck-label-${s.id}`}
                     >
-                      Round {s.timedOutRound ?? s.roundCount} timed out — tap to resume
+                      <span>
+                        Round {s.timedOutRound ?? s.roundCount} timed out — tap to resume
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          dismissSessionTimeout(s.id, s.title);
+                        }}
+                        disabled={
+                          dismissTimeout.isPending &&
+                          dismissTimeout.variables?.id === s.id
+                        }
+                        className="text-[10px] underline text-amber-800 dark:text-amber-200 hover:text-amber-900 dark:hover:text-amber-100 disabled:opacity-50"
+                        data-testid={`sg-dismiss-timeout-${s.id}`}
+                        title="Keep the transcript but hide the warning"
+                      >
+                        Dismiss
+                      </button>
                     </div>
                   ) : (
                     <div className="text-[11px] text-muted-foreground">

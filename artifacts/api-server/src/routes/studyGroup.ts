@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import {
   db,
   studyGroupSessions,
@@ -637,6 +637,8 @@ router.get("/study-group/sessions", async (_req, res): Promise<void> => {
           inArray(studyGroupMessages.sessionId, ids),
           eq(studyGroupMessages.status, "failed"),
           eq(studyGroupMessages.reason, "sweeper_timeout"),
+          // Skip rows the user has acknowledged via the Dismiss affordance.
+          isNull(studyGroupMessages.dismissedAt),
         ),
       );
     for (const s of stuck) {
@@ -728,6 +730,41 @@ router.get("/study-group/sessions/:id", async (req, res): Promise<void> => {
     .where(eq(studyGroupArtifacts.sessionId, id))
     .orderBy(asc(studyGroupArtifacts.createdAt));
   res.json({ session, messages, artifacts });
+});
+
+// Acknowledge a stuck/timed-out round the user doesn't plan to resume. Stamps
+// `dismissedAt` on every still-failed sweeper-timeout row in the session so the
+// dashboard banner and sidebar warning stop surfacing it. Transcript and the
+// underlying turn `status` are intentionally left alone — the user can still
+// revisit the partial transcript. If a *new* round in the same session later
+// times out, that new row's dismissedAt is NULL so the warning re-appears.
+router.post("/study-group/sessions/:id/dismiss-timeout", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const [session] = await db
+    .select({ id: studyGroupSessions.id })
+    .from(studyGroupSessions)
+    .where(eq(studyGroupSessions.id, id));
+  if (!session) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  const updated = await db
+    .update(studyGroupMessages)
+    .set({ dismissedAt: new Date() })
+    .where(
+      and(
+        eq(studyGroupMessages.sessionId, id),
+        eq(studyGroupMessages.status, "failed"),
+        eq(studyGroupMessages.reason, "sweeper_timeout"),
+        isNull(studyGroupMessages.dismissedAt),
+      ),
+    )
+    .returning({ id: studyGroupMessages.id });
+  res.json({ dismissed: updated.length });
 });
 
 router.delete("/study-group/sessions/:id", async (req, res): Promise<void> => {
@@ -936,7 +973,15 @@ router.post("/study-group/sessions/:id/round", async (req, res): Promise<void> =
       if (isRetry) {
         await db
           .update(studyGroupMessages)
-          .set({ status: "pending", content: "", reason: null, updatedAt: new Date() })
+          .set({
+            status: "pending",
+            content: "",
+            reason: null,
+            // Clear any prior user dismissal — they're re-engaging, so a fresh
+            // timeout on this same row should re-surface the warning.
+            dismissedAt: null,
+            updatedAt: new Date(),
+          })
           .where(
             and(
               eq(studyGroupMessages.sessionId, id),

@@ -1701,6 +1701,20 @@ export const DeleteStudyGroupSessionParams = zod.object({
 });
 
 /**
+ * Clears the timed-out warning for a session by stamping `dismissedAt` on every still-failed sweeper-timeout turn. Transcript and per-turn status are left intact. If a *new* round in the same session later times out, the warning re-appears for that new round.
+ * @summary Acknowledge a stuck/timed-out round you don't plan to resume
+ */
+export const DismissStudyGroupTimeoutParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DismissStudyGroupTimeoutResponse = zod.object({
+  dismissed: zod
+    .number()
+    .describe("How many timed-out turn rows were marked dismissed."),
+});
+
+/**
  * @summary Stream the next study-group round (SSE) — resumes any unfinished round
  */
 export const RunStudyGroupRoundParams = zod.object({

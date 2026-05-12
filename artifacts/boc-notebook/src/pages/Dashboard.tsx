@@ -73,7 +73,11 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useListStudyGroupSessions } from "@workspace/api-client-react";
+import {
+  useListStudyGroupSessions,
+  useDismissStudyGroupTimeout,
+  getListStudyGroupSessionsQueryKey,
+} from "@workspace/api-client-react";
 
 interface ScheduleDay {
   date: string;
@@ -195,6 +199,28 @@ export default function Dashboard() {
       ),
     [sgSessions],
   );
+  const dismissTimeout = useDismissStudyGroupTimeout();
+  const onDismissTimeout = (sessionId: number, sessionTitle: string) => {
+    dismissTimeout.mutate(
+      { id: sessionId },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getListStudyGroupSessionsQueryKey() });
+          toast({
+            title: "Timeout warning dismissed",
+            description: `"${sessionTitle}" — your transcript is still saved in Study Group.`,
+          });
+        },
+        onError: (e) => {
+          toast({
+            title: "Couldn't dismiss",
+            description: e instanceof Error ? e.message : "Try again in a moment.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
   const startQuiz = useStartQuiz();
   const markComplete = useMarkPlanItemComplete();
   const generateTopicPodcast = useGenerateTopicPodcast();
@@ -513,6 +539,20 @@ export default function Dashboard() {
                         >
                           Resume
                           <ArrowRight className="h-3 w-3 ml-1" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs text-amber-900/80 dark:text-amber-100/80 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                          onClick={() => onDismissTimeout(s.id, s.title)}
+                          disabled={
+                            dismissTimeout.isPending &&
+                            dismissTimeout.variables?.id === s.id
+                          }
+                          data-testid={`button-dashboard-sg-dismiss-${s.id}`}
+                          title="Acknowledge — keep the transcript, hide the warning"
+                        >
+                          Dismiss
                         </Button>
                       </div>
                     );

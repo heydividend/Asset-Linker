@@ -975,6 +975,11 @@ export interface StudyGroupRoundInput {
   retry?: boolean;
 }
 
+export interface StudyGroupDismissTimeoutResult {
+  /** How many timed-out turn rows were marked dismissed. */
+  dismissed: number;
+}
+
 export interface StudyGroupSessionInput {
   /** Optional. Auto-picks the weakest topic if omitted. */
   topicId?: number;

@@ -1159,6 +1159,25 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "204": { description: Deleted }
+  /study-group/sessions/{id}/dismiss-timeout:
+    post:
+      operationId: dismissStudyGroupTimeout
+      tags: [studygroup]
+      summary: Acknowledge a stuck/timed-out round you don't plan to resume
+      description: >-
+        Clears the timed-out warning for a session by stamping `dismissedAt` on
+        every still-failed sweeper-timeout turn. Transcript and per-turn status
+        are left intact. If a *new* round in the same session later times out,
+        the warning re-appears for that new round.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGroupDismissTimeoutResult" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /study-group/sessions/{id}/round:
     post:
       operationId: runStudyGroupRound
@@ -2038,6 +2057,13 @@ components:
         retry:
           type: boolean
           description: "If true, reset any 'failed' turns in the latest unfinished round to 'pending' and re-run them."
+    StudyGroupDismissTimeoutResult:
+      type: object
+      required: [dismissed]
+      properties:
+        dismissed:
+          type: integer
+          description: How many timed-out turn rows were marked dismissed.
     StudyGroupSessionInput:
       type: object
       properties:

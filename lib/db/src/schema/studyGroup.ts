@@ -33,6 +33,13 @@ export const studyGroupMessages = pgTable("study_group_messages", {
   // recorded when the model stream errored or returned no content. NULL for
   // normal failures and successes.
   reason: text("reason"),
+  // When the user explicitly dismisses a stuck/timed-out round (acknowledging
+  // they don't plan to resume it), we stamp this so the dashboard alert and
+  // sessions sidebar stop surfacing this row as a timed-out warning. The
+  // transcript and status itself are untouched. NULL = not dismissed. A future
+  // sweeper-timeout on a *new* round in the same session inserts a new row
+  // (dismissedAt is NULL on that new row), so the warning re-appears.
+  dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
   turnOrder: integer("turn_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

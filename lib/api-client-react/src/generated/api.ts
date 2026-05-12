@@ -78,6 +78,7 @@ import type {
   ResourceInput,
   ScrapeJob,
   ScrapeJobInput,
+  StudyGroupDismissTimeoutResult,
   StudyGroupInterjectInput,
   StudyGroupLearningSignal,
   StudyGroupLibrary,
@@ -6706,6 +6707,94 @@ export const useDeleteStudyGroupSession = <
   TContext
 > => {
   return useMutation(getDeleteStudyGroupSessionMutationOptions(options));
+};
+
+/**
+ * Clears the timed-out warning for a session by stamping `dismissedAt` on every still-failed sweeper-timeout turn. Transcript and per-turn status are left intact. If a *new* round in the same session later times out, the warning re-appears for that new round.
+ * @summary Acknowledge a stuck/timed-out round you don't plan to resume
+ */
+export const getDismissStudyGroupTimeoutUrl = (id: number) => {
+  return `/api/study-group/sessions/${id}/dismiss-timeout`;
+};
+
+export const dismissStudyGroupTimeout = async (
+  id: number,
+  options?: RequestInit,
+): Promise<StudyGroupDismissTimeoutResult> => {
+  return customFetch<StudyGroupDismissTimeoutResult>(
+    getDismissStudyGroupTimeoutUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getDismissStudyGroupTimeoutMutationOptions = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissStudyGroupTimeout>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof dismissStudyGroupTimeout>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["dismissStudyGroupTimeout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof dismissStudyGroupTimeout>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return dismissStudyGroupTimeout(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DismissStudyGroupTimeoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof dismissStudyGroupTimeout>>
+>;
+
+export type DismissStudyGroupTimeoutMutationError = ErrorType<NotFoundResponse>;
+
+/**
+ * @summary Acknowledge a stuck/timed-out round you don't plan to resume
+ */
+export const useDismissStudyGroupTimeout = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissStudyGroupTimeout>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof dismissStudyGroupTimeout>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDismissStudyGroupTimeoutMutationOptions(options));
 };
 
 /**
