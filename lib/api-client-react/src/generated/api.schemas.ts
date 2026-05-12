@@ -404,6 +404,9 @@ export interface QuizQuestion {
   topicId?: number | null;
   /** @nullable */
   domainId?: number | null;
+  /** @nullable */
+  sourceKind?: string | null;
+  pendingReview?: boolean;
   multiSelect?: boolean;
   /** @nullable */
   selectedIndex?: number | null;
@@ -433,6 +436,18 @@ export interface Quiz {
   finished: boolean;
   /** @nullable */
   score?: number | null;
+}
+
+export interface QuestionBankEntry {
+  id: number;
+  stem: string;
+  /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  domainId?: number | null;
+  sourceKind: string;
+  pendingReview: boolean;
+  createdAt: string;
 }
 
 export type QuizInputMode = (typeof QuizInputMode)[keyof typeof QuizInputMode];
@@ -1149,6 +1164,17 @@ export type ListDueFlashcardsParams = {
    * Filter by flashcard source (e.g. study_group).
    */
   source?: string;
+};
+
+export type ListAllQuestionsParams = {
+  /**
+   * Filter by question sourceKind (e.g. study_group, manual, ai).
+   */
+  source?: string;
+  /**
+   * When true, only return questions still flagged pendingReview.
+   */
+  pendingReview?: boolean;
 };
 
 export type ListAllStudyGuidesParams = {

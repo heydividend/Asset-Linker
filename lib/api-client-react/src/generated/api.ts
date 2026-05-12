@@ -39,6 +39,7 @@ import type {
   GetStudyGroupLibraryParams,
   HealthStatus,
   ListAllFlashcardsParams,
+  ListAllQuestionsParams,
   ListAllStudyGuidesParams,
   ListDueFlashcardsParams,
   ListGameSessionsParams,
@@ -66,6 +67,7 @@ import type {
   OpenaiMessageInput,
   PlanCompletionInput,
   PlanCompletions,
+  QuestionBankEntry,
   Quiz,
   QuizAnswerInput,
   QuizAnswerResult,
@@ -1972,6 +1974,103 @@ export function useListDueFlashcards<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListDueFlashcardsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary All enabled questions in the bank (browse / review surface)
+ */
+export const getListAllQuestionsUrl = (params?: ListAllQuestionsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/questions?${stringifiedParams}`
+    : `/api/questions`;
+};
+
+export const listAllQuestions = async (
+  params?: ListAllQuestionsParams,
+  options?: RequestInit,
+): Promise<QuestionBankEntry[]> => {
+  return customFetch<QuestionBankEntry[]>(getListAllQuestionsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAllQuestionsQueryKey = (
+  params?: ListAllQuestionsParams,
+) => {
+  return [`/api/questions`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAllQuestionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAllQuestions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAllQuestionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAllQuestions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAllQuestionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAllQuestions>>
+  > = ({ signal }) => listAllQuestions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAllQuestions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAllQuestionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllQuestions>>
+>;
+export type ListAllQuestionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary All enabled questions in the bank (browse / review surface)
+ */
+
+export function useListAllQuestions<
+  TData = Awaited<ReturnType<typeof listAllQuestions>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListAllQuestionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAllQuestions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAllQuestionsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

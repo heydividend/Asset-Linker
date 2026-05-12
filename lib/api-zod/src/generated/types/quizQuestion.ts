@@ -15,6 +15,9 @@ export interface QuizQuestion {
   topicId?: number | null;
   /** @nullable */
   domainId?: number | null;
+  /** @nullable */
+  sourceKind?: string | null;
+  pendingReview?: boolean;
   multiSelect?: boolean;
   /** @nullable */
   selectedIndex?: number | null;

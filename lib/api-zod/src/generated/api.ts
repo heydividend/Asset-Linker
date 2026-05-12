@@ -460,6 +460,31 @@ export const ListDueFlashcardsResponse = zod.array(
   ListDueFlashcardsResponseItem,
 );
 
+/**
+ * @summary All enabled questions in the bank (browse / review surface)
+ */
+export const ListAllQuestionsQueryParams = zod.object({
+  source: zod.coerce
+    .string()
+    .optional()
+    .describe("Filter by question sourceKind (e.g. study_group, manual, ai)."),
+  pendingReview: zod.coerce
+    .boolean()
+    .optional()
+    .describe("When true, only return questions still flagged pendingReview."),
+});
+
+export const ListAllQuestionsResponseItem = zod.object({
+  id: zod.number(),
+  stem: zod.string(),
+  topicId: zod.number().nullish(),
+  domainId: zod.number().nullish(),
+  sourceKind: zod.string(),
+  pendingReview: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAllQuestionsResponse = zod.array(ListAllQuestionsResponseItem);
+
 export const ListStudyGuidesParams = zod.object({
   id: zod.coerce.number(),
 });
@@ -686,6 +711,8 @@ export const GetQuizResponse = zod.object({
       choices: zod.array(zod.string()),
       topicId: zod.number().nullish(),
       domainId: zod.number().nullish(),
+      sourceKind: zod.string().nullish(),
+      pendingReview: zod.boolean().optional(),
       multiSelect: zod.boolean().optional(),
       selectedIndex: zod.number().nullish(),
       selectedIndices: zod.array(zod.number()).optional(),
@@ -745,6 +772,8 @@ export const FinishQuizResponse = zod.object({
       choices: zod.array(zod.string()),
       topicId: zod.number().nullish(),
       domainId: zod.number().nullish(),
+      sourceKind: zod.string().nullish(),
+      pendingReview: zod.boolean().optional(),
       multiSelect: zod.boolean().optional(),
       selectedIndex: zod.number().nullish(),
       selectedIndices: zod.array(zod.number()).optional(),

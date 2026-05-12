@@ -24,6 +24,8 @@ async function buildQuizQuestionView(qids: number[], answers: Map<number, { sele
         choices: q.choices,
         topicId: q.topicId,
         domainId: q.domainId,
+        sourceKind: q.sourceKind,
+        pendingReview: q.pendingReview,
         multiSelect: q.multiSelect,
         ...(ans
           ? {
@@ -46,6 +48,29 @@ function arraysEqualAsSets(a: number[], b: number[]): boolean {
   const sb = [...b].sort((x, y) => x - y);
   return sa.every((v, i) => v === sb[i]);
 }
+
+router.get("/questions", async (req, res): Promise<void> => {
+  const source = typeof req.query.source === "string" ? req.query.source.trim() : "";
+  const pendingOnly = req.query.pendingReview === "true" || req.query.pendingReview === "1";
+  const conditions = [eq(questions.enabled, true)];
+  if (source) conditions.push(eq(questions.sourceKind, source));
+  if (pendingOnly) conditions.push(eq(questions.pendingReview, true));
+  const rows = await db
+    .select({
+      id: questions.id,
+      stem: questions.stem,
+      topicId: questions.topicId,
+      domainId: questions.domainId,
+      sourceKind: questions.sourceKind,
+      pendingReview: questions.pendingReview,
+      createdAt: questions.createdAt,
+    })
+    .from(questions)
+    .where(and(...conditions))
+    .orderBy(desc(questions.createdAt))
+    .limit(200);
+  res.json(rows);
+});
 
 router.get("/quizzes", async (req, res): Promise<void> => {
   const limit = Math.min(parseInt((req.query.limit as string) ?? "20", 10) || 20, 100);

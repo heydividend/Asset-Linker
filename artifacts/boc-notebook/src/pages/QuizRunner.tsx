@@ -21,7 +21,7 @@ import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySparkline";
 import { Progress } from "@/components/ui/progress";
-import { Check, ChevronRight, ExternalLink, LogOut, Trophy, Users, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronRight, ExternalLink, LogOut, Trophy, Users, X } from "lucide-react";
 
 function arraysEqualAsSets(a: number[] | null | undefined, b: number[] | null | undefined): boolean {
   if (!a || !b) return false;
@@ -188,6 +188,28 @@ export default function QuizRunner() {
         )}
         <Card>
           <CardHeader>
+            {(q.sourceKind === "study_group" || q.pendingReview) && (
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                {q.sourceKind === "study_group" && (
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] px-1.5 py-0 flex items-center gap-1"
+                    data-testid="badge-question-source-study-group"
+                  >
+                    <Users className="h-3 w-3" /> From study group
+                  </Badge>
+                )}
+                {q.pendingReview && (
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] px-1.5 py-0 border-amber-300 text-amber-700 dark:text-amber-300 flex items-center gap-1"
+                    data-testid="badge-question-pending-review"
+                  >
+                    <AlertTriangle className="h-3 w-3" /> Pending review
+                  </Badge>
+                )}
+              </div>
+            )}
             <CardTitle className="text-lg leading-relaxed" data-testid="text-question-stem">{q.stem}</CardTitle>
             {q.imageUrl && (
               <img
@@ -390,7 +412,25 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
                 <CardHeader>
                   <CardTitle className="text-base flex items-start gap-2">
                     {isCorrect ? <Check className="h-5 w-5 text-primary mt-0.5" /> : <X className="h-5 w-5 text-destructive mt-0.5" />}
-                    <span>Q{i + 1}. {qq.stem}</span>
+                    <span className="flex-1">Q{i + 1}. {qq.stem}</span>
+                    {qq.sourceKind === "study_group" && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 flex items-center gap-1 shrink-0"
+                        data-testid={`results-question-source-${qq.questionId}`}
+                      >
+                        <Users className="h-3 w-3" /> Study group
+                      </Badge>
+                    )}
+                    {qq.pendingReview && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 border-amber-300 text-amber-700 dark:text-amber-300 flex items-center gap-1 shrink-0"
+                        data-testid={`results-question-pending-${qq.questionId}`}
+                      >
+                        <AlertTriangle className="h-3 w-3" /> Pending review
+                      </Badge>
+                    )}
                   </CardTitle>
                   {qq.imageUrl && (
                     <img
