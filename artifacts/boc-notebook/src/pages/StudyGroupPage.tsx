@@ -46,16 +46,22 @@ import {
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { useToast } from "@/hooks/use-toast";
 import { useChatStore } from "@/hooks/use-chat";
+import { useSpeech, type TtsVoice } from "@/hooks/use-speech";
 import {
   GraduationCap,
+  Headphones,
   Loader2,
   Pause,
   Play,
   Plus,
   Send,
+  SkipBack,
+  SkipForward,
   Sparkles,
+  Square,
   Trash2,
   Users,
+  Volume2,
   Wand2,
   Stethoscope,
   CheckCircle2,
@@ -76,6 +82,8 @@ interface SpeakerStyle {
   badge: string;
   ring: string;
   icon: typeof GraduationCap;
+  /** Per-persona TTS voice. Falls back to user voice when undefined. */
+  voice?: TtsVoice;
 }
 
 const SPEAKERS: Record<string, SpeakerStyle> = {
@@ -85,6 +93,7 @@ const SPEAKERS: Record<string, SpeakerStyle> = {
     badge: "Graduate Professor",
     ring: "bg-amber-500 text-white",
     icon: GraduationCap,
+    voice: "onyx", // deep, authoritative
   },
   alex: {
     initials: "A",
@@ -92,6 +101,7 @@ const SPEAKERS: Record<string, SpeakerStyle> = {
     badge: "BOC-certified peer",
     ring: "bg-sky-500 text-white",
     icon: Sparkles,
+    voice: "nova", // warm, energetic peer
   },
   jordan: {
     initials: "J",
@@ -99,6 +109,7 @@ const SPEAKERS: Record<string, SpeakerStyle> = {
     badge: "BOC-certified peer · 4 yrs clinic",
     ring: "bg-emerald-500 text-white",
     icon: Stethoscope,
+    voice: "echo", // calm, clinical
   },
   student: {
     initials: "You",
@@ -106,6 +117,7 @@ const SPEAKERS: Record<string, SpeakerStyle> = {
     badge: "Student",
     ring: "bg-primary text-primary-foreground",
     icon: Users,
+    voice: "shimmer",
   },
   system: {
     initials: "·",
@@ -131,12 +143,26 @@ function speakerStyle(s: string): SpeakerStyle {
   return SPEAKERS[s] ?? SPEAKERS.system;
 }
 
-function MessageBubble({ message, highlighted }: { message: TempMessage; highlighted?: boolean }) {
+function MessageBubble({
+  message,
+  highlighted,
+  isPlaying,
+}: {
+  message: TempMessage;
+  highlighted?: boolean;
+  isPlaying?: boolean;
+}) {
   const style = speakerStyle(message.speaker);
   const kindLabel = KIND_LABELS[message.kind] ?? message.kind;
   const isStudent = message.speaker === "student";
   const isSystem = message.speaker === "system";
   const isFailed = (message as { status?: string }).status === "failed";
+  const speakId = `sg-msg-${message.id}`;
+  const speech = useSpeech();
+  const speakingThis = speech.isSpeaking(speakId);
+  const loadingThis = speech.isLoading(speakId);
+  const canSpeak =
+    speech.supported && !isSystem && Boolean(message.content) && !message.__pending;
   if (isSystem) {
     return (
       <div className="flex justify-center py-1">
@@ -152,6 +178,7 @@ function MessageBubble({ message, highlighted }: { message: TempMessage; highlig
         "flex gap-3 items-start rounded-md transition-colors",
         isStudent && "flex-row-reverse",
         highlighted && "bg-amber-100/40 dark:bg-amber-900/20 ring-2 ring-amber-300 p-2 -mx-2",
+        isPlaying && "bg-primary/5 ring-2 ring-primary/40 p-2 -mx-2",
       )}
       data-testid={`sg-msg-${message.id}`}
       data-round={message.roundIndex}
@@ -180,6 +207,41 @@ function MessageBubble({ message, highlighted }: { message: TempMessage; highlig
           )}
           {kindLabel && (
             <span className="text-muted-foreground">· {kindLabel}</span>
+          )}
+          {canSpeak && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (speakingThis || loadingThis) {
+                  speech.stop();
+                } else {
+                  void speech.speak(speakId, message.content, style.voice);
+                }
+              }}
+              className={cn(
+                "ml-1 inline-flex items-center justify-center h-5 w-5 rounded hover:bg-accent transition-colors",
+                (speakingThis || loadingThis || isPlaying) && "text-primary",
+              )}
+              title={
+                speakingThis
+                  ? "Stop"
+                  : loadingThis
+                    ? "Loading voice…"
+                    : `Read with ${style.label}'s voice`
+              }
+              aria-label={speakingThis ? "Stop reading" : `Read with ${style.label}'s voice`}
+              aria-pressed={speakingThis}
+              data-testid={`button-sg-speak-${message.id}`}
+            >
+              {loadingThis ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : speakingThis ? (
+                <Square className="h-3 w-3" />
+              ) : (
+                <Volume2 className="h-3 w-3" />
+              )}
+            </button>
           )}
         </div>
         <div
@@ -580,6 +642,87 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
   const artifacts = (detail?.artifacts ?? []) as StudyGroupArtifact[];
   const isPaused = session.status === "paused";
 
+  // Audio read-out playlist: eligible messages in transcript order, each
+  // tagged with its persona's voice. System rows and empty/pending bubbles
+  // are skipped.
+  const speech = useSpeech();
+  const playlistItems = useMemo(
+    () =>
+      merged
+        .filter(
+          (m) =>
+            m.speaker !== "system" &&
+            !m.__pending &&
+            (m.content ?? "").trim().length > 0,
+        )
+        .map((m) => ({
+          id: `sg-msg-${m.id}`,
+          text: m.content,
+          voice: speakerStyle(m.speaker).voice,
+        })),
+    [merged],
+  );
+  // Track which playlist *we* started so the toolbar/highlight stay accurate
+  // even when new bubbles append while audio is mid-stream (the global
+  // playlist snapshot doesn't grow).
+  const ownedPlaylistIdRef = useRef<number | null>(null);
+  const isOurPlaylistActive =
+    speech.playlist != null &&
+    speech.playlist.playlistId === ownedPlaylistIdRef.current;
+  if (speech.playlist == null && ownedPlaylistIdRef.current != null) {
+    ownedPlaylistIdRef.current = null;
+  }
+  const currentPlayingId = isOurPlaylistActive
+    ? speech.playlist!.items[speech.playlist!.index]?.id ?? null
+    : null;
+  const playlistPaused = isOurPlaylistActive && speech.playlist!.paused;
+  const playlistPlaying = isOurPlaylistActive && !speech.playlist!.paused;
+  const playlistSnapshotTotal = isOurPlaylistActive
+    ? speech.playlist!.items.length
+    : 0;
+  const playlistPosition = isOurPlaylistActive ? speech.playlist!.index + 1 : 0;
+  const playlistTotal = playlistItems.length;
+  const currentPlayingSpeaker = isOurPlaylistActive
+    ? merged.find((m) => `sg-msg-${m.id}` === currentPlayingId)?.speaker ?? null
+    : null;
+
+  async function handleStartListen() {
+    if (playlistItems.length === 0) return;
+    await speech.playPlaylist(playlistItems);
+    // playPlaylist mutates the singleton synchronously before awaiting, so
+    // the latest playlistId is already available on the next render. We
+    // capture it here from the singleton state via a follow-up read.
+    // Note: speech.playlist reflects the current render snapshot; read the
+    // freshly-bumped id by re-reading the hook in a microtask.
+    queueMicrotask(() => {
+      // useSpeech's notify() will trigger a re-render with the new playlist.
+      // We snag the id from a one-shot read by leveraging the same module
+      // singleton via the hook's next render — but since we don't have a
+      // direct accessor here, we mark ownership using the next non-null
+      // playlistId we see (handled by the effect below).
+    });
+  }
+  // Claim ownership of the most recently created playlist when we don't yet
+  // have one and the singleton has a fresh playlist that wasn't there before.
+  // This covers the (synchronous) gap between calling playPlaylist and the
+  // re-render that delivers the new playlist state.
+  useEffect(() => {
+    if (
+      speech.playlist != null &&
+      ownedPlaylistIdRef.current == null &&
+      // Heuristic: only auto-claim if the playlist's items match what we'd
+      // have queued (same ids in same order). Avoids stealing another panel's
+      // playlist.
+      speech.playlist.items.length > 0 &&
+      speech.playlist.items.every(
+        (it, i) => playlistItems[i]?.id === it.id,
+      ) &&
+      speech.playlist.items.length === playlistItems.length
+    ) {
+      ownedPlaylistIdRef.current = speech.playlist.playlistId;
+    }
+  }, [speech.playlist, playlistItems]);
+
   return (
     <div className="flex-1 min-w-0 flex flex-col h-full">
       {/* Header */}
@@ -634,6 +777,98 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
         </Button>
       </div>
 
+      {/* Audio read-out toolbar */}
+      {speech.supported && playlistTotal > 0 && (
+        <div className="border-b bg-muted/40 px-4 py-1.5 flex items-center gap-2 text-xs">
+          <Headphones className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          {!isOurPlaylistActive ? (
+            <>
+              <span className="text-muted-foreground">
+                Read this conversation aloud — each persona uses their own voice.
+              </span>
+              <div className="flex-1" />
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => void handleStartListen()}
+                data-testid="button-sg-listen-all"
+              >
+                <Play className="h-3.5 w-3.5 mr-1" />
+                Listen ({playlistTotal})
+              </Button>
+            </>
+          ) : (
+            <>
+              <span className="font-medium" data-testid="sg-playlist-position">
+                {playlistPosition} / {playlistSnapshotTotal}
+              </span>
+              {currentPlayingSpeaker && (
+                <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                  {speakerStyle(currentPlayingSpeaker).label}
+                </Badge>
+              )}
+              <div className="flex-1" />
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+                onClick={() => speech.prevPlaylist()}
+                disabled={speech.playlist!.index <= 0}
+                title="Previous"
+                data-testid="button-sg-playlist-prev"
+              >
+                <SkipBack className="h-3.5 w-3.5" />
+              </Button>
+              {playlistPaused ? (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-primary"
+                  onClick={() => speech.resumePlaylist()}
+                  title="Resume"
+                  data-testid="button-sg-playlist-resume"
+                >
+                  <Play className="h-3.5 w-3.5" />
+                </Button>
+              ) : (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-primary"
+                  onClick={() => speech.pausePlaylist()}
+                  title="Pause"
+                  data-testid="button-sg-playlist-pause"
+                >
+                  <Pause className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+                onClick={() => speech.nextPlaylist()}
+                disabled={speech.playlist!.index >= playlistSnapshotTotal - 1}
+                title="Next"
+                data-testid="button-sg-playlist-next"
+              >
+                <SkipForward className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7"
+                onClick={() => speech.stopPlaylist()}
+                title="Stop"
+                data-testid="button-sg-playlist-stop"
+              >
+                <Square className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Transcript */}
       <div ref={transcriptRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {merged.length === 0 && (
@@ -646,6 +881,10 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
             key={`${m.id}-${m.kind}`}
             message={m}
             highlighted={focusRound != null && m.roundIndex === focusRound.round}
+            isPlaying={
+              (playlistPlaying || playlistPaused) &&
+              currentPlayingId === `sg-msg-${m.id}`
+            }
           />
         ))}
         {streaming && (
