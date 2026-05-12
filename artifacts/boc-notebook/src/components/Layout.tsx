@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 function shouldHideChat(location: string): boolean {
   if (/^\/mock-exam\/\d+/.test(location)) return true;
   if (location === "/tutor") return true;
+  if (location === "/study-group") return true;
   return false;
 }
 

@@ -17,3 +17,4 @@ export * from "./examSchedule";
 export * from "./fixItCompletions";
 export * from "./gameSessions";
 export * from "./planCompletions";
+export * from "./studyGroup";

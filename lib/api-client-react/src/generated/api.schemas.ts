@@ -897,6 +897,143 @@ export interface FixItStreak {
   today: string;
 }
 
+export type StudyGroupSessionStatus =
+  (typeof StudyGroupSessionStatus)[keyof typeof StudyGroupSessionStatus];
+
+export const StudyGroupSessionStatus = {
+  idle: "idle",
+  active: "active",
+  paused: "paused",
+  finished: "finished",
+} as const;
+
+export interface StudyGroupSession {
+  id: number;
+  title: string;
+  /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  domainId?: number | null;
+  /** @nullable */
+  focus?: string | null;
+  status: StudyGroupSessionStatus;
+  roundCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudyGroupSessionInput {
+  /** Optional. Auto-picks the weakest topic if omitted. */
+  topicId?: number;
+  /** Optional focus prompt the user wants the group to anchor on. */
+  focus?: string;
+}
+
+export type StudyGroupSessionStatusInputStatus =
+  (typeof StudyGroupSessionStatusInputStatus)[keyof typeof StudyGroupSessionStatusInputStatus];
+
+export const StudyGroupSessionStatusInputStatus = {
+  active: "active",
+  paused: "paused",
+  finished: "finished",
+} as const;
+
+export interface StudyGroupSessionStatusInput {
+  status: StudyGroupSessionStatusInputStatus;
+}
+
+export type StudyGroupMessageSpeaker =
+  (typeof StudyGroupMessageSpeaker)[keyof typeof StudyGroupMessageSpeaker];
+
+export const StudyGroupMessageSpeaker = {
+  mentor: "mentor",
+  alex: "alex",
+  jordan: "jordan",
+  student: "student",
+  system: "system",
+} as const;
+
+export interface StudyGroupMessage {
+  id: number;
+  sessionId: number;
+  speaker: StudyGroupMessageSpeaker;
+  /** question | answer | reasoning | verdict | takeaway | interjection | response | system */
+  kind: string;
+  content: string;
+  roundIndex: number;
+  /** @nullable */
+  questionId?: number | null;
+  createdAt: string;
+}
+
+export type StudyGroupArtifactKind =
+  (typeof StudyGroupArtifactKind)[keyof typeof StudyGroupArtifactKind];
+
+export const StudyGroupArtifactKind = {
+  flashcard_candidate: "flashcard_candidate",
+  question_candidate: "question_candidate",
+  reasoning_pattern: "reasoning_pattern",
+  mastery_signal: "mastery_signal",
+} as const;
+
+export type StudyGroupArtifactPayload = { [key: string]: unknown };
+
+export interface StudyGroupArtifact {
+  id: number;
+  sessionId: number;
+  roundIndex: number;
+  kind: StudyGroupArtifactKind;
+  /** @nullable */
+  topicId?: number | null;
+  payload: StudyGroupArtifactPayload;
+  /** @nullable */
+  promotedRefId?: number | null;
+  /** @nullable */
+  promotedAt?: string | null;
+  createdAt: string;
+}
+
+export interface StudyGroupSessionDetail {
+  session: StudyGroupSession;
+  messages: StudyGroupMessage[];
+  artifacts: StudyGroupArtifact[];
+}
+
+export interface StudyGroupInterjectInput {
+  content: string;
+}
+
+export type StudyGroupPromoteResultKind =
+  (typeof StudyGroupPromoteResultKind)[keyof typeof StudyGroupPromoteResultKind];
+
+export const StudyGroupPromoteResultKind = {
+  flashcard: "flashcard",
+  question: "question",
+} as const;
+
+export interface StudyGroupPromoteResult {
+  kind: StudyGroupPromoteResultKind;
+  id: number;
+}
+
+export interface StudyGroupLearningSignalNote {
+  note: string;
+  /** @nullable */
+  topic?: string | null;
+}
+
+export interface StudyGroupLearningSignal {
+  sessions: number;
+  reasoningPatterns: number;
+  flashcardCandidates: number;
+  flashcardsPromoted: number;
+  questionCandidates: number;
+  questionsPromoted: number;
+  masterySignals: number;
+  summary: string;
+  recentSignalNotes: StudyGroupLearningSignalNote[];
+}
+
 /**
  * Not found
  */

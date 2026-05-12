@@ -23,6 +23,7 @@ tags:
   - name: scraper
   - name: catalog
   - name: topics
+  - name: studygroup
 paths:
   /healthz:
     get:
@@ -1059,6 +1060,127 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/FixItStreak" }
 
+  # ---- Study Group (multi-agent) ----
+  /study-group/sessions:
+    get:
+      operationId: listStudyGroupSessions
+      tags: [studygroup]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/StudyGroupSession" }
+    post:
+      operationId: createStudyGroupSession
+      tags: [studygroup]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudyGroupSessionInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGroupSession" }
+  /study-group/sessions/{id}:
+    get:
+      operationId: getStudyGroupSession
+      tags: [studygroup]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGroupSessionDetail" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateStudyGroupSession
+      tags: [studygroup]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudyGroupSessionStatusInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGroupSession" }
+    delete:
+      operationId: deleteStudyGroupSession
+      tags: [studygroup]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Deleted }
+  /study-group/sessions/{id}/round:
+    post:
+      operationId: runStudyGroupRound
+      tags: [studygroup]
+      summary: Stream the next study-group round (SSE)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream: {}
+  /study-group/sessions/{id}/interject:
+    post:
+      operationId: interjectStudyGroup
+      tags: [studygroup]
+      summary: User interjection — agents respond (SSE)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudyGroupInterjectInput" }
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream: {}
+  /study-group/artifacts/{id}/promote:
+    post:
+      operationId: promoteStudyGroupArtifact
+      tags: [studygroup]
+      summary: Promote a candidate artifact (flashcard or question) into the main pipeline.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "201":
+          description: Promoted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGroupPromoteResult" }
+        "409":
+          description: Already promoted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+  /study-group/learning-signal:
+    get:
+      operationId: getStudyGroupLearningSignal
+      tags: [studygroup]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGroupLearningSignal" }
+
 components:
   responses:
     NotFound:
@@ -1779,3 +1901,98 @@ components:
         streak: { type: integer }
         completedToday: { type: boolean }
         today: { type: string, format: date }
+
+    StudyGroupSession:
+      type: object
+      required: [id, title, status, roundCount, createdAt, updatedAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        topicId: { type: ["integer", "null"] }
+        domainId: { type: ["integer", "null"] }
+        focus: { type: ["string", "null"] }
+        status: { type: string, enum: [idle, active, paused, finished] }
+        roundCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    StudyGroupSessionInput:
+      type: object
+      properties:
+        topicId: { type: integer, description: "Optional. Auto-picks the weakest topic if omitted." }
+        focus: { type: string, description: "Optional focus prompt the user wants the group to anchor on." }
+    StudyGroupSessionStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [active, paused, finished] }
+    StudyGroupMessage:
+      type: object
+      required: [id, sessionId, speaker, kind, content, roundIndex, createdAt]
+      properties:
+        id: { type: integer }
+        sessionId: { type: integer }
+        speaker: { type: string, enum: [mentor, alex, jordan, student, system] }
+        kind: { type: string, description: "question | answer | reasoning | verdict | takeaway | interjection | response | system" }
+        content: { type: string }
+        roundIndex: { type: integer }
+        questionId: { type: ["integer", "null"] }
+        createdAt: { type: string, format: date-time }
+    StudyGroupArtifact:
+      type: object
+      required: [id, sessionId, roundIndex, kind, payload, createdAt]
+      properties:
+        id: { type: integer }
+        sessionId: { type: integer }
+        roundIndex: { type: integer }
+        kind: { type: string, enum: [flashcard_candidate, question_candidate, reasoning_pattern, mastery_signal] }
+        topicId: { type: ["integer", "null"] }
+        payload:
+          type: object
+          additionalProperties: true
+        promotedRefId: { type: ["integer", "null"] }
+        promotedAt: { type: ["string", "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+    StudyGroupSessionDetail:
+      type: object
+      required: [session, messages, artifacts]
+      properties:
+        session: { $ref: "#/components/schemas/StudyGroupSession" }
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/StudyGroupMessage" }
+        artifacts:
+          type: array
+          items: { $ref: "#/components/schemas/StudyGroupArtifact" }
+    StudyGroupInterjectInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string }
+    StudyGroupPromoteResult:
+      type: object
+      required: [kind, id]
+      properties:
+        kind: { type: string, enum: [flashcard, question] }
+        id: { type: integer }
+    StudyGroupLearningSignalNote:
+      type: object
+      required: [note]
+      properties:
+        note: { type: string }
+        topic: { type: ["string", "null"] }
+    StudyGroupLearningSignal:
+      type: object
+      required:
+        [sessions, reasoningPatterns, flashcardCandidates, flashcardsPromoted, questionCandidates, questionsPromoted, masterySignals, summary, recentSignalNotes]
+      properties:
+        sessions: { type: integer }
+        reasoningPatterns: { type: integer }
+        flashcardCandidates: { type: integer }
+        flashcardsPromoted: { type: integer }
+        questionCandidates: { type: integer }
+        questionsPromoted: { type: integer }
+        masterySignals: { type: integer }
+        summary: { type: string }
+        recentSignalNotes:
+          type: array
+          items: { $ref: "#/components/schemas/StudyGroupLearningSignalNote" }

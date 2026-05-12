@@ -67,6 +67,7 @@ import {
   TrendingUp,
   StickyNote,
   History,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -1005,6 +1006,17 @@ export default function Dashboard() {
                               >
                                 <Play className="h-3 w-3 mr-1" /> Quiz
                               </Button>
+                              <Link href={`/study-group?topicId=${topic.topicId}`}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 shrink-0"
+                                  data-testid={`weak-topic-full-group-${topic.topicId}`}
+                                  title="Join a study group on this topic"
+                                >
+                                  <Users className="h-3 w-3 mr-1" /> Group
+                                </Button>
+                              </Link>
                             </li>
                           );
                         })}

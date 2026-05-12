@@ -21,7 +21,7 @@ import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySparkline";
 import { Progress } from "@/components/ui/progress";
-import { Check, ChevronRight, ExternalLink, LogOut, Trophy, X } from "lucide-react";
+import { Check, ChevronRight, ExternalLink, LogOut, Trophy, Users, X } from "lucide-react";
 
 function arraysEqualAsSets(a: number[] | null | undefined, b: number[] | null | undefined): boolean {
   if (!a || !b) return false;
@@ -434,6 +434,13 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
                       </a>
                     )}
                     <AskAiButton context={`Help me understand this quiz question I missed:\nQ: ${qq.stem}\nMy answer: ${qq.choices[qq.selectedIndex ?? 0] ?? "n/a"}\nCorrect: ${qq.choices[qq.correctIndex ?? 0]}\nRationale: ${qq.rationale ?? "n/a"}`} size="sm" />
+                    {qq.topicId != null && (
+                      <Link href={`/study-group?topicId=${qq.topicId}`}>
+                        <Button size="sm" variant="outline" className="h-7 text-xs" data-testid={`button-discuss-group-${qq.id}`}>
+                          <Users className="h-3 w-3 mr-1" /> Discuss with the group
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                   {showTrend && (
                     <div

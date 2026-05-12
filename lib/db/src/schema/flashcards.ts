@@ -8,6 +8,7 @@ export const flashcards = pgTable("flashcards", {
   front: text("front").notNull(),
   back: text("back").notNull(),
   topicId: integer("topic_id").references(() => topics.id, { onDelete: "set null" }),
+  source: text("source").notNull().default("manual"),
   easeFactor: doublePrecision("ease_factor").notNull().default(2.5),
   intervalDays: integer("interval_days").notNull().default(0),
   repetitions: integer("repetitions").notNull().default(0),

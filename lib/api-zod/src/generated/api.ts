@@ -1461,3 +1461,147 @@ export const MarkFixItCompleteResponse = zod.object({
   completedToday: zod.boolean(),
   today: zod.coerce.date(),
 });
+
+export const ListStudyGroupSessionsResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  topicId: zod.number().nullish(),
+  domainId: zod.number().nullish(),
+  focus: zod.string().nullish(),
+  status: zod.enum(["idle", "active", "paused", "finished"]),
+  roundCount: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListStudyGroupSessionsResponse = zod.array(
+  ListStudyGroupSessionsResponseItem,
+);
+
+export const CreateStudyGroupSessionBody = zod.object({
+  topicId: zod
+    .number()
+    .optional()
+    .describe("Optional. Auto-picks the weakest topic if omitted."),
+  focus: zod
+    .string()
+    .optional()
+    .describe("Optional focus prompt the user wants the group to anchor on."),
+});
+
+export const GetStudyGroupSessionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetStudyGroupSessionResponse = zod.object({
+  session: zod.object({
+    id: zod.number(),
+    title: zod.string(),
+    topicId: zod.number().nullish(),
+    domainId: zod.number().nullish(),
+    focus: zod.string().nullish(),
+    status: zod.enum(["idle", "active", "paused", "finished"]),
+    roundCount: zod.number(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+  messages: zod.array(
+    zod.object({
+      id: zod.number(),
+      sessionId: zod.number(),
+      speaker: zod.enum(["mentor", "alex", "jordan", "student", "system"]),
+      kind: zod
+        .string()
+        .describe(
+          "question | answer | reasoning | verdict | takeaway | interjection | response | system",
+        ),
+      content: zod.string(),
+      roundIndex: zod.number(),
+      questionId: zod.number().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  artifacts: zod.array(
+    zod.object({
+      id: zod.number(),
+      sessionId: zod.number(),
+      roundIndex: zod.number(),
+      kind: zod.enum([
+        "flashcard_candidate",
+        "question_candidate",
+        "reasoning_pattern",
+        "mastery_signal",
+      ]),
+      topicId: zod.number().nullish(),
+      payload: zod.record(zod.string(), zod.unknown()),
+      promotedRefId: zod.number().nullish(),
+      promotedAt: zod.coerce.date().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+export const UpdateStudyGroupSessionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateStudyGroupSessionBody = zod.object({
+  status: zod.enum(["active", "paused", "finished"]),
+});
+
+export const UpdateStudyGroupSessionResponse = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  topicId: zod.number().nullish(),
+  domainId: zod.number().nullish(),
+  focus: zod.string().nullish(),
+  status: zod.enum(["idle", "active", "paused", "finished"]),
+  roundCount: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+export const DeleteStudyGroupSessionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Stream the next study-group round (SSE)
+ */
+export const RunStudyGroupRoundParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary User interjection — agents respond (SSE)
+ */
+export const InterjectStudyGroupParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const InterjectStudyGroupBody = zod.object({
+  content: zod.string(),
+});
+
+/**
+ * @summary Promote a candidate artifact (flashcard or question) into the main pipeline.
+ */
+export const PromoteStudyGroupArtifactParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetStudyGroupLearningSignalResponse = zod.object({
+  sessions: zod.number(),
+  reasoningPatterns: zod.number(),
+  flashcardCandidates: zod.number(),
+  flashcardsPromoted: zod.number(),
+  questionCandidates: zod.number(),
+  questionsPromoted: zod.number(),
+  masterySignals: zod.number(),
+  summary: zod.string(),
+  recentSignalNotes: zod.array(
+    zod.object({
+      note: zod.string(),
+      topic: zod.string().nullish(),
+    }),
+  ),
+});

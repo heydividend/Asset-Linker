@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  ApiError,
   AudioOverview,
   AudioOverviewInput,
   DashboardSummary,
@@ -72,6 +73,13 @@ import type {
   ResourceInput,
   ScrapeJob,
   ScrapeJobInput,
+  StudyGroupInterjectInput,
+  StudyGroupLearningSignal,
+  StudyGroupPromoteResult,
+  StudyGroupSession,
+  StudyGroupSessionDetail,
+  StudyGroupSessionInput,
+  StudyGroupSessionStatusInput,
   StudyGuide,
   StudyGuideAudioInput,
   StudyGuideInput,
@@ -6181,3 +6189,726 @@ export const useMarkFixItComplete = <
 > => {
   return useMutation(getMarkFixItCompleteMutationOptions(options));
 };
+
+export const getListStudyGroupSessionsUrl = () => {
+  return `/api/study-group/sessions`;
+};
+
+export const listStudyGroupSessions = async (
+  options?: RequestInit,
+): Promise<StudyGroupSession[]> => {
+  return customFetch<StudyGroupSession[]>(getListStudyGroupSessionsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStudyGroupSessionsQueryKey = () => {
+  return [`/api/study-group/sessions`] as const;
+};
+
+export const getListStudyGroupSessionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStudyGroupSessions>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listStudyGroupSessions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListStudyGroupSessionsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listStudyGroupSessions>>
+  > = ({ signal }) => listStudyGroupSessions({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStudyGroupSessions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListStudyGroupSessionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStudyGroupSessions>>
+>;
+export type ListStudyGroupSessionsQueryError = ErrorType<unknown>;
+
+export function useListStudyGroupSessions<
+  TData = Awaited<ReturnType<typeof listStudyGroupSessions>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listStudyGroupSessions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStudyGroupSessionsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateStudyGroupSessionUrl = () => {
+  return `/api/study-group/sessions`;
+};
+
+export const createStudyGroupSession = async (
+  studyGroupSessionInput?: StudyGroupSessionInput,
+  options?: RequestInit,
+): Promise<StudyGroupSession> => {
+  return customFetch<StudyGroupSession>(getCreateStudyGroupSessionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(studyGroupSessionInput),
+  });
+};
+
+export const getCreateStudyGroupSessionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStudyGroupSession>>,
+    TError,
+    { data: BodyType<StudyGroupSessionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createStudyGroupSession>>,
+  TError,
+  { data: BodyType<StudyGroupSessionInput> },
+  TContext
+> => {
+  const mutationKey = ["createStudyGroupSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createStudyGroupSession>>,
+    { data: BodyType<StudyGroupSessionInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createStudyGroupSession(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateStudyGroupSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createStudyGroupSession>>
+>;
+export type CreateStudyGroupSessionMutationBody =
+  BodyType<StudyGroupSessionInput>;
+export type CreateStudyGroupSessionMutationError = ErrorType<unknown>;
+
+export const useCreateStudyGroupSession = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStudyGroupSession>>,
+    TError,
+    { data: BodyType<StudyGroupSessionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createStudyGroupSession>>,
+  TError,
+  { data: BodyType<StudyGroupSessionInput> },
+  TContext
+> => {
+  return useMutation(getCreateStudyGroupSessionMutationOptions(options));
+};
+
+export const getGetStudyGroupSessionUrl = (id: number) => {
+  return `/api/study-group/sessions/${id}`;
+};
+
+export const getStudyGroupSession = async (
+  id: number,
+  options?: RequestInit,
+): Promise<StudyGroupSessionDetail> => {
+  return customFetch<StudyGroupSessionDetail>(getGetStudyGroupSessionUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStudyGroupSessionQueryKey = (id: number) => {
+  return [`/api/study-group/sessions/${id}`] as const;
+};
+
+export const getGetStudyGroupSessionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStudyGroupSession>>,
+  TError = ErrorType<NotFoundResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStudyGroupSession>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStudyGroupSessionQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStudyGroupSession>>
+  > = ({ signal }) => getStudyGroupSession(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStudyGroupSession>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStudyGroupSessionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStudyGroupSession>>
+>;
+export type GetStudyGroupSessionQueryError = ErrorType<NotFoundResponse>;
+
+export function useGetStudyGroupSession<
+  TData = Awaited<ReturnType<typeof getStudyGroupSession>>,
+  TError = ErrorType<NotFoundResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStudyGroupSession>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStudyGroupSessionQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getUpdateStudyGroupSessionUrl = (id: number) => {
+  return `/api/study-group/sessions/${id}`;
+};
+
+export const updateStudyGroupSession = async (
+  id: number,
+  studyGroupSessionStatusInput: StudyGroupSessionStatusInput,
+  options?: RequestInit,
+): Promise<StudyGroupSession> => {
+  return customFetch<StudyGroupSession>(getUpdateStudyGroupSessionUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(studyGroupSessionStatusInput),
+  });
+};
+
+export const getUpdateStudyGroupSessionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateStudyGroupSession>>,
+    TError,
+    { id: number; data: BodyType<StudyGroupSessionStatusInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateStudyGroupSession>>,
+  TError,
+  { id: number; data: BodyType<StudyGroupSessionStatusInput> },
+  TContext
+> => {
+  const mutationKey = ["updateStudyGroupSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateStudyGroupSession>>,
+    { id: number; data: BodyType<StudyGroupSessionStatusInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateStudyGroupSession(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateStudyGroupSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateStudyGroupSession>>
+>;
+export type UpdateStudyGroupSessionMutationBody =
+  BodyType<StudyGroupSessionStatusInput>;
+export type UpdateStudyGroupSessionMutationError = ErrorType<unknown>;
+
+export const useUpdateStudyGroupSession = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateStudyGroupSession>>,
+    TError,
+    { id: number; data: BodyType<StudyGroupSessionStatusInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateStudyGroupSession>>,
+  TError,
+  { id: number; data: BodyType<StudyGroupSessionStatusInput> },
+  TContext
+> => {
+  return useMutation(getUpdateStudyGroupSessionMutationOptions(options));
+};
+
+export const getDeleteStudyGroupSessionUrl = (id: number) => {
+  return `/api/study-group/sessions/${id}`;
+};
+
+export const deleteStudyGroupSession = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteStudyGroupSessionUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteStudyGroupSessionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteStudyGroupSession>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteStudyGroupSession>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteStudyGroupSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteStudyGroupSession>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteStudyGroupSession(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteStudyGroupSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteStudyGroupSession>>
+>;
+
+export type DeleteStudyGroupSessionMutationError = ErrorType<unknown>;
+
+export const useDeleteStudyGroupSession = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteStudyGroupSession>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteStudyGroupSession>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteStudyGroupSessionMutationOptions(options));
+};
+
+/**
+ * @summary Stream the next study-group round (SSE)
+ */
+export const getRunStudyGroupRoundUrl = (id: number) => {
+  return `/api/study-group/sessions/${id}/round`;
+};
+
+export const runStudyGroupRound = async (
+  id: number,
+  options?: RequestInit,
+): Promise<unknown> => {
+  return customFetch<unknown>(getRunStudyGroupRoundUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getRunStudyGroupRoundMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runStudyGroupRound>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof runStudyGroupRound>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["runStudyGroupRound"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof runStudyGroupRound>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return runStudyGroupRound(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RunStudyGroupRoundMutationResult = NonNullable<
+  Awaited<ReturnType<typeof runStudyGroupRound>>
+>;
+
+export type RunStudyGroupRoundMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Stream the next study-group round (SSE)
+ */
+export const useRunStudyGroupRound = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runStudyGroupRound>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof runStudyGroupRound>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getRunStudyGroupRoundMutationOptions(options));
+};
+
+/**
+ * @summary User interjection — agents respond (SSE)
+ */
+export const getInterjectStudyGroupUrl = (id: number) => {
+  return `/api/study-group/sessions/${id}/interject`;
+};
+
+export const interjectStudyGroup = async (
+  id: number,
+  studyGroupInterjectInput: StudyGroupInterjectInput,
+  options?: RequestInit,
+): Promise<unknown> => {
+  return customFetch<unknown>(getInterjectStudyGroupUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(studyGroupInterjectInput),
+  });
+};
+
+export const getInterjectStudyGroupMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof interjectStudyGroup>>,
+    TError,
+    { id: number; data: BodyType<StudyGroupInterjectInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof interjectStudyGroup>>,
+  TError,
+  { id: number; data: BodyType<StudyGroupInterjectInput> },
+  TContext
+> => {
+  const mutationKey = ["interjectStudyGroup"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof interjectStudyGroup>>,
+    { id: number; data: BodyType<StudyGroupInterjectInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return interjectStudyGroup(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InterjectStudyGroupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof interjectStudyGroup>>
+>;
+export type InterjectStudyGroupMutationBody =
+  BodyType<StudyGroupInterjectInput>;
+export type InterjectStudyGroupMutationError = ErrorType<unknown>;
+
+/**
+ * @summary User interjection — agents respond (SSE)
+ */
+export const useInterjectStudyGroup = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof interjectStudyGroup>>,
+    TError,
+    { id: number; data: BodyType<StudyGroupInterjectInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof interjectStudyGroup>>,
+  TError,
+  { id: number; data: BodyType<StudyGroupInterjectInput> },
+  TContext
+> => {
+  return useMutation(getInterjectStudyGroupMutationOptions(options));
+};
+
+/**
+ * @summary Promote a candidate artifact (flashcard or question) into the main pipeline.
+ */
+export const getPromoteStudyGroupArtifactUrl = (id: number) => {
+  return `/api/study-group/artifacts/${id}/promote`;
+};
+
+export const promoteStudyGroupArtifact = async (
+  id: number,
+  options?: RequestInit,
+): Promise<StudyGroupPromoteResult> => {
+  return customFetch<StudyGroupPromoteResult>(
+    getPromoteStudyGroupArtifactUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getPromoteStudyGroupArtifactMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof promoteStudyGroupArtifact>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof promoteStudyGroupArtifact>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["promoteStudyGroupArtifact"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof promoteStudyGroupArtifact>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return promoteStudyGroupArtifact(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PromoteStudyGroupArtifactMutationResult = NonNullable<
+  Awaited<ReturnType<typeof promoteStudyGroupArtifact>>
+>;
+
+export type PromoteStudyGroupArtifactMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Promote a candidate artifact (flashcard or question) into the main pipeline.
+ */
+export const usePromoteStudyGroupArtifact = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof promoteStudyGroupArtifact>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof promoteStudyGroupArtifact>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getPromoteStudyGroupArtifactMutationOptions(options));
+};
+
+export const getGetStudyGroupLearningSignalUrl = () => {
+  return `/api/study-group/learning-signal`;
+};
+
+export const getStudyGroupLearningSignal = async (
+  options?: RequestInit,
+): Promise<StudyGroupLearningSignal> => {
+  return customFetch<StudyGroupLearningSignal>(
+    getGetStudyGroupLearningSignalUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetStudyGroupLearningSignalQueryKey = () => {
+  return [`/api/study-group/learning-signal`] as const;
+};
+
+export const getGetStudyGroupLearningSignalQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStudyGroupLearningSignal>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudyGroupLearningSignal>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStudyGroupLearningSignalQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStudyGroupLearningSignal>>
+  > = ({ signal }) =>
+    getStudyGroupLearningSignal({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStudyGroupLearningSignal>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStudyGroupLearningSignalQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStudyGroupLearningSignal>>
+>;
+export type GetStudyGroupLearningSignalQueryError = ErrorType<unknown>;
+
+export function useGetStudyGroupLearningSignal<
+  TData = Awaited<ReturnType<typeof getStudyGroupLearningSignal>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStudyGroupLearningSignal>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStudyGroupLearningSignalQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
