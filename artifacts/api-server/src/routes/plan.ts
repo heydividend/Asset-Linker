@@ -16,7 +16,7 @@ import {
 } from "../lib/scheduleBuilder";
 import { isMandatoryKind, planItemKey } from "../lib/planItemKey";
 import { getOrCreateSessionId } from "../lib/sessionId";
-import { listCompletedKeys } from "../lib/planCompletions";
+import { listCompletedKeys, listCompletedKeysThrough } from "../lib/planCompletions";
 
 const router: IRouter = Router();
 
@@ -103,9 +103,32 @@ async function buildTodayItems(sessionId: string) {
   const days = buildSchedule(sched.startDate, sched.examDate, dRows);
   const today = todayStr();
   const todayDay = days.find((d) => d.date === today);
+
+  // ----- Roll-over: any item scheduled on a prior day that the user has
+  // never ticked off (on its original date OR any later day) gets surfaced
+  // today, tagged with its original date. We dedupe by item key so the same
+  // activity scheduled on multiple past days only shows up once, and skip
+  // pure rest items — those expire with the day.
+  const everCompleted = new Set(await listCompletedKeysThrough(sessionId, today));
+  const carriedByKey = new Map<string, PlanItem>();
+  const pastDays = days.filter((d) => d.date < today);
+  for (const day of pastDays) {
+    for (const it of day.items) {
+      if (it.kind === "rest") continue;
+      const key = planItemKey(it);
+      if (everCompleted.has(key)) continue;
+      if (carriedByKey.has(key)) continue; // earliest occurrence wins
+      carriedByKey.set(key, { ...it, carriedFrom: day.date });
+    }
+  }
+
+  // Today's native items first; carried items are appended after, but
+  // decorateItems will dedupe so a carry-over for the same activity already
+  // present today is dropped (today's native one is the canonical entry).
   if (todayDay) {
     items.push(...todayDay.items);
   }
+  for (const it of carriedByKey.values()) items.push(it);
 
   const [{ due }] = await db
     .select({ due: sql<number>`cast(count(*) as int)` })
@@ -149,7 +172,9 @@ async function buildTodayItems(sessionId: string) {
     });
   }
 
-  const decorated = decorateItems(items).slice(0, 8);
+  // Allow more items in the daily list to make room for carry-overs without
+  // squeezing out today's mandatory work.
+  const decorated = decorateItems(items).slice(0, 16);
   const completedKeys = new Set(await listCompletedKeys(sessionId, today));
   const itemsOut = decorated.map((it) => ({
     ...it,

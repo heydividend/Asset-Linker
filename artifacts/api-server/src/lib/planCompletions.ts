@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, lte } from "drizzle-orm";
 import { db, planCompletions } from "@workspace/db";
 
 export { todayStrPT as todayStr } from "./today";
@@ -29,4 +29,18 @@ export async function listCompletedKeys(
     .from(planCompletions)
     .where(and(eq(planCompletions.sessionId, sessionId), eq(planCompletions.date, date)));
   return rows.map((r) => r.itemKey);
+}
+
+// Returns every distinct itemKey this session has completed on or before the
+// given date. Used by the rollover logic so a missed item that was finally
+// completed on a later day stops being carried forward.
+export async function listCompletedKeysThrough(
+  sessionId: string,
+  date: string,
+): Promise<string[]> {
+  const rows = await db
+    .select({ itemKey: planCompletions.itemKey })
+    .from(planCompletions)
+    .where(and(eq(planCompletions.sessionId, sessionId), lte(planCompletions.date, date)));
+  return Array.from(new Set(rows.map((r) => r.itemKey)));
 }

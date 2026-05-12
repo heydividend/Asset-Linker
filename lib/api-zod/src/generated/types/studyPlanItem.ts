@@ -29,4 +29,9 @@ export interface StudyPlanItem {
   mandatory: boolean;
   /** True when this item has been marked complete today. */
   completed: boolean;
+  /**
+   * Original date (YYYY-MM-DD) this item was scheduled for, if it was rolled over from a previous day.
+   * @nullable
+   */
+  carriedFrom?: Date | null;
 }

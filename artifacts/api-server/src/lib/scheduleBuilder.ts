@@ -24,6 +24,10 @@ export interface PlanItem {
   notebookId?: number;
   gameId?: string;
   link?: string;
+  /** ISO date (YYYY-MM-DD) this item was originally scheduled for, when it
+   *  has been carried over into a later day because it wasn't completed on
+   *  its original day. Undefined for items that belong to today natively. */
+  carriedFrom?: string;
 }
 
 export interface ScheduleDay {

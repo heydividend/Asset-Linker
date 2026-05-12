@@ -1214,6 +1214,12 @@ export const GetStudyPlanTodayResponse = zod.object({
       completed: zod
         .boolean()
         .describe("True when this item has been marked complete today."),
+      carriedFrom: zod.coerce
+        .date()
+        .nullish()
+        .describe(
+          "Original date (YYYY-MM-DD) this item was scheduled for, if it was rolled over from a previous day.",
+        ),
     }),
   ),
   mandatoryCount: zod
@@ -1266,6 +1272,12 @@ export const RegenerateStudyPlanResponse = zod.object({
       completed: zod
         .boolean()
         .describe("True when this item has been marked complete today."),
+      carriedFrom: zod.coerce
+        .date()
+        .nullish()
+        .describe(
+          "Original date (YYYY-MM-DD) this item was scheduled for, if it was rolled over from a previous day.",
+        ),
     }),
   ),
   mandatoryCount: zod

@@ -1652,6 +1652,10 @@ components:
         key: { type: string, description: "Stable identifier for this item, used to record completion." }
         mandatory: { type: boolean, description: "If true, this item must be completed for the day to count as complete." }
         completed: { type: boolean, description: "True when this item has been marked complete today." }
+        carriedFrom:
+          type: ["string", "null"]
+          format: date
+          description: "Original date (YYYY-MM-DD) this item was scheduled for, if it was rolled over from a previous day."
 
     PlanCompletions:
       type: object

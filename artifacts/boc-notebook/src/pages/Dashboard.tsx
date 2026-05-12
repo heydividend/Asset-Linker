@@ -66,6 +66,7 @@ import {
   Coffee,
   TrendingUp,
   StickyNote,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -793,6 +794,15 @@ export default function Dashboard() {
                             {item.completed && (
                               <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30 text-[10px] tracking-wider px-1.5 py-0 uppercase gap-1" data-testid={`plan-item-done-${item.key}`}>
                                 <Check className="h-3 w-3" /> Done
+                              </Badge>
+                            )}
+                            {item.carriedFrom && !item.completed && (
+                              <Badge
+                                className="bg-amber-500/15 text-amber-700 border-amber-500/30 text-[10px] tracking-wider px-1.5 py-0 uppercase gap-1"
+                                title={`Originally scheduled for ${item.carriedFrom}`}
+                                data-testid={`plan-item-carried-${item.key}`}
+                              >
+                                <History className="h-3 w-3" /> Carried over
                               </Badge>
                             )}
                             <h4
