@@ -177,6 +177,11 @@ export function ChatPanel() {
                 // tied to the message instead of as a transient block.
                 queryClient.invalidateQueries({ queryKey: getListOpenaiMessagesQueryKey(convId) });
               }
+              if (typeof json.title === "string" && json.title.length > 0) {
+                // Auto-generated title arrived after `done` — refresh the
+                // sidebar list so the new label replaces "New Conversation".
+                queryClient.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
+              }
               if (json.content) setStreamingMessage((p) => p + json.content);
             } catch {
               // ignore

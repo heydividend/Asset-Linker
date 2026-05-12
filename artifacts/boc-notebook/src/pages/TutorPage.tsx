@@ -252,6 +252,10 @@ export default function TutorPage() {
               qc.invalidateQueries({ queryKey: getListOpenaiMessagesQueryKey(activeId) });
               continue;
             }
+            if (typeof json.title === "string" && json.title.length > 0) {
+              qc.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
+              continue;
+            }
             if (json.error) {
               toast({ title: "AI error", description: json.error, variant: "destructive" });
               setBusy(false);

@@ -380,31 +380,84 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
   res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
 
   if (fullText) {
-    let followups: string[] = [];
-    try {
-      const fu = await anthropic.messages.create({
-        model: "claude-haiku-4-5",
-        max_tokens: 256,
-        system:
-          'You generate exactly 3 short follow-up questions a BOC Athletic Training student would naturally ask next, given the tutor turn just shown. Each question must be self-contained, under 90 characters, and end with "?". Respond with ONLY a JSON object of the form {"followups": ["...", "...", "..."]} — no prose, no code fences.',
-        messages: [
-          { role: "user", content: `Student asked: ${content.slice(0, 800)}\n\nTutor replied:\n${fullText.slice(0, 4000)}` },
-        ],
-      });
-      const block = fu.content.find((b) => b.type === "text");
-      const raw = block && block.type === "text" ? block.text : "{}";
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
-      if (Array.isArray(parsed.followups)) {
-        followups = parsed.followups
-          .filter((s: unknown): s is string => typeof s === "string")
-          .map((s: string) => s.trim())
-          .filter((s: string) => s.length > 0)
-          .slice(0, 3);
+    // Run follow-ups and (if needed) auto-title in parallel — both are
+    // post-stream Haiku calls that the user is waiting on.
+    const needsTitle =
+      conv.title === "New Conversation" || conv.title.trim().length === 0;
+
+    const followupsPromise = (async (): Promise<string[]> => {
+      try {
+        const fu = await anthropic.messages.create({
+          model: "claude-haiku-4-5",
+          max_tokens: 256,
+          system:
+            'You generate exactly 3 short follow-up questions a BOC Athletic Training student would naturally ask next, given the tutor turn just shown. Each question must be self-contained, under 90 characters, and end with "?". Respond with ONLY a JSON object of the form {"followups": ["...", "...", "..."]} — no prose, no code fences.',
+          messages: [
+            { role: "user", content: `Student asked: ${content.slice(0, 800)}\n\nTutor replied:\n${fullText.slice(0, 4000)}` },
+          ],
+        });
+        const block = fu.content.find((b) => b.type === "text");
+        const raw = block && block.type === "text" ? block.text : "{}";
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
+        if (Array.isArray(parsed.followups)) {
+          return parsed.followups
+            .filter((s: unknown): s is string => typeof s === "string")
+            .map((s: string) => s.trim())
+            .filter((s: string) => s.length > 0)
+            .slice(0, 3);
+        }
+      } catch (err) {
+        req.log.warn({ err }, "followups generation failed");
       }
-    } catch (err) {
-      req.log.warn({ err }, "followups generation failed");
+      return [];
+    })();
+
+    const titlePromise = (async (): Promise<string | null> => {
+      if (!needsTitle) return null;
+      try {
+        const t = await anthropic.messages.create({
+          model: "claude-haiku-4-5",
+          max_tokens: 60,
+          system:
+            'You generate a short, descriptive title (3–6 words, max 60 characters) for a BOC Athletic Training tutor conversation, based on the first question and answer. No quotes, no trailing punctuation, no prefixes like "Title:". Respond with ONLY the title text on a single line.',
+          messages: [
+            { role: "user", content: `Student asked: ${content.slice(0, 600)}\n\nTutor replied:\n${fullText.slice(0, 1500)}` },
+          ],
+        });
+        const block = t.content.find((b) => b.type === "text");
+        const raw = block && block.type === "text" ? block.text : "";
+        const cleaned = raw
+          .split("\n")[0]
+          .replace(/^["'`]+|["'`]+$/g, "")
+          .replace(/[.!?,;:]+$/g, "")
+          .trim()
+          .slice(0, 60);
+        return cleaned.length > 0 ? cleaned : null;
+      } catch (err) {
+        req.log.warn({ err }, "title generation failed");
+        return null;
+      }
+    })();
+
+    const [followups, generatedTitle] = await Promise.all([
+      followupsPromise,
+      titlePromise,
+    ]);
+
+    // Fallback title if Haiku failed but we still need one: truncate the
+    // user's first message so the sidebar isn't stuck on "New Conversation".
+    const finalTitle =
+      generatedTitle ??
+      (needsTitle ? content.trim().replace(/\s+/g, " ").slice(0, 60) : null);
+    if (finalTitle && finalTitle !== conv.title) {
+      await db
+        .update(conversations)
+        .set({ title: finalTitle })
+        .where(eq(conversations.id, id));
+      res.write(`data: ${JSON.stringify({ title: finalTitle })}\n\n`);
     }
+
     if (followups.length > 0) {
       if (savedMessageId != null) {
         await db
