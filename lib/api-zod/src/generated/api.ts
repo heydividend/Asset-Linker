@@ -1757,3 +1757,110 @@ export const GetStudyGroupLearningSignalResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary Bundled view of AI conversations, training output, and quiz accuracy
+ */
+export const GetAiLearningOverviewResponse = zod.object({
+  conversations: zod.object({
+    tutor: zod.object({
+      totalSessions: zod.number(),
+      totalMessages: zod.number(),
+      recent: zod.array(
+        zod.object({
+          id: zod.number(),
+          title: zod.string(),
+          messageCount: zod.number(),
+          lastMessageAt: zod.coerce.date().nullish(),
+          createdAt: zod.coerce.date(),
+        }),
+      ),
+    }),
+    studyGroup: zod.object({
+      totalSessions: zod.number(),
+      totalMessages: zod.number(),
+      recent: zod.array(
+        zod.object({
+          id: zod.number(),
+          title: zod.string(),
+          status: zod.string(),
+          roundCount: zod.number(),
+          messageCount: zod.number(),
+          artifactCount: zod.number(),
+          promotedCount: zod.number(),
+          updatedAt: zod.coerce.date(),
+        }),
+      ),
+    }),
+  }),
+  training: zod.object({
+    flashcards: zod.object({
+      total: zod.number(),
+      bySource: zod.array(
+        zod.object({
+          source: zod.string(),
+          count: zod.number(),
+        }),
+      ),
+    }),
+    questions: zod.object({
+      total: zod.number(),
+      bySource: zod.array(
+        zod.object({
+          source: zod.string(),
+          count: zod.number(),
+          pendingReview: zod.number(),
+        }),
+      ),
+    }),
+    artifacts: zod.object({
+      total: zod.number(),
+      promoted: zod.number(),
+      byKind: zod.array(
+        zod.object({
+          kind: zod.string(),
+          count: zod.number(),
+          promoted: zod.number(),
+        }),
+      ),
+    }),
+    recentPromoted: zod.array(
+      zod.object({
+        id: zod.number(),
+        kind: zod.string(),
+        promotedAt: zod.coerce.date(),
+        sessionId: zod.number(),
+        sessionTitle: zod.string(),
+        topicName: zod.string().nullish(),
+        preview: zod.object({
+          front: zod.string(),
+          back: zod.string(),
+        }),
+      }),
+    ),
+  }),
+  accuracy: zod.object({
+    overall: zod.object({
+      attempts: zod.number(),
+      correct: zod.number(),
+      accuracy: zod.number().nullish(),
+    }),
+    daily: zod.array(
+      zod.object({
+        day: zod.coerce.date(),
+        attempts: zod.number(),
+        correct: zod.number(),
+        accuracy: zod.number().nullish(),
+      }),
+    ),
+    byDomain: zod.array(
+      zod.object({
+        domainId: zod.number(),
+        domainName: zod.string(),
+        attempts: zod.number(),
+        correct: zod.number(),
+        accuracy: zod.number().nullish(),
+      }),
+    ),
+  }),
+});

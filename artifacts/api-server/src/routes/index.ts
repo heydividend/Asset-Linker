@@ -17,6 +17,7 @@ import planCompletionsRouter from "./planCompletions";
 import topicPodcastsRouter from "./topicPodcasts";
 import ttsRouter from "./tts";
 import studyGroupRouter from "./studyGroup";
+import aiLearningRouter from "./aiLearning";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(planCompletionsRouter);
 router.use(topicPodcastsRouter);
 router.use(ttsRouter);
 router.use(studyGroupRouter);
+router.use(aiLearningRouter);
 
 export default router;

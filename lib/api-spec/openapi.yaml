@@ -1239,6 +1239,18 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/StudyGroupLearningSignal" }
 
+  /ai-learning/overview:
+    get:
+      operationId: getAiLearningOverview
+      tags: [ailearning]
+      summary: Bundled view of AI conversations, training output, and quiz accuracy
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiLearningOverview" }
+
 components:
   responses:
     NotFound:
@@ -2135,3 +2147,153 @@ components:
         recentSignalNotes:
           type: array
           items: { $ref: "#/components/schemas/StudyGroupLearningSignalNote" }
+
+    AiLearningOverview:
+      type: object
+      required: [conversations, training, accuracy]
+      properties:
+        conversations:
+          type: object
+          required: [tutor, studyGroup]
+          properties:
+            tutor:
+              type: object
+              required: [totalSessions, totalMessages, recent]
+              properties:
+                totalSessions: { type: integer }
+                totalMessages: { type: integer }
+                recent:
+                  type: array
+                  items: { $ref: "#/components/schemas/AiLearningTutorConv" }
+            studyGroup:
+              type: object
+              required: [totalSessions, totalMessages, recent]
+              properties:
+                totalSessions: { type: integer }
+                totalMessages: { type: integer }
+                recent:
+                  type: array
+                  items: { $ref: "#/components/schemas/AiLearningStudyGroupSession" }
+        training:
+          type: object
+          required: [flashcards, questions, artifacts, recentPromoted]
+          properties:
+            flashcards:
+              type: object
+              required: [total, bySource]
+              properties:
+                total: { type: integer }
+                bySource:
+                  type: array
+                  items:
+                    type: object
+                    required: [source, count]
+                    properties:
+                      source: { type: string }
+                      count: { type: integer }
+            questions:
+              type: object
+              required: [total, bySource]
+              properties:
+                total: { type: integer }
+                bySource:
+                  type: array
+                  items:
+                    type: object
+                    required: [source, count, pendingReview]
+                    properties:
+                      source: { type: string }
+                      count: { type: integer }
+                      pendingReview: { type: integer }
+            artifacts:
+              type: object
+              required: [total, promoted, byKind]
+              properties:
+                total: { type: integer }
+                promoted: { type: integer }
+                byKind:
+                  type: array
+                  items:
+                    type: object
+                    required: [kind, count, promoted]
+                    properties:
+                      kind: { type: string }
+                      count: { type: integer }
+                      promoted: { type: integer }
+            recentPromoted:
+              type: array
+              items: { $ref: "#/components/schemas/AiLearningPromotedItem" }
+        accuracy:
+          type: object
+          required: [overall, daily, byDomain]
+          properties:
+            overall:
+              type: object
+              required: [attempts, correct]
+              properties:
+                attempts: { type: integer }
+                correct: { type: integer }
+                accuracy:
+                  type: number
+                  nullable: true
+            daily:
+              type: array
+              items: { $ref: "#/components/schemas/AiLearningDailyPoint" }
+            byDomain:
+              type: array
+              items: { $ref: "#/components/schemas/AiLearningDomainAccuracy" }
+    AiLearningTutorConv:
+      type: object
+      required: [id, title, messageCount, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        messageCount: { type: integer }
+        lastMessageAt: { type: string, nullable: true, format: date-time }
+        createdAt: { type: string, format: date-time }
+    AiLearningStudyGroupSession:
+      type: object
+      required: [id, title, status, roundCount, messageCount, artifactCount, promotedCount, updatedAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        status: { type: string }
+        roundCount: { type: integer }
+        messageCount: { type: integer }
+        artifactCount: { type: integer }
+        promotedCount: { type: integer }
+        updatedAt: { type: string, format: date-time }
+    AiLearningPromotedItem:
+      type: object
+      required: [id, kind, promotedAt, sessionId, sessionTitle, preview]
+      properties:
+        id: { type: integer }
+        kind: { type: string }
+        promotedAt: { type: string, format: date-time }
+        sessionId: { type: integer }
+        sessionTitle: { type: string }
+        topicName: { type: string, nullable: true }
+        preview:
+          type: object
+          required: [front, back]
+          properties:
+            front: { type: string }
+            back: { type: string }
+    AiLearningDailyPoint:
+      type: object
+      required: [day, attempts, correct]
+      properties:
+        day: { type: string, format: date-time }
+        attempts: { type: integer }
+        correct: { type: integer }
+        accuracy: { type: number, nullable: true }
+    AiLearningDomainAccuracy:
+      type: object
+      required: [domainId, domainName, attempts, correct]
+      properties:
+        domainId: { type: integer }
+        domainName: { type: string }
+        attempts: { type: integer }
+        correct: { type: integer }
+        accuracy: { type: number, nullable: true }
+

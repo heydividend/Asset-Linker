@@ -6,6 +6,25 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./aiLearningDailyPoint";
+export * from "./aiLearningDomainAccuracy";
+export * from "./aiLearningOverview";
+export * from "./aiLearningOverviewAccuracy";
+export * from "./aiLearningOverviewAccuracyOverall";
+export * from "./aiLearningOverviewConversations";
+export * from "./aiLearningOverviewConversationsStudyGroup";
+export * from "./aiLearningOverviewConversationsTutor";
+export * from "./aiLearningOverviewTraining";
+export * from "./aiLearningOverviewTrainingArtifacts";
+export * from "./aiLearningOverviewTrainingArtifactsByKindItem";
+export * from "./aiLearningOverviewTrainingFlashcards";
+export * from "./aiLearningOverviewTrainingFlashcardsBySourceItem";
+export * from "./aiLearningOverviewTrainingQuestions";
+export * from "./aiLearningOverviewTrainingQuestionsBySourceItem";
+export * from "./aiLearningPromotedItem";
+export * from "./aiLearningPromotedItemPreview";
+export * from "./aiLearningStudyGroupSession";
+export * from "./aiLearningTutorConv";
 export * from "./apiError";
 export * from "./audioOverview";
 export * from "./audioOverviewInput";

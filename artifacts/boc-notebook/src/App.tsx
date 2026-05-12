@@ -22,6 +22,7 @@ import BodyMapPage from "@/pages/BodyMapPage";
 import StudyGuidesPage from "@/pages/StudyGuidesPage";
 import StudyGuideDetail from "@/pages/StudyGuideDetail";
 import StudyGroupPage from "@/pages/StudyGroupPage";
+import AILearningPage from "@/pages/AILearningPage";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ function Router() {
         <Route path="/study-guides" component={StudyGuidesPage} />
         <Route path="/study-guides/:id" component={StudyGuideDetail} />
         <Route path="/study-group" component={StudyGroupPage} />
+        <Route path="/ai-learning" component={AILearningPage} />
         <Route component={NotFound} />
       </Switch>
       </Layout>

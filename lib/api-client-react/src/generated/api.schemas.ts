@@ -1139,6 +1139,130 @@ export interface StudyGroupLearningSignal {
   recentSignalNotes: StudyGroupLearningSignalNote[];
 }
 
+export interface AiLearningTutorConv {
+  id: number;
+  title: string;
+  messageCount: number;
+  lastMessageAt?: string | null;
+  createdAt: string;
+}
+
+export type AiLearningOverviewConversationsTutor = {
+  totalSessions: number;
+  totalMessages: number;
+  recent: AiLearningTutorConv[];
+};
+
+export interface AiLearningStudyGroupSession {
+  id: number;
+  title: string;
+  status: string;
+  roundCount: number;
+  messageCount: number;
+  artifactCount: number;
+  promotedCount: number;
+  updatedAt: string;
+}
+
+export type AiLearningOverviewConversationsStudyGroup = {
+  totalSessions: number;
+  totalMessages: number;
+  recent: AiLearningStudyGroupSession[];
+};
+
+export type AiLearningOverviewConversations = {
+  tutor: AiLearningOverviewConversationsTutor;
+  studyGroup: AiLearningOverviewConversationsStudyGroup;
+};
+
+export type AiLearningOverviewTrainingFlashcardsBySourceItem = {
+  source: string;
+  count: number;
+};
+
+export type AiLearningOverviewTrainingFlashcards = {
+  total: number;
+  bySource: AiLearningOverviewTrainingFlashcardsBySourceItem[];
+};
+
+export type AiLearningOverviewTrainingQuestionsBySourceItem = {
+  source: string;
+  count: number;
+  pendingReview: number;
+};
+
+export type AiLearningOverviewTrainingQuestions = {
+  total: number;
+  bySource: AiLearningOverviewTrainingQuestionsBySourceItem[];
+};
+
+export type AiLearningOverviewTrainingArtifactsByKindItem = {
+  kind: string;
+  count: number;
+  promoted: number;
+};
+
+export type AiLearningOverviewTrainingArtifacts = {
+  total: number;
+  promoted: number;
+  byKind: AiLearningOverviewTrainingArtifactsByKindItem[];
+};
+
+export type AiLearningPromotedItemPreview = {
+  front: string;
+  back: string;
+};
+
+export interface AiLearningPromotedItem {
+  id: number;
+  kind: string;
+  promotedAt: string;
+  sessionId: number;
+  sessionTitle: string;
+  topicName?: string | null;
+  preview: AiLearningPromotedItemPreview;
+}
+
+export type AiLearningOverviewTraining = {
+  flashcards: AiLearningOverviewTrainingFlashcards;
+  questions: AiLearningOverviewTrainingQuestions;
+  artifacts: AiLearningOverviewTrainingArtifacts;
+  recentPromoted: AiLearningPromotedItem[];
+};
+
+export type AiLearningOverviewAccuracyOverall = {
+  attempts: number;
+  correct: number;
+  accuracy?: number | null;
+};
+
+export interface AiLearningDailyPoint {
+  day: string;
+  attempts: number;
+  correct: number;
+  accuracy?: number | null;
+}
+
+export interface AiLearningDomainAccuracy {
+  domainId: number;
+  domainName: string;
+  attempts: number;
+  correct: number;
+  accuracy?: number | null;
+}
+
+export type AiLearningOverviewAccuracy = {
+  overall: AiLearningOverviewAccuracyOverall;
+  daily: AiLearningDailyPoint[];
+  byDomain: AiLearningDomainAccuracy[];
+};
+
+export interface AiLearningOverview {
+  conversations: AiLearningOverviewConversations;
+  training: AiLearningOverviewTraining;
+  accuracy: AiLearningOverviewAccuracy;
+}
+
 /**
  * Not found
  */

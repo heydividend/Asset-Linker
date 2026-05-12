@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones, Compass, MapPin, FileText, RotateCcw, HelpCircle, Users } from "lucide-react";
+import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones, Compass, MapPin, FileText, RotateCcw, HelpCircle, Users, Sparkles } from "lucide-react";
 import { HelpDialog } from "./HelpDialog";
 import { VoicePicker } from "./VoicePicker";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ const navItems = [
   { href: "/games", label: "Games", icon: Gamepad2 },
   { href: "/tutor", label: "AI Tutor", icon: Bot },
   { href: "/study-group", label: "Study Group", icon: Users },
+  { href: "/ai-learning", label: "AI Learning", icon: Sparkles },
 ];
 
 export function Sidebar() {

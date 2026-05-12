@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AiLearningOverview,
   ApiError,
   AudioOverview,
   AudioOverviewInput,
@@ -7133,6 +7134,81 @@ export function useGetStudyGroupLearningSignal<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetStudyGroupLearningSignalQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Bundled view of AI conversations, training output, and quiz accuracy
+ */
+export const getGetAiLearningOverviewUrl = () => {
+  return `/api/ai-learning/overview`;
+};
+
+export const getAiLearningOverview = async (
+  options?: RequestInit,
+): Promise<AiLearningOverview> => {
+  return customFetch<AiLearningOverview>(getGetAiLearningOverviewUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAiLearningOverviewQueryKey = () => {
+  return [`/api/ai-learning/overview`] as const;
+};
+
+export const getGetAiLearningOverviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAiLearningOverview>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAiLearningOverview>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAiLearningOverviewQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAiLearningOverview>>
+  > = ({ signal }) => getAiLearningOverview({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAiLearningOverview>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAiLearningOverviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAiLearningOverview>>
+>;
+export type GetAiLearningOverviewQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Bundled view of AI conversations, training output, and quiz accuracy
+ */
+
+export function useGetAiLearningOverview<
+  TData = Awaited<ReturnType<typeof getAiLearningOverview>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAiLearningOverview>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAiLearningOverviewQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
