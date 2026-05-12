@@ -24,6 +24,7 @@ import StudyGuideDetail from "@/pages/StudyGuideDetail";
 import StudyGroupPage from "@/pages/StudyGroupPage";
 import AILearningPage from "@/pages/AILearningPage";
 import { StudyGroupTimeoutNotifier } from "@/hooks/use-study-group-timeout-notifier";
+import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ function Router() {
   return (
     <TourProvider>
       <StudyGroupTimeoutNotifier />
+      <NotificationPermissionPrompt />
       <Layout>
         <Switch>
         <Route path="/" component={Dashboard} />

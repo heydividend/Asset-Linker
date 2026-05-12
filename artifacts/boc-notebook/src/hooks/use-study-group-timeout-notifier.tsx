@@ -7,6 +7,7 @@ import {
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import { useNotificationPermission } from "@/hooks/use-notification-permission";
 
 const STORAGE_KEY = "boc:study-group-timeout-seen";
 const POLL_INTERVAL_MS = 30_000;
@@ -67,9 +68,47 @@ function pickTimedOut(sessions: StudyGroupSession[]): TimedOut[] {
  * Mounted once at the app root so the alert reaches the user wherever they
  * happen to be — dashboard, notebooks, quiz, etc.
  */
+function buildDeepLink(sessionId: string | number, round: number): string {
+  const path = `/study-group?session=${sessionId}&round=${round}`;
+  if (typeof window === "undefined") return path;
+  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+  return `${window.location.origin}${base}${path}`;
+}
+
+function fireSystemNotification(opts: {
+  sessionId: string | number;
+  round: number;
+  title: string;
+  url: string;
+  navigate: (to: string) => void;
+}) {
+  if (typeof window === "undefined" || typeof Notification === "undefined") return;
+  if (Notification.permission !== "granted") return;
+  try {
+    const n = new Notification("Study group round timed out", {
+      body: `Round ${opts.round} of "${opts.title}" stalled while you were away — pick up where the group left off.`,
+      tag: `sg-timeout-${opts.sessionId}-${opts.round}`,
+      data: { url: opts.url },
+    });
+    n.onclick = () => {
+      try {
+        window.focus();
+      } catch {
+        // ignore
+      }
+      const path = `/study-group?session=${opts.sessionId}&round=${opts.round}`;
+      opts.navigate(path);
+      n.close();
+    };
+  } catch {
+    // ignore browsers that block constructor (e.g. require ServiceWorker)
+  }
+}
+
 export function useStudyGroupTimeoutNotifier() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
+  const { canNotify } = useNotificationPermission();
   const seenRef = useRef<SeenMap>(readSeen());
   const initializedRef = useRef(false);
 
@@ -119,8 +158,23 @@ export function useStudyGroupTimeoutNotifier() {
         new URLSearchParams(location.split("?")[1] ?? "").get("session") ===
           String(s.session.id);
 
+      const targetUrl = `/study-group?session=${s.session.id}&round=${s.round}`;
+      const tabHidden =
+        typeof document !== "undefined" && document.visibilityState === "hidden";
+
+      // System notification: fire whenever the tab is hidden, regardless of
+      // which page the user was on, so they get a real OS push.
+      if (canNotify && tabHidden) {
+        fireSystemNotification({
+          sessionId: s.session.id,
+          round: s.round,
+          title: s.session.title,
+          url: buildDeepLink(s.session.id, s.round),
+          navigate,
+        });
+      }
+
       if (!onThisSession) {
-        const targetUrl = `/study-group?session=${s.session.id}&round=${s.round}`;
         toast({
           title: "Study group round timed out",
           description: `Round ${s.round} of "${s.session.title}" stalled while you were away — pick up where the group left off.`,
@@ -143,7 +197,7 @@ export function useStudyGroupTimeoutNotifier() {
       seenRef.current = next;
       writeSeen(next);
     }
-  }, [sessions, toast, navigate, location]);
+  }, [sessions, toast, navigate, location, canNotify]);
 }
 
 export function StudyGroupTimeoutNotifier() {
