@@ -86,6 +86,7 @@ import type {
   StudyGroupLibrary,
   StudyGroupPromoteResult,
   StudyGroupRestoreTimeoutResult,
+  StudyGroupResumeAllTimeoutsResult,
   StudyGroupRoundInput,
   StudyGroupSession,
   StudyGroupSessionDetail,
@@ -6910,6 +6911,91 @@ export const useDismissAllStudyGroupTimeouts = <
   TContext
 > => {
   return useMutation(getDismissAllStudyGroupTimeoutsMutationOptions(options));
+};
+
+/**
+ * Server-side fan-out version of `POST /study-group/sessions/{id}/round` with `{retry:true}`. Finds every session with at least one undismissed sweeper-timeout turn, kicks off resume for each in the background with a small concurrency cap, and returns a summary immediately. The dashboard can poll the sessions list to watch stuck rows clear instead of holding a long-lived browser tab open over per-session SSE streams.
+ * @summary Bulk-resume every currently stuck study-group round
+ */
+export const getResumeAllStudyGroupTimeoutsUrl = () => {
+  return `/api/study-group/sessions/resume-all-timeouts`;
+};
+
+export const resumeAllStudyGroupTimeouts = async (
+  options?: RequestInit,
+): Promise<StudyGroupResumeAllTimeoutsResult> => {
+  return customFetch<StudyGroupResumeAllTimeoutsResult>(
+    getResumeAllStudyGroupTimeoutsUrl(),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getResumeAllStudyGroupTimeoutsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resumeAllStudyGroupTimeouts>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resumeAllStudyGroupTimeouts>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["resumeAllStudyGroupTimeouts"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resumeAllStudyGroupTimeouts>>,
+    void
+  > = () => {
+    return resumeAllStudyGroupTimeouts(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResumeAllStudyGroupTimeoutsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resumeAllStudyGroupTimeouts>>
+>;
+
+export type ResumeAllStudyGroupTimeoutsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Bulk-resume every currently stuck study-group round
+ */
+export const useResumeAllStudyGroupTimeouts = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resumeAllStudyGroupTimeouts>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resumeAllStudyGroupTimeouts>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getResumeAllStudyGroupTimeoutsMutationOptions(options));
 };
 
 /**

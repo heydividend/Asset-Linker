@@ -1775,6 +1775,29 @@ export const DismissAllStudyGroupTimeoutsResponse = zod.object({
 });
 
 /**
+ * Server-side fan-out version of `POST /study-group/sessions/{id}/round` with `{retry:true}`. Finds every session with at least one undismissed sweeper-timeout turn, kicks off resume for each in the background with a small concurrency cap, and returns a summary immediately. The dashboard can poll the sessions list to watch stuck rows clear instead of holding a long-lived browser tab open over per-session SSE streams.
+ * @summary Bulk-resume every currently stuck study-group round
+ */
+export const ResumeAllStudyGroupTimeoutsResponse = zod.object({
+  started: zod
+    .number()
+    .describe(
+      "Number of stuck sessions handed off to a background resume worker.",
+    ),
+  skipped: zod
+    .array(
+      zod.object({
+        sessionId: zod.number(),
+        title: zod.string(),
+        reason: zod.string(),
+      }),
+    )
+    .describe(
+      "Sessions that couldn't be resumed at all (e.g., session row missing or topic missing). The dashboard surfaces these as a precise error.",
+    ),
+});
+
+/**
  * Reverses `dismissStudyGroupTimeout` by clearing `dismissedAt` on every still-failed sweeper-timeout turn for the session. The dashboard banner and sidebar warning re-appear; transcript and per-turn status are unchanged.
  * @summary Undo a previous dismissal so the timed-out warning comes back
  */

@@ -127,6 +127,8 @@ export * from "./studyGroupMessageStatus";
 export * from "./studyGroupPromoteResult";
 export * from "./studyGroupPromoteResultKind";
 export * from "./studyGroupRestoreTimeoutResult";
+export * from "./studyGroupResumeAllTimeoutsResult";
+export * from "./studyGroupResumeAllTimeoutsResultSkippedItem";
 export * from "./studyGroupRoundInput";
 export * from "./studyGroupSession";
 export * from "./studyGroupSessionDetail";

@@ -1200,6 +1200,24 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/StudyGroupDismissAllTimeoutsResult" }
+  /study-group/sessions/resume-all-timeouts:
+    post:
+      operationId: resumeAllStudyGroupTimeouts
+      tags: [studygroup]
+      summary: Bulk-resume every currently stuck study-group round
+      description: >-
+        Server-side fan-out version of `POST /study-group/sessions/{id}/round`
+        with `{retry:true}`. Finds every session with at least one undismissed
+        sweeper-timeout turn, kicks off resume for each in the background with
+        a small concurrency cap, and returns a summary immediately. The
+        dashboard can poll the sessions list to watch stuck rows clear instead
+        of holding a long-lived browser tab open over per-session SSE streams.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGroupResumeAllTimeoutsResult" }
   /study-group/sessions/{id}/restore-timeout:
     post:
       operationId: restoreStudyGroupTimeout
@@ -2122,6 +2140,23 @@ components:
         sessionsCleared:
           type: integer
           description: Number of distinct sessions whose stuck warning was cleared.
+    StudyGroupResumeAllTimeoutsResult:
+      type: object
+      required: [started, skipped]
+      properties:
+        started:
+          type: integer
+          description: Number of stuck sessions handed off to a background resume worker.
+        skipped:
+          type: array
+          description: Sessions that couldn't be resumed at all (e.g., session row missing or topic missing). The dashboard surfaces these as a precise error.
+          items:
+            type: object
+            required: [sessionId, title, reason]
+            properties:
+              sessionId: { type: integer }
+              title: { type: string }
+              reason: { type: string }
     StudyGroupRestoreTimeoutResult:
       type: object
       required: [restored]

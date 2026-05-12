@@ -1019,38 +1019,33 @@ async function runExtractionForRound(
   return created;
 }
 
-router.post("/study-group/sessions/:id/round", async (req, res): Promise<void> => {
-  const id = parseId(req);
-  if (id == null) {
-    res.status(400).json({ error: "invalid id" });
-    return;
-  }
-  const [session] = await db.select().from(studyGroupSessions).where(eq(studyGroupSessions.id, id));
-  if (!session) {
-    res.status(404).json({ error: "Not found" });
-    return;
-  }
-  if (session.topicId == null) {
-    res.status(400).json({ error: "Session has no topic" });
-    return;
-  }
-  const t = await resolveTopic(session.topicId);
-  if (!t) {
-    res.status(400).json({ error: "Topic missing" });
-    return;
-  }
+// A no-op StreamHandle used by the bulk `resume-all-timeouts` worker — the
+// underlying round runner pushes SSE events as it goes, but the bulk caller
+// has nothing to send them to (the HTTP response has already returned with a
+// summary). The dashboard discovers progress by re-polling the sessions list
+// instead.
+function noopStreamHandle(): StreamHandle {
+  return {
+    push: () => {},
+    end: () => {},
+    alive: () => true,
+  };
+}
 
-  const isRetry = req.body?.retry === true;
-
-  // Take over the session: abort any older handler and reset orphaned 'streaming' rows.
-  const ac = await takeOverSession(id);
-  const stream = startSseStream(res);
-  res.on("close", () => {
-    // We do NOT abort on client disconnect — the server keeps running so the
-    // round always reaches a checkpointed state. The new POST that supersedes
-    // us will call takeOverSession() and abort our anthropic streams.
-  });
-
+// Core round runner extracted so both the SSE route handler and the bulk
+// `resume-all-timeouts` worker can drive a round to its next checkpoint.
+// Caller is responsible for: validating the session/topic, calling
+// takeOverSession() to obtain the AbortController, and providing a
+// StreamHandle (real SSE for interactive callers, no-op for bulk).
+async function executeStudyGroupRound(args: {
+  session: typeof studyGroupSessions.$inferSelect;
+  topic: ResolvedTopic;
+  isRetry: boolean;
+  stream: StreamHandle;
+  ac: AbortController;
+}): Promise<void> {
+  const { session, topic: t, isRetry, stream, ac } = args;
+  const id = session.id;
   try {
     // Decide which round to run: resume an unfinished one, or start a new one.
     const incompleteRows = await db
@@ -1253,7 +1248,134 @@ router.post("/study-group/sessions/:id/round", async (req, res): Promise<void> =
   } finally {
     releaseSession(id, ac);
   }
+}
+
+router.post("/study-group/sessions/:id/round", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const [session] = await db.select().from(studyGroupSessions).where(eq(studyGroupSessions.id, id));
+  if (!session) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  if (session.topicId == null) {
+    res.status(400).json({ error: "Session has no topic" });
+    return;
+  }
+  const t = await resolveTopic(session.topicId);
+  if (!t) {
+    res.status(400).json({ error: "Topic missing" });
+    return;
+  }
+  const isRetry = req.body?.retry === true;
+  const ac = await takeOverSession(id);
+  const stream = startSseStream(res);
+  res.on("close", () => {
+    // We do NOT abort on client disconnect — the server keeps running so the
+    // round always reaches a checkpointed state. The new POST that supersedes
+    // us will call takeOverSession() and abort our anthropic streams.
+  });
+  await executeStudyGroupRound({ session, topic: t, isRetry, stream, ac });
 });
+
+// Bulk version of POST /study-group/sessions/:id/round with `{retry:true}` —
+// kicks off a server-side fan-out that resumes every currently stuck session
+// in parallel (with a small concurrency cap), then returns a summary
+// immediately. The dashboard banner can then drop its per-session SSE
+// consumption loop and just re-poll the sessions list to watch the stuck rows
+// disappear as workers complete.
+//
+// "started" counts sessions handed off to a background worker; "skipped" lists
+// sessions that couldn't be resumed at all (missing topic / missing session
+// row) so the UI can surface a precise error rather than spinning forever.
+const RESUME_ALL_CONCURRENCY = 3;
+
+async function runResumeAllInBackground(
+  sessions: (typeof studyGroupSessions.$inferSelect)[],
+): Promise<void> {
+  const queue = [...sessions];
+  const workerCount = Math.min(RESUME_ALL_CONCURRENCY, queue.length);
+  const workers: Promise<void>[] = [];
+  for (let i = 0; i < workerCount; i++) {
+    workers.push(
+      (async () => {
+        while (queue.length > 0) {
+          const s = queue.shift();
+          if (!s) break;
+          try {
+            if (s.topicId == null) continue;
+            const topic = await resolveTopic(s.topicId);
+            if (!topic) continue;
+            const ac = await takeOverSession(s.id);
+            await executeStudyGroupRound({
+              session: s,
+              topic,
+              isRetry: true,
+              stream: noopStreamHandle(),
+              ac,
+            });
+          } catch {
+            // Best-effort — if a single session blows up, the dashboard will
+            // still show it as stuck on the next poll and the user can retry.
+          }
+        }
+      })(),
+    );
+  }
+  await Promise.all(workers);
+}
+
+router.post(
+  "/study-group/sessions/resume-all-timeouts",
+  async (_req, res): Promise<void> => {
+    const stuckRows = await db
+      .selectDistinct({ sessionId: studyGroupMessages.sessionId })
+      .from(studyGroupMessages)
+      .where(
+        and(
+          eq(studyGroupMessages.status, "failed"),
+          eq(studyGroupMessages.reason, "sweeper_timeout"),
+          isNull(studyGroupMessages.dismissedAt),
+        ),
+      );
+    const stuckIds = stuckRows.map((r) => r.sessionId);
+    if (stuckIds.length === 0) {
+      res.json({ started: 0, skipped: [] });
+      return;
+    }
+    const rows = await db
+      .select()
+      .from(studyGroupSessions)
+      .where(inArray(studyGroupSessions.id, stuckIds));
+    const skipped: { sessionId: number; title: string; reason: string }[] = [];
+    const ready: typeof rows = [];
+    const presentIds = new Set(rows.map((r) => r.id));
+    for (const s of rows) {
+      if (s.topicId == null) {
+        skipped.push({
+          sessionId: s.id,
+          title: s.title,
+          reason: "Session has no topic",
+        });
+        continue;
+      }
+      ready.push(s);
+    }
+    for (const id of stuckIds) {
+      if (!presentIds.has(id)) {
+        skipped.push({ sessionId: id, title: "", reason: "Session not found" });
+      }
+    }
+    // Fire-and-forget: workers run after the response. The dashboard polls the
+    // sessions list to watch stuck rows clear; we don't make the user hold a
+    // long-lived HTTP request open while up to N rounds re-stream.
+    void runResumeAllInBackground(ready);
+    res.json({ started: ready.length, skipped });
+  },
+);
 
 router.post("/study-group/sessions/:id/interject", async (req, res): Promise<void> => {
   const id = parseId(req);

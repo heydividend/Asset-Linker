@@ -997,6 +997,19 @@ export interface StudyGroupDismissAllTimeoutsResult {
   sessionsCleared: number;
 }
 
+export type StudyGroupResumeAllTimeoutsResultSkippedItem = {
+  sessionId: number;
+  title: string;
+  reason: string;
+};
+
+export interface StudyGroupResumeAllTimeoutsResult {
+  /** Number of stuck sessions handed off to a background resume worker. */
+  started: number;
+  /** Sessions that couldn't be resumed at all (e.g., session row missing or topic missing). The dashboard surfaces these as a precise error. */
+  skipped: StudyGroupResumeAllTimeoutsResultSkippedItem[];
+}
+
 export interface StudyGroupRestoreTimeoutResult {
   /** How many previously-dismissed timed-out turn rows had their dismissedAt cleared. */
   restored: number;
