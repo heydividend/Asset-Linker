@@ -1715,6 +1715,21 @@ export const DismissStudyGroupTimeoutResponse = zod.object({
 });
 
 /**
+ * Clears the timed-out warning across every session by stamping `dismissedAt` on every still-failed sweeper-timeout turn. Returns the number of turn rows dismissed and the number of distinct sessions that were cleared. Transcripts and per-turn status are left intact.
+ * @summary Bulk-acknowledge every currently stuck study-group round
+ */
+export const DismissAllStudyGroupTimeoutsResponse = zod.object({
+  dismissed: zod
+    .number()
+    .describe(
+      "Total number of timed-out turn rows marked dismissed across all sessions.",
+    ),
+  sessionsCleared: zod
+    .number()
+    .describe("Number of distinct sessions whose stuck warning was cleared."),
+});
+
+/**
  * @summary Stream the next study-group round (SSE) — resumes any unfinished round
  */
 export const RunStudyGroupRoundParams = zod.object({

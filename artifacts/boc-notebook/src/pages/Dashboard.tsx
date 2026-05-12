@@ -76,6 +76,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   useListStudyGroupSessions,
   useDismissStudyGroupTimeout,
+  useDismissAllStudyGroupTimeouts,
   getListStudyGroupSessionsQueryKey,
 } from "@workspace/api-client-react";
 
@@ -200,6 +201,41 @@ export default function Dashboard() {
     [sgSessions],
   );
   const dismissTimeout = useDismissStudyGroupTimeout();
+  const dismissAllTimeouts = useDismissAllStudyGroupTimeouts();
+  const onDismissAllTimeouts = () => {
+    dismissAllTimeouts.mutate(undefined, {
+      onSuccess: (result) => {
+        qc.invalidateQueries({ queryKey: getListStudyGroupSessionsQueryKey() });
+        const n = result.sessionsCleared;
+        toast({
+          title:
+            n === 0
+              ? "Nothing to dismiss"
+              : n === 1
+                ? "Cleared 1 stuck round"
+                : `Cleared ${n} stuck rounds`,
+          description: "Transcripts are still saved in Study Group.",
+          action: (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => navigate("/study-group")}
+              data-testid="toast-dismiss-all-open-study-group"
+            >
+              Open Study Group
+            </Button>
+          ),
+        });
+      },
+      onError: (e) => {
+        toast({
+          title: "Couldn't dismiss all",
+          description: e instanceof Error ? e.message : "Try again in a moment.",
+          variant: "destructive",
+        });
+      },
+    });
+  };
   const onDismissTimeout = (sessionId: number, sessionTitle: string) => {
     dismissTimeout.mutate(
       { id: sessionId },
@@ -501,14 +537,31 @@ export default function Dashboard() {
             <CardContent className="p-3 flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-300 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
-                  {timedOutSessions.length === 1
-                    ? "A study group round timed out"
-                    : `${timedOutSessions.length} study group rounds timed out`}
-                </p>
-                <p className="text-xs text-amber-800/90 dark:text-amber-200/80 mt-0.5">
-                  Your partial transcript is saved — pick up where the group left off.
-                </p>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                      {timedOutSessions.length === 1
+                        ? "A study group round timed out"
+                        : `${timedOutSessions.length} study group rounds timed out`}
+                    </p>
+                    <p className="text-xs text-amber-800/90 dark:text-amber-200/80 mt-0.5">
+                      Your partial transcript is saved — pick up where the group left off.
+                    </p>
+                  </div>
+                  {timedOutSessions.length > 1 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs border-amber-400 text-amber-900 dark:border-amber-500/60 dark:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/40 shrink-0"
+                      onClick={onDismissAllTimeouts}
+                      disabled={dismissAllTimeouts.isPending}
+                      data-testid="button-dashboard-sg-dismiss-all"
+                      title="Acknowledge every stuck round — keep transcripts, hide warnings"
+                    >
+                      {dismissAllTimeouts.isPending ? "Dismissing…" : "Dismiss all"}
+                    </Button>
+                  )}
+                </div>
                 <div className="mt-2 flex flex-col gap-1.5">
                   {timedOutSessions.slice(0, 3).map((s) => {
                     const round =

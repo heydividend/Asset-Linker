@@ -767,6 +767,29 @@ router.post("/study-group/sessions/:id/dismiss-timeout", async (req, res): Promi
   res.json({ dismissed: updated.length });
 });
 
+// Bulk version of /study-group/sessions/:id/dismiss-timeout — clears the
+// timed-out warning for every currently stuck session in one shot. Used by the
+// dashboard banner's "Dismiss all" affordance when a user comes back after a
+// long break and has multiple piled-up rounds. Per-session semantics are
+// identical: stamp `dismissedAt` on still-failed sweeper-timeout rows; leave
+// transcripts and per-turn status alone; a new timeout in the same session
+// later will re-surface the warning.
+router.post("/study-group/sessions/dismiss-all-timeouts", async (_req, res): Promise<void> => {
+  const updated = await db
+    .update(studyGroupMessages)
+    .set({ dismissedAt: new Date() })
+    .where(
+      and(
+        eq(studyGroupMessages.status, "failed"),
+        eq(studyGroupMessages.reason, "sweeper_timeout"),
+        isNull(studyGroupMessages.dismissedAt),
+      ),
+    )
+    .returning({ id: studyGroupMessages.id, sessionId: studyGroupMessages.sessionId });
+  const sessionsCleared = new Set(updated.map((r) => r.sessionId)).size;
+  res.json({ dismissed: updated.length, sessionsCleared });
+});
+
 router.delete("/study-group/sessions/:id", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {

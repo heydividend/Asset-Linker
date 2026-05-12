@@ -78,6 +78,7 @@ import type {
   ResourceInput,
   ScrapeJob,
   ScrapeJobInput,
+  StudyGroupDismissAllTimeoutsResult,
   StudyGroupDismissTimeoutResult,
   StudyGroupInterjectInput,
   StudyGroupLearningSignal,
@@ -6795,6 +6796,91 @@ export const useDismissStudyGroupTimeout = <
   TContext
 > => {
   return useMutation(getDismissStudyGroupTimeoutMutationOptions(options));
+};
+
+/**
+ * Clears the timed-out warning across every session by stamping `dismissedAt` on every still-failed sweeper-timeout turn. Returns the number of turn rows dismissed and the number of distinct sessions that were cleared. Transcripts and per-turn status are left intact.
+ * @summary Bulk-acknowledge every currently stuck study-group round
+ */
+export const getDismissAllStudyGroupTimeoutsUrl = () => {
+  return `/api/study-group/sessions/dismiss-all-timeouts`;
+};
+
+export const dismissAllStudyGroupTimeouts = async (
+  options?: RequestInit,
+): Promise<StudyGroupDismissAllTimeoutsResult> => {
+  return customFetch<StudyGroupDismissAllTimeoutsResult>(
+    getDismissAllStudyGroupTimeoutsUrl(),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getDismissAllStudyGroupTimeoutsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissAllStudyGroupTimeouts>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof dismissAllStudyGroupTimeouts>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["dismissAllStudyGroupTimeouts"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof dismissAllStudyGroupTimeouts>>,
+    void
+  > = () => {
+    return dismissAllStudyGroupTimeouts(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DismissAllStudyGroupTimeoutsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof dismissAllStudyGroupTimeouts>>
+>;
+
+export type DismissAllStudyGroupTimeoutsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Bulk-acknowledge every currently stuck study-group round
+ */
+export const useDismissAllStudyGroupTimeouts = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof dismissAllStudyGroupTimeouts>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof dismissAllStudyGroupTimeouts>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getDismissAllStudyGroupTimeoutsMutationOptions(options));
 };
 
 /**

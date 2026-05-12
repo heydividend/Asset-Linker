@@ -112,6 +112,7 @@ export * from "./scrapeJobStatus";
 export * from "./studyGroupArtifact";
 export * from "./studyGroupArtifactKind";
 export * from "./studyGroupArtifactPayload";
+export * from "./studyGroupDismissAllTimeoutsResult";
 export * from "./studyGroupDismissTimeoutResult";
 export * from "./studyGroupInterjectInput";
 export * from "./studyGroupLearningSignal";

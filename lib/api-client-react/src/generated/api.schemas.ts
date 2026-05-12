@@ -980,6 +980,13 @@ export interface StudyGroupDismissTimeoutResult {
   dismissed: number;
 }
 
+export interface StudyGroupDismissAllTimeoutsResult {
+  /** Total number of timed-out turn rows marked dismissed across all sessions. */
+  dismissed: number;
+  /** Number of distinct sessions whose stuck warning was cleared. */
+  sessionsCleared: number;
+}
+
 export interface StudyGroupSessionInput {
   /** Optional. Auto-picks the weakest topic if omitted. */
   topicId?: number;

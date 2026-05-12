@@ -1178,6 +1178,22 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/StudyGroupDismissTimeoutResult" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /study-group/sessions/dismiss-all-timeouts:
+    post:
+      operationId: dismissAllStudyGroupTimeouts
+      tags: [studygroup]
+      summary: Bulk-acknowledge every currently stuck study-group round
+      description: >-
+        Clears the timed-out warning across every session by stamping
+        `dismissedAt` on every still-failed sweeper-timeout turn. Returns the
+        number of turn rows dismissed and the number of distinct sessions that
+        were cleared. Transcripts and per-turn status are left intact.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGroupDismissAllTimeoutsResult" }
   /study-group/sessions/{id}/round:
     post:
       operationId: runStudyGroupRound
@@ -2064,6 +2080,16 @@ components:
         dismissed:
           type: integer
           description: How many timed-out turn rows were marked dismissed.
+    StudyGroupDismissAllTimeoutsResult:
+      type: object
+      required: [dismissed, sessionsCleared]
+      properties:
+        dismissed:
+          type: integer
+          description: Total number of timed-out turn rows marked dismissed across all sessions.
+        sessionsCleared:
+          type: integer
+          description: Number of distinct sessions whose stuck warning was cleared.
     StudyGroupSessionInput:
       type: object
       properties:
