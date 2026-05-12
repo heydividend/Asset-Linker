@@ -1,6 +1,9 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { recoverStuckStudyGroupRounds } from "./routes/studyGroup";
+import {
+  recoverStuckStudyGroupRounds,
+  startStudyGroupStaleSweeper,
+} from "./routes/studyGroup";
 
 const rawPort = process.env["PORT"];
 
@@ -28,6 +31,10 @@ async function start(): Promise<void> {
   } catch (err) {
     logger.error({ err }, "Failed to recover stuck study group rounds");
   }
+
+  startStudyGroupStaleSweeper((err) =>
+    logger.error({ err }, "Stale study group round sweep failed"),
+  );
 
   app.listen(port, (err) => {
     if (err) {

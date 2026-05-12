@@ -201,10 +201,79 @@ const sessionAborters = new Map<number, AbortController>();
 export async function recoverStuckStudyGroupRounds(): Promise<number> {
   const updated = await db
     .update(studyGroupMessages)
-    .set({ status: "failed" })
+    .set({ status: "failed", updatedAt: new Date() })
     .where(eq(studyGroupMessages.status, "streaming"))
     .returning({ id: studyGroupMessages.id });
   return updated.length;
+}
+
+// Periodic sweep: while the server is alive, a single round can still hang
+// (network blip to Anthropic, dropped client connection that the server didn't
+// notice). Every minute, flip rows that have been 'streaming' for longer than
+// STALE_STREAMING_MS to 'failed' — but only if no in-process handler is
+// actively owning that session (sessionAborters), to avoid clobbering a real
+// in-flight stream.
+const STALE_STREAMING_MS = 2 * 60 * 1000;
+const SWEEP_INTERVAL_MS = 60 * 1000;
+
+export async function sweepStaleStudyGroupRounds(now: Date = new Date()): Promise<number> {
+  const cutoff = new Date(now.getTime() - STALE_STREAMING_MS);
+  const candidates = await db
+    .select({
+      id: studyGroupMessages.id,
+      sessionId: studyGroupMessages.sessionId,
+    })
+    .from(studyGroupMessages)
+    .where(
+      and(
+        eq(studyGroupMessages.status, "streaming"),
+        sql`${studyGroupMessages.updatedAt} < ${cutoff}`,
+      ),
+    );
+  const stale = candidates.filter((row) => !sessionAborters.has(row.sessionId));
+  if (stale.length === 0) return 0;
+  const updated = await db
+    .update(studyGroupMessages)
+    .set({ status: "failed", updatedAt: new Date() })
+    .where(
+      and(
+        inArray(
+          studyGroupMessages.id,
+          stale.map((r) => r.id),
+        ),
+        eq(studyGroupMessages.status, "streaming"),
+        sql`${studyGroupMessages.updatedAt} < ${cutoff}`,
+      ),
+    )
+    .returning({ id: studyGroupMessages.id });
+  return updated.length;
+}
+
+let sweepTimer: NodeJS.Timeout | null = null;
+export function startStudyGroupStaleSweeper(
+  onError: (err: unknown) => void = () => {},
+): () => void {
+  if (sweepTimer) return () => stopStudyGroupStaleSweeper();
+  const tick = async () => {
+    try {
+      await sweepStaleStudyGroupRounds();
+    } catch (err) {
+      onError(err);
+    }
+  };
+  sweepTimer = setInterval(() => {
+    void tick();
+  }, SWEEP_INTERVAL_MS);
+  // Don't keep the process alive solely for the sweep timer.
+  sweepTimer.unref?.();
+  return () => stopStudyGroupStaleSweeper();
+}
+
+export function stopStudyGroupStaleSweeper(): void {
+  if (sweepTimer) {
+    clearInterval(sweepTimer);
+    sweepTimer = null;
+  }
 }
 
 async function takeOverSession(sessionId: number): Promise<AbortController> {
@@ -218,7 +287,7 @@ async function takeOverSession(sessionId: number): Promise<AbortController> {
   // will be treated as 'failed' (resumable) by the planner below.
   await db
     .update(studyGroupMessages)
-    .set({ status: "failed" })
+    .set({ status: "failed", updatedAt: new Date() })
     .where(
       and(
         eq(studyGroupMessages.sessionId, sessionId),
@@ -341,7 +410,7 @@ async function runPlannedTurn(
   const { row, systemPrompt, userPrompt, stream, abortSignal } = input;
   await db
     .update(studyGroupMessages)
-    .set({ status: "streaming", content: "" })
+    .set({ status: "streaming", content: "", updatedAt: new Date() })
     .where(eq(studyGroupMessages.id, row.id));
   stream.push({
     type: "message_start",
@@ -432,14 +501,14 @@ async function runPlannedTurn(
     // Superseded by a newer handler — leave as 'failed' so resume picks it up.
     await db
       .update(studyGroupMessages)
-      .set({ status: "failed", content: full })
+      .set({ status: "failed", content: full, updatedAt: new Date() })
       .where(eq(studyGroupMessages.id, row.id));
     return { ok: false, content: full, aborted: true };
   }
   if (streamFailed || !full.trim()) {
     await db
       .update(studyGroupMessages)
-      .set({ status: "failed", content: full })
+      .set({ status: "failed", content: full, updatedAt: new Date() })
       .where(eq(studyGroupMessages.id, row.id));
     stream.push({
       type: "error",
@@ -451,7 +520,7 @@ async function runPlannedTurn(
   }
   await db
     .update(studyGroupMessages)
-    .set({ status: "done", content: full })
+    .set({ status: "done", content: full, updatedAt: new Date() })
     .where(eq(studyGroupMessages.id, row.id));
   stream.push({
     type: "message_end",
@@ -799,7 +868,7 @@ router.post("/study-group/sessions/:id/round", async (req, res): Promise<void> =
       if (isRetry) {
         await db
           .update(studyGroupMessages)
-          .set({ status: "pending", content: "" })
+          .set({ status: "pending", content: "", updatedAt: new Date() })
           .where(
             and(
               eq(studyGroupMessages.sessionId, id),

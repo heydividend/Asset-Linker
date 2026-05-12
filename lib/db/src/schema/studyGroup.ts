@@ -28,6 +28,7 @@ export const studyGroupMessages = pgTable("study_group_messages", {
   status: text("status").notNull().default("done"), // pending | streaming | done | failed
   turnOrder: integer("turn_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const studyGroupArtifacts = pgTable("study_group_artifacts", {
