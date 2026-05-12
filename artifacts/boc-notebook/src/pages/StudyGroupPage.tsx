@@ -164,6 +164,7 @@ function MessageBubble({
   const isTimedOut = isFailed && failedReason === "sweeper_timeout";
   const speakId = `sg-msg-${message.id}`;
   const speech = useSpeech();
+  const { toast } = useToast();
   const speakingThis = speech.isSpeaking(speakId);
   const loadingThis = speech.isLoading(speakId);
   const canSpeak =
@@ -221,7 +222,14 @@ function MessageBubble({
                 if (speakingThis || loadingThis) {
                   speech.stop();
                 } else {
-                  void speech.speak(speakId, message.content, style.voice);
+                  speech.speak(speakId, message.content, style.voice).catch((err) => {
+                    toast({
+                      title: "Read-aloud failed",
+                      description:
+                        err instanceof Error ? err.message : "Could not play audio",
+                      variant: "destructive",
+                    });
+                  });
                 }
               }}
               className={cn(
@@ -729,7 +737,17 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
 
   async function handleStartListen() {
     if (playlistItems.length === 0) return;
-    await speech.playPlaylist(playlistItems);
+    try {
+      await speech.playPlaylist(playlistItems);
+    } catch (err) {
+      toast({
+        title: "Listen failed",
+        description:
+          err instanceof Error ? err.message : "Could not start playlist",
+        variant: "destructive",
+      });
+      return;
+    }
     // playPlaylist mutates the singleton synchronously before awaiting, so
     // the latest playlistId is already available on the next render. We
     // capture it here from the singleton state via a follow-up read.

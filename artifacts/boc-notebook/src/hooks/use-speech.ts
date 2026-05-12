@@ -169,12 +169,12 @@ async function playOne(
   let url: string;
   try {
     url = await fetchAudioUrl(voice, cleaned);
-  } catch {
+  } catch (err) {
     if (gen === utteranceToken) {
       loadingId = null;
       notify();
     }
-    return;
+    throw err;
   }
 
   // Superseded by a newer speak/stop/playlist transition while the fetch was
@@ -225,12 +225,13 @@ async function playOne(
     loadingId = null;
     activeId = id;
     notify();
-  } catch {
+  } catch (err) {
     if (gen === utteranceToken) {
       loadingId = null;
       activeId = null;
       notify();
     }
+    throw err;
   }
 }
 
@@ -255,7 +256,15 @@ async function startPlaylistAt(token: number, index: number): Promise<void> {
   await playOne(item.id, item.text, voice, () => {
     // Auto-advance only if we're still the active playlist and not paused.
     if (token !== playlistToken || !playlist || playlist.paused) return;
-    void startPlaylistAt(token, index + 1);
+    // Errors here can't be surfaced to a UI handler (we're past the original
+    // user-initiated promise). Tear down the playlist so the UI shows a clean
+    // stopped state instead of a stuck spinner.
+    startPlaylistAt(token, index + 1).catch(() => {
+      if (token === playlistToken) {
+        clearPlaylistInternal();
+        stopInternal();
+      }
+    });
   });
 }
 

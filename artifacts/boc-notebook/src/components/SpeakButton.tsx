@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Volume2, Square, Loader2 } from "lucide-react";
 import { useSpeech } from "@/hooks/use-speech";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 interface SpeakButtonProps {
@@ -26,6 +27,7 @@ export function SpeakButton({
   testId,
 }: SpeakButtonProps) {
   const { supported, speak, stop, isSpeaking, isLoading } = useSpeech();
+  const { toast } = useToast();
   const active = isSpeaking(id);
   const loading = isLoading(id);
 
@@ -41,7 +43,14 @@ export function SpeakButton({
         e.stopPropagation();
         e.preventDefault();
         if (active || loading) stop();
-        else void speak(id, text);
+        else
+          speak(id, text).catch((err) => {
+            toast({
+              title: "Read-aloud failed",
+              description: err instanceof Error ? err.message : "Could not play audio",
+              variant: "destructive",
+            });
+          });
       }}
       className={cn(
         size === "icon" && "h-7 w-7",

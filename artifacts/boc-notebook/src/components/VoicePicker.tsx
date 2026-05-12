@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Mic2, Play } from "lucide-react";
+import { Mic2, Play, Loader2 } from "lucide-react";
 import { useSpeech, type TtsVoice } from "@/hooks/use-speech";
+import { useToast } from "@/hooks/use-toast";
 
 const VOICES: { id: TtsVoice; label: string; description: string }[] = [
   { id: "nova", label: "Nova", description: "Warm, energetic female" },
@@ -16,7 +17,8 @@ const PREVIEW_TEXT =
   "Hi! This is a quick preview of how I sound when reading your study notes.";
 
 export function VoicePicker() {
-  const { voice, setVoice, speak } = useSpeech();
+  const { voice, setVoice, speak, isSpeaking, isLoading } = useSpeech();
+  const { toast } = useToast();
   const current = VOICES.find((v) => v.id === voice) ?? VOICES[0];
 
   return (
@@ -65,11 +67,25 @@ export function VoicePicker() {
                   title={`Preview ${v.label}`}
                   onClick={() => {
                     setVoice(v.id);
-                    void speak(`voice-preview-${v.id}`, PREVIEW_TEXT);
+                    const previewId = `voice-preview-${v.id}`;
+                    speak(previewId, PREVIEW_TEXT, v.id).catch((err) => {
+                      const msg =
+                        err instanceof Error ? err.message : "Could not play preview";
+                      toast({
+                        title: "Voice preview failed",
+                        description: msg,
+                        variant: "destructive",
+                      });
+                    });
                   }}
                   data-testid={`voice-preview-${v.id}`}
                 >
-                  <Play className="h-3.5 w-3.5" />
+                  {isLoading(`voice-preview-${v.id}`) ||
+                  isSpeaking(`voice-preview-${v.id}`) ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5" />
+                  )}
                 </Button>
               </div>
             );
