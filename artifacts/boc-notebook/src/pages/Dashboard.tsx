@@ -202,6 +202,113 @@ export default function Dashboard() {
   );
   const dismissTimeout = useDismissStudyGroupTimeout();
   const dismissAllTimeouts = useDismissAllStudyGroupTimeouts();
+  const [resumeAllProgress, setResumeAllProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
+  const onResumeAllTimeouts = async () => {
+    if (timedOutSessions.length === 0 || resumeAllProgress) return;
+    const sessions = timedOutSessions.map((s) => ({ id: s.id, title: s.title }));
+    const total = sessions.length;
+    const failures: { title: string; reason: string }[] = [];
+    setResumeAllProgress({ current: 0, total });
+    for (let i = 0; i < sessions.length; i++) {
+      const s = sessions[i];
+      setResumeAllProgress({ current: i + 1, total });
+      let sawError: string | null = null;
+      try {
+        const res = await fetch(`/api/study-group/sessions/${s.id}/round`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ retry: true }),
+        });
+        if (!res.ok || !res.body) {
+          const errText = await res.text().catch(() => "");
+          failures.push({ title: s.title, reason: errText || res.statusText });
+        } else {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buf = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const parts = buf.split("\n\n");
+            buf = parts.pop() || "";
+            for (const part of parts) {
+              if (!part.startsWith("data: ")) continue;
+              try {
+                const evt = JSON.parse(part.slice(6));
+                if (evt.type === "error" && !sawError) {
+                  sawError = typeof evt.error === "string" ? evt.error : "Stream error";
+                }
+              } catch {
+                /* ignore malformed event */
+              }
+            }
+          }
+          if (sawError) failures.push({ title: s.title, reason: sawError });
+        }
+      } catch (e) {
+        failures.push({
+          title: s.title,
+          reason: e instanceof Error ? e.message : "Network error",
+        });
+      }
+      // Refresh after each so the banner drops successfully-resumed entries
+      // as we go (failed-row reset clears them from `timedOutSessions`).
+      await qc.invalidateQueries({ queryKey: getListStudyGroupSessionsQueryKey() });
+    }
+    setResumeAllProgress(null);
+    const succeeded = total - failures.length;
+    if (failures.length === 0) {
+      toast({
+        title:
+          succeeded === 1 ? "Resumed 1 stuck round" : `Resumed ${succeeded} stuck rounds`,
+        description: "Open Study Group to see the fresh rounds.",
+        action: (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => navigate("/study-group")}
+            data-testid="toast-resume-all-open-study-group"
+          >
+            Open Study Group
+          </Button>
+        ),
+      });
+    } else if (succeeded === 0) {
+      toast({
+        title:
+          total === 1
+            ? "Couldn't resume that round"
+            : `Couldn't resume any of ${total} rounds`,
+        description: failures
+          .slice(0, 2)
+          .map((f) => `${f.title}: ${f.reason}`)
+          .join(" · "),
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: `Resumed ${succeeded} of ${total} rounds`,
+        description: `Still stuck — ${failures
+          .slice(0, 2)
+          .map((f) => `${f.title}: ${f.reason}`)
+          .join(" · ")}${failures.length > 2 ? ` (+${failures.length - 2} more)` : ""}`,
+        action: (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => navigate("/study-group")}
+            data-testid="toast-resume-all-open-study-group"
+          >
+            Open Study Group
+          </Button>
+        ),
+      });
+    }
+  };
   const onDismissAllTimeouts = () => {
     dismissAllTimeouts.mutate(undefined, {
       onSuccess: (result) => {
@@ -549,17 +656,37 @@ export default function Dashboard() {
                     </p>
                   </div>
                   {timedOutSessions.length > 1 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs border-amber-400 text-amber-900 dark:border-amber-500/60 dark:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/40 shrink-0"
-                      onClick={onDismissAllTimeouts}
-                      disabled={dismissAllTimeouts.isPending}
-                      data-testid="button-dashboard-sg-dismiss-all"
-                      title="Acknowledge every stuck round — keep transcripts, hide warnings"
-                    >
-                      {dismissAllTimeouts.isPending ? "Dismissing…" : "Dismiss all"}
-                    </Button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="h-7 text-xs bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-amber-950"
+                        onClick={onResumeAllTimeouts}
+                        disabled={resumeAllProgress != null || dismissAllTimeouts.isPending}
+                        data-testid="button-dashboard-sg-resume-all"
+                        title="Re-run the latest unfinished round of every stuck session"
+                      >
+                        {resumeAllProgress
+                          ? `Resuming ${resumeAllProgress.current}/${resumeAllProgress.total}…`
+                          : (
+                            <>
+                              <Play className="h-3 w-3 mr-1" />
+                              Resume all
+                            </>
+                          )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs border-amber-400 text-amber-900 dark:border-amber-500/60 dark:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                        onClick={onDismissAllTimeouts}
+                        disabled={dismissAllTimeouts.isPending || resumeAllProgress != null}
+                        data-testid="button-dashboard-sg-dismiss-all"
+                        title="Acknowledge every stuck round — keep transcripts, hide warnings"
+                      >
+                        {dismissAllTimeouts.isPending ? "Dismissing…" : "Dismiss all"}
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <div className="mt-2 flex flex-col gap-1.5">
