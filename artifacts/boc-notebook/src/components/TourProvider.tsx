@@ -1,4 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useRef } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 import { useLocation } from "wouter";
 import { driver, type Driver, type DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
@@ -9,14 +16,19 @@ import {
   TOUR_SEEN_KEY,
   type BocStep,
   type PageKey,
+  clearCompletedTours,
+  getTourProgress,
+  markTourCompleted,
+  type TourProgress,
 } from "@/lib/tour";
 
-type Scope = "page" | "all";
+type Scope = "page" | "all" | "remaining";
 
 interface TourCtx {
   startTour: (scope: Scope) => void;
   replayWelcomeTour: () => void;
   isRunning: boolean;
+  progress: TourProgress;
 }
 
 const Ctx = createContext<TourCtx | null>(null);
@@ -145,9 +157,14 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           /* ignore */
         }
       }
+      const totalSteps = resolved.length;
+      let lastShownIndex = -1;
       const d = driver({
         ...driverBase,
         steps: resolved,
+        onHighlightStarted: (_el, _step, opts) => {
+          lastShownIndex = opts.state.activeIndex ?? lastShownIndex;
+        },
         onCloseClick: (_el, _step, opts) => {
           abortedRef.current = true;
           try {
@@ -158,6 +175,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         },
         onDestroyed: () => {
           driverRef.current = null;
+          // Treat the page tour as completed if the user reached the final
+          // step (Done). Closing/Esc partway through does NOT mark it done.
+          const reachedEnd =
+            !abortedRef.current && lastShownIndex >= totalSteps - 1;
+          if (reachedEnd) {
+            markTourCompleted(key);
+          }
           try {
             def.cleanup?.();
           } catch {
@@ -249,7 +273,20 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         window.setTimeout(() => void runStepsForPage(key), 60);
         return;
       }
-      queueRef.current = [...ALL_TOUR_QUEUE];
+      if (scope === "remaining") {
+        const { remaining } = getTourProgress();
+        if (remaining.length === 0) {
+          // Already done — replay everything.
+          queueRef.current = [...ALL_TOUR_QUEUE];
+        } else {
+          // Walk only the pages the user hasn't finished, in canonical order.
+          queueRef.current = [...remaining].sort(
+            (a, b) => ALL_TOUR_QUEUE.indexOf(a) - ALL_TOUR_QUEUE.indexOf(b),
+          );
+        }
+      } else {
+        queueRef.current = [...ALL_TOUR_QUEUE];
+      }
       const first = queueRef.current.shift()!;
       void startPage(first);
     },
@@ -262,6 +299,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* ignore */
     }
+    clearCompletedTours();
     startTour("all");
   }, [startTour]);
 
@@ -314,11 +352,50 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [stop]);
 
+  const progress = useSyncExternalStore(
+    subscribeToProgress,
+    getCachedProgress,
+    getInitialProgress,
+  );
+
   return (
-    <Ctx.Provider value={{ startTour, replayWelcomeTour, isRunning: runningRef.current }}>
+    <Ctx.Provider
+      value={{ startTour, replayWelcomeTour, isRunning: runningRef.current, progress }}
+    >
       {children}
     </Ctx.Provider>
   );
+}
+
+let cachedProgress: TourProgress | null = null;
+
+function getCachedProgress(): TourProgress {
+  if (!cachedProgress) cachedProgress = getTourProgress();
+  return cachedProgress;
+}
+
+function subscribeToProgress(cb: () => void): () => void {
+  const handler = () => {
+    cachedProgress = getTourProgress();
+    cb();
+  };
+  window.addEventListener("boc:tour:progress", handler);
+  window.addEventListener("storage", handler);
+  return () => {
+    window.removeEventListener("boc:tour:progress", handler);
+    window.removeEventListener("storage", handler);
+  };
+}
+
+const INITIAL_PROGRESS: TourProgress = {
+  completed: [],
+  remaining: [],
+  total: 0,
+  done: false,
+};
+
+function getInitialProgress(): TourProgress {
+  return INITIAL_PROGRESS;
 }
 
 function getCurrentRoutePath(): string {

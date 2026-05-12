@@ -689,3 +689,69 @@ export function pageForLocation(location: string): PageKey | null {
 }
 
 export const TOUR_SEEN_KEY = "boc:tour:seen:v1";
+export const TOUR_COMPLETED_KEY = "boc:tour:completed:v1";
+
+/** Pages whose completion counts toward "all tours done". The runner pages
+ *  (quizRun/mockRun) are excluded because they intentionally skip when no
+ *  attempt is in progress and would otherwise be impossible to "complete". */
+export const TRACKABLE_PAGES: PageKey[] = ALL_TOUR_QUEUE.filter(
+  (k) => k !== "quizRun" && k !== "mockRun",
+);
+
+export function getCompletedTours(): Set<PageKey> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(TOUR_COMPLETED_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return new Set();
+    return new Set(arr.filter((v): v is PageKey => typeof v === "string" && v in PAGES));
+  } catch {
+    return new Set();
+  }
+}
+
+export function markTourCompleted(key: PageKey): void {
+  if (typeof window === "undefined") return;
+  const done = getCompletedTours();
+  if (done.has(key)) return;
+  done.add(key);
+  try {
+    window.localStorage.setItem(
+      TOUR_COMPLETED_KEY,
+      JSON.stringify(Array.from(done)),
+    );
+    window.dispatchEvent(new Event("boc:tour:progress"));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearCompletedTours(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(TOUR_COMPLETED_KEY);
+    window.dispatchEvent(new Event("boc:tour:progress"));
+  } catch {
+    /* ignore */
+  }
+}
+
+export interface TourProgress {
+  completed: PageKey[];
+  remaining: PageKey[];
+  total: number;
+  done: boolean;
+}
+
+export function getTourProgress(): TourProgress {
+  const done = getCompletedTours();
+  const completed = TRACKABLE_PAGES.filter((k) => done.has(k));
+  const remaining = TRACKABLE_PAGES.filter((k) => !done.has(k));
+  return {
+    completed,
+    remaining,
+    total: TRACKABLE_PAGES.length,
+    done: remaining.length === 0,
+  };
+}
