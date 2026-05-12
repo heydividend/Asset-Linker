@@ -353,6 +353,48 @@ async function runPlannedTurn(
   });
   let full = "";
   let streamFailed = false;
+  // Throttle DB writes for partial text so a reconnecting client can see the
+  // in-progress turn via the GET endpoint without thrashing the database.
+  // Partial writes are gated on status='streaming' so a late-arriving partial
+  // can NEVER overwrite the final 'done'/'failed' row written below. We also
+  // track the in-flight write so the terminal write awaits it before running.
+  let lastPersistAt = 0;
+  let lastPersistedLen = 0;
+  let inFlightPersist: Promise<void> = Promise.resolve();
+  const PARTIAL_PERSIST_INTERVAL_MS = 400;
+  const schedulePartialPersist = () => {
+    if (abortSignal.aborted) return;
+    const now = Date.now();
+    if (
+      now - lastPersistAt < PARTIAL_PERSIST_INTERVAL_MS ||
+      full.length === lastPersistedLen
+    ) {
+      return;
+    }
+    lastPersistAt = now;
+    lastPersistedLen = full.length;
+    const snapshot = full;
+    inFlightPersist = inFlightPersist
+      .catch(() => {})
+      .then(async () => {
+        try {
+          // Conditional update: only patch while still streaming. Once the
+          // terminal write below sets status to 'done' or 'failed', this
+          // becomes a no-op and cannot clobber the final content.
+          await db
+            .update(studyGroupMessages)
+            .set({ content: snapshot })
+            .where(
+              and(
+                eq(studyGroupMessages.id, row.id),
+                eq(studyGroupMessages.status, "streaming"),
+              ),
+            );
+        } catch {
+          // Best-effort checkpoint; don't crash the stream on a transient DB hiccup.
+        }
+      });
+  };
   try {
     const stream$ = anthropic.messages.stream({
       model: "claude-haiku-4-5",
@@ -371,12 +413,21 @@ async function runPlannedTurn(
         if (delta) {
           full += delta;
           stream.push({ type: "message_delta", speaker: row.speaker, content: delta });
+          // Fire-and-forget; the helper internally throttles to ~400ms and
+          // serializes via inFlightPersist so the terminal write below can
+          // safely await it.
+          schedulePartialPersist();
         }
       }
     }
   } catch {
     streamFailed = true;
   }
+  // Drain any in-flight throttled partial write before the terminal write so
+  // a late partial cannot land after we set status='done'/'failed'. The
+  // status-gated WHERE on partial writes is the primary safety net; this
+  // await eliminates the ordering ambiguity entirely.
+  await inFlightPersist.catch(() => {});
   if (abortSignal.aborted) {
     // Superseded by a newer handler — leave as 'failed' so resume picks it up.
     await db

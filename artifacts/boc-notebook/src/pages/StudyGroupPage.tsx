@@ -319,17 +319,23 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
   const merged = useMemo(() => {
     // Hide planned-turn placeholders that haven't been spoken yet (status
     // pending/streaming with no content) — those are filled in by the live
-    // SSE stream's pending messages.
+    // SSE stream's pending messages. Streaming rows WITH content are kept so
+    // a reload mid-turn shows the checkpointed partial text immediately.
     const persisted = ((detail?.messages ?? []) as TempMessage[]).filter((m) => {
       const status = (m as { status?: string }).status;
       if (!status || status === "done" || status === "failed") return true;
       return Boolean(m.content);
     });
+    // When the live stream and the persisted row refer to the same DB row
+    // (matched by id), prefer the live pending version — its content is
+    // strictly fresher than the throttled DB checkpoint.
+    const pendingById = new Map(pendingMessages.map((m) => [m.id, m]));
+    const result: TempMessage[] = persisted.map((m) => pendingById.get(m.id) ?? m);
     const persistedIds = new Set(persisted.map((m) => m.id));
-    return [
-      ...persisted,
-      ...pendingMessages.filter((m) => !persistedIds.has(m.id)),
-    ];
+    for (const p of pendingMessages) {
+      if (!persistedIds.has(p.id)) result.push(p);
+    }
+    return result;
   }, [detail, pendingMessages]);
 
   // Detect resume/retry state from the persisted transcript.
@@ -420,9 +426,13 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
             continue;
           }
           if (evt.type === "message_start") {
-            pendingId -= 1;
+            // Prefer the server-provided messageId so the merged transcript
+            // can dedupe this pending row against the persisted (throttled)
+            // partial of the same DB row on a mid-stream reload.
+            const id =
+              typeof evt.messageId === "number" ? evt.messageId : --pendingId;
             current = {
-              id: pendingId,
+              id,
               sessionId: session.id,
               speaker: evt.speaker,
               kind: evt.kind,
