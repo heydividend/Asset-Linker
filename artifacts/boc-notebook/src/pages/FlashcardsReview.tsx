@@ -3,6 +3,7 @@ import {
   useListDueFlashcards,
   useListAllFlashcards,
   useReviewFlashcard,
+  useGradeFlashcardAnswer,
   useStartQuiz,
   useListNotebooks,
   useGenerateFlashcards,
@@ -12,6 +13,7 @@ import {
   getListQuizAttemptsQueryKey,
   getGetNotebookQueryKey,
 } from "@workspace/api-client-react";
+import type { FlashcardGradeResult } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { AskAiButton } from "@/components/AskAiButton";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, CheckCheck, Target, X, Play, Wand2, Loader2 } from "lucide-react";
+import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, CheckCheck, Target, X, Play, Wand2, Loader2, Pencil, Send, ThumbsUp, ThumbsDown, MinusCircle } from "lucide-react";
 import { Link, useSearch, useLocation } from "wouter";
 import { rememberFixItQuizId } from "@/lib/fixItPlan";
 
@@ -36,6 +38,7 @@ const TOUR_SAMPLE_CARD = {
 
 export default function FlashcardsReview() {
   const review = useReviewFlashcard();
+  const grade = useGradeFlashcardAnswer();
   const startQuiz = useStartQuiz();
   const generate = useGenerateFlashcards();
   const { data: notebooks = [] } = useListNotebooks();
@@ -50,6 +53,12 @@ export default function FlashcardsReview() {
   const [genOpen, setGenOpen] = useState(false);
   const [genForm, setGenForm] = useState({ notebookId: "", count: "10", focus: "" });
   const [tourPreview, setTourPreview] = useState<{ active: boolean; revealed: boolean } | null>(null);
+  // "Type your answer" flow: when answering=true we show a textarea + Submit
+  // button instead of (or before) the Reveal button. After submit, the AI
+  // grader returns a verdict + feedback that we display alongside the back.
+  const [answering, setAnswering] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState("");
+  const [gradeResult, setGradeResult] = useState<FlashcardGradeResult | null>(null);
 
   useEffect(() => {
     const onPreview = (e: Event) => {
@@ -200,6 +209,15 @@ export default function FlashcardsReview() {
 
   const liveCard = cards[0];
   const card = tourPreview?.active ? TOUR_SAMPLE_CARD : liveCard;
+
+  // Reset typed-answer state whenever the active card changes so the previous
+  // card's textarea/feedback don't leak into the next card.
+  useEffect(() => {
+    setAnswering(false);
+    setTypedAnswer("");
+    setGradeResult(null);
+  }, [card?.id]);
+
   const effectiveRevealed = tourPreview?.active ? tourPreview.revealed : revealed;
   const handleReveal = () => {
     if (tourPreview?.active) {
@@ -250,12 +268,55 @@ export default function FlashcardsReview() {
       {
         onSuccess: () => {
           setRevealed(false);
+          setAnswering(false);
+          setTypedAnswer("");
+          setGradeResult(null);
           setReviewedCount((c) => c + 1);
           qc.invalidateQueries({ queryKey: getListDueFlashcardsQueryKey() });
           qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
         },
       },
     );
+  };
+
+  const submitTypedAnswer = () => {
+    if (!card || !typedAnswer.trim()) return;
+    if (tourPreview?.active) {
+      // Tour mode: don't actually call AI — just simulate a "correct" verdict
+      // so the user can see the flow during the guided walkthrough.
+      setGradeResult({
+        verdict: "correct",
+        score: 92,
+        feedback:
+          "Nice work — your answer captured the key idea. **Grade 5 (Normal)** is the gold standard for full ROM against gravity with **maximal resistance**.",
+        suggestedQuality: 4,
+        back: card.back,
+      });
+      setTourPreview({ active: true, revealed: true });
+      return;
+    }
+    grade.mutate(
+      { id: card.id, data: { answer: typedAnswer.trim() } },
+      {
+        onSuccess: (result) => {
+          setGradeResult(result);
+          setRevealed(true);
+        },
+        onError: (e) => {
+          toast({
+            title: "Couldn't grade your answer",
+            description: e instanceof Error ? e.message : "Try again or just reveal the card.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  const cancelAnswering = () => {
+    setAnswering(false);
+    setTypedAnswer("");
+    setGradeResult(null);
   };
 
   if (mode === "browse") {
@@ -443,30 +504,140 @@ export default function FlashcardsReview() {
                 variant="ghost"
               />
             </div>
-            <div className="flex-1 flex items-center justify-center text-center">
-              {effectiveRevealed ? (
-                <div className="w-full text-left" data-testid="flashcard-content">
-                  <MarkdownMessage content={card.back} className="prose-base" />
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
+              {/* Always show the question at the top of the card */}
+              <p
+                className={`leading-relaxed ${effectiveRevealed ? "text-base font-medium text-muted-foreground" : "text-2xl font-medium"}`}
+                data-testid="flashcard-content"
+              >
+                {card.front}
+              </p>
+
+              {/* Typed-answer panel (before grading) */}
+              {answering && !gradeResult && (
+                <div className="w-full text-left space-y-2">
+                  <Label htmlFor="typed-answer" className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Your answer
+                  </Label>
+                  <Textarea
+                    id="typed-answer"
+                    autoFocus
+                    rows={4}
+                    placeholder="Type what you remember — full sentences, key terms, or bullet points all work."
+                    value={typedAnswer}
+                    onChange={(e) => setTypedAnswer(e.target.value)}
+                    onKeyDown={(e) => {
+                      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                        e.preventDefault();
+                        submitTypedAnswer();
+                      }
+                    }}
+                    data-testid="textarea-typed-answer"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Press <kbd className="rounded border bg-muted px-1">⌘</kbd> /{" "}
+                    <kbd className="rounded border bg-muted px-1">Ctrl</kbd> +{" "}
+                    <kbd className="rounded border bg-muted px-1">Enter</kbd> to submit.
+                  </p>
                 </div>
-              ) : (
-                <p className="text-2xl font-medium leading-relaxed" data-testid="flashcard-content">
-                  {card.front}
-                </p>
+              )}
+
+              {/* AI grading result + official answer */}
+              {effectiveRevealed && (
+                <div className="w-full text-left space-y-3">
+                  {gradeResult && (
+                    <GradeResultPanel result={gradeResult} typedAnswer={typedAnswer} />
+                  )}
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                      Official answer
+                    </p>
+                    <MarkdownMessage content={card.back} className="prose-base" />
+                  </div>
+                </div>
               )}
             </div>
             <div className="mt-6">
-              {!effectiveRevealed ? (
-                <Button className="w-full" size="lg" onClick={handleReveal} data-testid="button-reveal">
-                  <Eye className="h-4 w-4 mr-2" /> Reveal answer
-                </Button>
+              {!effectiveRevealed && !answering ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setAnswering(true)}
+                    data-testid="button-answer"
+                  >
+                    <Pencil className="h-4 w-4 mr-2" /> Type my answer
+                  </Button>
+                  <Button size="lg" onClick={handleReveal} data-testid="button-reveal">
+                    <Eye className="h-4 w-4 mr-2" /> Just reveal
+                  </Button>
+                </div>
+              ) : answering && !gradeResult ? (
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={cancelAnswering}
+                    disabled={grade.isPending}
+                    data-testid="button-cancel-answer"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      // Skip grading entirely — bail out of typing mode and
+                      // jump straight to the official answer + SM-2 ratings.
+                      setAnswering(false);
+                      setTypedAnswer("");
+                      setGradeResult(null);
+                      handleReveal();
+                    }}
+                    disabled={grade.isPending}
+                    data-testid="button-skip-to-reveal"
+                  >
+                    <Eye className="h-4 w-4 mr-1" /> Show answer
+                  </Button>
+                  <Button
+                    onClick={submitTypedAnswer}
+                    disabled={grade.isPending || !typedAnswer.trim()}
+                    data-testid="button-submit-answer"
+                  >
+                    {grade.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4 mr-1" />
+                    )}
+                    Submit
+                  </Button>
+                </div>
               ) : (
                 <div className="grid grid-cols-4 gap-2">
-                  <Button variant="destructive" onClick={() => handleRate(1)} data-testid="button-rate-again">
+                  <Button
+                    variant={gradeResult?.suggestedQuality === 1 ? "destructive" : "outline"}
+                    onClick={() => handleRate(1)}
+                    data-testid="button-rate-again"
+                  >
                     <RotateCcw className="h-4 w-4 mr-1" /> Again
                   </Button>
-                  <Button variant="outline" onClick={() => handleRate(3)} data-testid="button-rate-hard">Hard</Button>
-                  <Button variant="secondary" onClick={() => handleRate(4)} data-testid="button-rate-good">Good</Button>
-                  <Button onClick={() => handleRate(5)} data-testid="button-rate-easy">
+                  <Button
+                    variant={gradeResult?.suggestedQuality === 3 ? "default" : "outline"}
+                    onClick={() => handleRate(3)}
+                    data-testid="button-rate-hard"
+                  >
+                    Hard
+                  </Button>
+                  <Button
+                    variant={gradeResult?.suggestedQuality === 4 ? "default" : "secondary"}
+                    onClick={() => handleRate(4)}
+                    data-testid="button-rate-good"
+                  >
+                    Good
+                  </Button>
+                  <Button
+                    variant={gradeResult?.suggestedQuality === 5 ? "default" : "outline"}
+                    onClick={() => handleRate(5)}
+                    data-testid="button-rate-easy"
+                  >
                     <Sparkles className="h-4 w-4 mr-1" /> Easy
                   </Button>
                 </div>
@@ -476,6 +647,63 @@ export default function FlashcardsReview() {
         </Card>
       </div>
       {generateDialog}
+    </div>
+  );
+}
+
+function GradeResultPanel({
+  result,
+  typedAnswer,
+}: {
+  result: FlashcardGradeResult;
+  typedAnswer: string;
+}) {
+  const tone =
+    result.verdict === "correct"
+      ? {
+          wrap: "border-emerald-500/40 bg-emerald-500/5",
+          label: "text-emerald-700",
+          Icon: ThumbsUp,
+          title: "Correct",
+        }
+      : result.verdict === "partial"
+      ? {
+          wrap: "border-amber-500/40 bg-amber-500/5",
+          label: "text-amber-700",
+          Icon: MinusCircle,
+          title: "Partially correct",
+        }
+      : {
+          wrap: "border-rose-500/40 bg-rose-500/5",
+          label: "text-rose-700",
+          Icon: ThumbsDown,
+          title: "Not quite",
+        };
+  const { Icon } = tone;
+  return (
+    <div className={`rounded-lg border p-3 ${tone.wrap}`} data-testid={`grade-${result.verdict}`}>
+      <div className={`flex items-center justify-between gap-2 mb-2 ${tone.label}`}>
+        <div className="flex items-center gap-1.5 font-semibold text-sm">
+          <Icon className="h-4 w-4" /> {tone.title}
+        </div>
+        <Badge variant="outline" className={`${tone.label} border-current`} data-testid="grade-score">
+          {result.score}/100
+        </Badge>
+      </div>
+      {typedAnswer && (
+        <div className="mb-2">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+            Your answer
+          </p>
+          <p className="text-sm whitespace-pre-wrap text-foreground/90">{typedAnswer}</p>
+        </div>
+      )}
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+          Tutor feedback
+        </p>
+        <MarkdownMessage content={result.feedback} className="prose-sm" />
+      </div>
     </div>
   );
 }

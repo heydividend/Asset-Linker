@@ -292,6 +292,40 @@ export const DeleteFlashcardParams = zod.object({
 });
 
 /**
+ * @summary Grade a typed free-text answer against the card's back using the AI tutor
+ */
+export const GradeFlashcardAnswerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GradeFlashcardAnswerBody = zod.object({
+  answer: zod.string().describe("Free-text answer typed by the student"),
+});
+
+export const gradeFlashcardAnswerResponseScoreMin = 0;
+export const gradeFlashcardAnswerResponseScoreMax = 100;
+
+export const GradeFlashcardAnswerResponse = zod.object({
+  verdict: zod.enum(["correct", "partial", "wrong"]),
+  score: zod
+    .number()
+    .min(gradeFlashcardAnswerResponseScoreMin)
+    .max(gradeFlashcardAnswerResponseScoreMax)
+    .describe("How close the typed answer is to the official back, 0-100."),
+  feedback: zod
+    .string()
+    .describe("Markdown tutor feedback explaining what was right\/wrong."),
+  suggestedQuality: zod
+    .union([zod.literal(1), zod.literal(3), zod.literal(4), zod.literal(5)])
+    .describe(
+      "Suggested SM-2 rating to pre-select (1=Again, 3=Hard, 4=Good, 5=Easy).",
+    ),
+  back: zod
+    .string()
+    .describe("Official answer (back of the card), echoed for convenience."),
+});
+
+/**
  * @summary Submit a spaced-repetition rating (0-5) and get next due
  */
 export const ReviewFlashcardParams = zod.object({

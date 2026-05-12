@@ -24,6 +24,8 @@ import type {
   FixItStreak,
   Flashcard,
   FlashcardGenInput,
+  FlashcardGradeInput,
+  FlashcardGradeResult,
   FlashcardInput,
   FlashcardReviewInput,
   FlashcardUpdate,
@@ -1511,6 +1513,93 @@ export const useDeleteFlashcard = <
   TContext
 > => {
   return useMutation(getDeleteFlashcardMutationOptions(options));
+};
+
+/**
+ * @summary Grade a typed free-text answer against the card's back using the AI tutor
+ */
+export const getGradeFlashcardAnswerUrl = (id: number) => {
+  return `/api/flashcards/${id}/grade`;
+};
+
+export const gradeFlashcardAnswer = async (
+  id: number,
+  flashcardGradeInput: FlashcardGradeInput,
+  options?: RequestInit,
+): Promise<FlashcardGradeResult> => {
+  return customFetch<FlashcardGradeResult>(getGradeFlashcardAnswerUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(flashcardGradeInput),
+  });
+};
+
+export const getGradeFlashcardAnswerMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof gradeFlashcardAnswer>>,
+    TError,
+    { id: number; data: BodyType<FlashcardGradeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof gradeFlashcardAnswer>>,
+  TError,
+  { id: number; data: BodyType<FlashcardGradeInput> },
+  TContext
+> => {
+  const mutationKey = ["gradeFlashcardAnswer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof gradeFlashcardAnswer>>,
+    { id: number; data: BodyType<FlashcardGradeInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return gradeFlashcardAnswer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GradeFlashcardAnswerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof gradeFlashcardAnswer>>
+>;
+export type GradeFlashcardAnswerMutationBody = BodyType<FlashcardGradeInput>;
+export type GradeFlashcardAnswerMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Grade a typed free-text answer against the card's back using the AI tutor
+ */
+export const useGradeFlashcardAnswer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof gradeFlashcardAnswer>>,
+    TError,
+    { id: number; data: BodyType<FlashcardGradeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof gradeFlashcardAnswer>>,
+  TError,
+  { id: number; data: BodyType<FlashcardGradeInput> },
+  TContext
+> => {
+  return useMutation(getGradeFlashcardAnswerMutationOptions(options));
 };
 
 /**

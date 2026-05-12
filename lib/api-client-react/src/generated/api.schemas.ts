@@ -202,6 +202,49 @@ export interface FlashcardGenInput {
   topicId?: number;
 }
 
+export interface FlashcardGradeInput {
+  /** Free-text answer typed by the student */
+  answer: string;
+}
+
+export type FlashcardGradeResultVerdict =
+  (typeof FlashcardGradeResultVerdict)[keyof typeof FlashcardGradeResultVerdict];
+
+export const FlashcardGradeResultVerdict = {
+  correct: "correct",
+  partial: "partial",
+  wrong: "wrong",
+} as const;
+
+/**
+ * Suggested SM-2 rating to pre-select (1=Again, 3=Hard, 4=Good, 5=Easy).
+ */
+export type FlashcardGradeResultSuggestedQuality =
+  (typeof FlashcardGradeResultSuggestedQuality)[keyof typeof FlashcardGradeResultSuggestedQuality];
+
+export const FlashcardGradeResultSuggestedQuality = {
+  NUMBER_1: 1,
+  NUMBER_3: 3,
+  NUMBER_4: 4,
+  NUMBER_5: 5,
+} as const;
+
+export interface FlashcardGradeResult {
+  verdict: FlashcardGradeResultVerdict;
+  /**
+   * How close the typed answer is to the official back, 0-100.
+   * @minimum 0
+   * @maximum 100
+   */
+  score: number;
+  /** Markdown tutor feedback explaining what was right/wrong. */
+  feedback: string;
+  /** Suggested SM-2 rating to pre-select (1=Again, 3=Hard, 4=Good, 5=Easy). */
+  suggestedQuality: FlashcardGradeResultSuggestedQuality;
+  /** Official answer (back of the card), echoed for convenience. */
+  back: string;
+}
+
 export interface FlashcardReviewInput {
   /**
    * SM-2 quality rating

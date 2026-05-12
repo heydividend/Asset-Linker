@@ -191,6 +191,76 @@ router.post("/flashcards/:id/review", async (req, res): Promise<void> => {
   res.json(updated);
 });
 
+router.post("/flashcards/:id/grade", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const answer = String(req.body?.answer ?? "").trim();
+  if (!answer) {
+    res.status(400).json({ error: "answer required" });
+    return;
+  }
+  const [card] = await db.select().from(flashcards).where(eq(flashcards.id, id));
+  if (!card) {
+    res.status(404).json({ error: "Flashcard not found" });
+    return;
+  }
+
+  // Ask the AI tutor to grade the typed answer against the official back of
+  // the card. Score 0-100, verdict bucket, short tutor-style feedback, and a
+  // suggested SM-2 quality so the UI can pre-select Again/Hard/Good/Easy.
+  let graded: {
+    verdict?: string;
+    score?: number;
+    feedback?: string;
+    suggestedQuality?: number;
+  };
+  try {
+    graded = await chatJson<typeof graded>(
+      `Grade the student's typed answer to a BOC Athletic Training flashcard.
+Compare meaning, not exact wording. A correct answer captures the key clinical concept(s) even if phrased differently.
+
+QUESTION (front): ${card.front}
+OFFICIAL ANSWER (back): ${card.back}
+STUDENT ANSWER: ${answer}
+
+Return JSON:
+{
+  "verdict": "correct" | "partial" | "wrong",
+  "score": integer 0-100,
+  "feedback": "1-3 sentences of supportive tutor feedback. Call out what they got right, what they missed, and the single most important fact to remember. Use markdown bold for key terms.",
+  "suggestedQuality": integer 1-5 (1=Again, 3=Hard, 4=Good, 5=Easy)
+}`,
+    );
+  } catch (err) {
+    req.log.error({ err }, "flashcard grading failed");
+    res.status(502).json({ error: "AI grading failed" });
+    return;
+  }
+
+  const verdict = ["correct", "partial", "wrong"].includes(String(graded.verdict))
+    ? (graded.verdict as "correct" | "partial" | "wrong")
+    : "partial";
+  const score = Math.max(0, Math.min(100, Math.round(Number(graded.score) || 0)));
+  const sq = Number(graded.suggestedQuality);
+  const suggestedQuality = [1, 3, 4, 5].includes(sq)
+    ? sq
+    : verdict === "correct"
+    ? 4
+    : verdict === "partial"
+    ? 3
+    : 1;
+  res.json({
+    verdict,
+    score,
+    feedback: String(graded.feedback ?? ""),
+    suggestedQuality,
+    back: card.back,
+  });
+});
+
 router.get("/flashcards", async (_req, res): Promise<void> => {
   const rows = await db
     .select()

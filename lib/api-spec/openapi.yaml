@@ -274,6 +274,24 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "204": { description: Deleted }
+  /flashcards/{id}/grade:
+    post:
+      operationId: gradeFlashcardAnswer
+      tags: [flashcards]
+      summary: Grade a typed free-text answer against the card's back using the AI tutor
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FlashcardGradeInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FlashcardGradeResult" }
   /flashcards/{id}/review:
     post:
       operationId: reviewFlashcard
@@ -1174,6 +1192,29 @@ components:
         topicId:
           type: integer
           description: "If set, all generated cards are locked to this topic. Otherwise each card is auto-tagged by the model from the available topics."
+    FlashcardGradeInput:
+      type: object
+      required: [answer]
+      properties:
+        answer: { type: string, description: "Free-text answer typed by the student" }
+    FlashcardGradeResult:
+      type: object
+      required: [verdict, score, feedback, suggestedQuality, back]
+      properties:
+        verdict:
+          type: string
+          enum: [correct, partial, wrong]
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: "How close the typed answer is to the official back, 0-100."
+        feedback: { type: string, description: "Markdown tutor feedback explaining what was right/wrong." }
+        suggestedQuality:
+          type: integer
+          enum: [1, 3, 4, 5]
+          description: "Suggested SM-2 rating to pre-select (1=Again, 3=Hard, 4=Good, 5=Easy)."
+        back: { type: string, description: "Official answer (back of the card), echoed for convenience." }
     FlashcardReviewInput:
       type: object
       required: [quality]
