@@ -610,7 +610,8 @@ function buildPlannedPrompt(
 
 // ---------- Routes ----------
 
-router.get("/study-group/sessions", async (_req, res): Promise<void> => {
+router.get("/study-group/sessions", async (req, res): Promise<void> => {
+  const includeDismissed = req.query.includeDismissed === "true";
   const rows = await db
     .select()
     .from(studyGroupSessions)
@@ -621,6 +622,14 @@ router.get("/study-group/sessions", async (_req, res): Promise<void> => {
   // sessions to the top.
   const ids = rows.map((r) => r.id);
   const timedOutByPid = new Map<
+    number,
+    { roundIndex: number; updatedAt: Date }
+  >();
+  // Tracks the most recent dismissed timeout per session — only populated when
+  // the caller asked for `?includeDismissed=true`, so the "Show dismissed
+  // warnings" sidebar toggle can offer a per-row Restore action without
+  // changing the default response shape.
+  const dismissedByPid = new Map<
     number,
     { roundIndex: number; updatedAt: Date }
   >();
@@ -658,13 +667,49 @@ router.get("/study-group/sessions", async (_req, res): Promise<void> => {
         });
       }
     }
+    if (includeDismissed) {
+      const dismissed = await db
+        .select({
+          sessionId: studyGroupMessages.sessionId,
+          roundIndex: studyGroupMessages.roundIndex,
+          dismissedAt: studyGroupMessages.dismissedAt,
+        })
+        .from(studyGroupMessages)
+        .where(
+          and(
+            inArray(studyGroupMessages.sessionId, ids),
+            eq(studyGroupMessages.status, "failed"),
+            eq(studyGroupMessages.reason, "sweeper_timeout"),
+            isNotNull(studyGroupMessages.dismissedAt),
+          ),
+        );
+      for (const s of dismissed) {
+        if (!s.dismissedAt) continue;
+        const cur = dismissedByPid.get(s.sessionId);
+        if (!cur) {
+          dismissedByPid.set(s.sessionId, {
+            roundIndex: s.roundIndex,
+            updatedAt: s.dismissedAt,
+          });
+        } else {
+          dismissedByPid.set(s.sessionId, {
+            roundIndex: Math.min(cur.roundIndex, s.roundIndex),
+            updatedAt:
+              s.dismissedAt > cur.updatedAt ? s.dismissedAt : cur.updatedAt,
+          });
+        }
+      }
+    }
   }
   const enriched = rows.map((r) => {
     const stuck = timedOutByPid.get(r.id);
+    const dismissed = dismissedByPid.get(r.id);
     return {
       ...r,
       timedOutAt: stuck ? stuck.updatedAt.toISOString() : null,
       timedOutRound: stuck ? stuck.roundIndex : null,
+      dismissedTimeoutAt: dismissed ? dismissed.updatedAt.toISOString() : null,
+      dismissedTimeoutRound: dismissed ? dismissed.roundIndex : null,
     };
   });
   // Stuck sessions float to the top; otherwise preserve createdAt-desc order.
@@ -789,6 +834,42 @@ router.post("/study-group/sessions/dismiss-all-timeouts", async (_req, res): Pro
   const sessionsCleared = new Set(updated.map((r) => r.sessionId)).size;
   res.json({ dismissed: updated.length, sessionsCleared });
 });
+
+// Undo a previous Dismiss: clear `dismissedAt` on every still-failed
+// sweeper-timeout row in the session so the dashboard banner and sidebar
+// warning come back. Transcript and per-turn `status` are intentionally left
+// alone — only the user's acknowledgement is reversed.
+router.post(
+  "/study-group/sessions/:id/restore-timeout",
+  async (req, res): Promise<void> => {
+    const id = parseId(req);
+    if (id == null) {
+      res.status(400).json({ error: "invalid id" });
+      return;
+    }
+    const [session] = await db
+      .select({ id: studyGroupSessions.id })
+      .from(studyGroupSessions)
+      .where(eq(studyGroupSessions.id, id));
+    if (!session) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    const updated = await db
+      .update(studyGroupMessages)
+      .set({ dismissedAt: null })
+      .where(
+        and(
+          eq(studyGroupMessages.sessionId, id),
+          eq(studyGroupMessages.status, "failed"),
+          eq(studyGroupMessages.reason, "sweeper_timeout"),
+          isNotNull(studyGroupMessages.dismissedAt),
+        ),
+      )
+      .returning({ id: studyGroupMessages.id });
+    res.json({ restored: updated.length });
+  },
+);
 
 router.delete("/study-group/sessions/:id", async (req, res): Promise<void> => {
   const id = parseId(req);

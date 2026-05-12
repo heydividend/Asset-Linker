@@ -1101,6 +1101,12 @@ paths:
     get:
       operationId: listStudyGroupSessions
       tags: [studygroup]
+      parameters:
+        - name: includeDismissed
+          in: query
+          required: false
+          description: When true, also surface previously dismissed timeout warnings via `dismissedTimeoutAt` / `dismissedTimeoutRound` so the user can restore them.
+          schema: { type: boolean }
       responses:
         "200":
           description: OK
@@ -1194,6 +1200,25 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/StudyGroupDismissAllTimeoutsResult" }
+  /study-group/sessions/{id}/restore-timeout:
+    post:
+      operationId: restoreStudyGroupTimeout
+      tags: [studygroup]
+      summary: Undo a previous dismissal so the timed-out warning comes back
+      description: >-
+        Reverses `dismissStudyGroupTimeout` by clearing `dismissedAt` on every
+        still-failed sweeper-timeout turn for the session. The dashboard
+        banner and sidebar warning re-appear; transcript and per-turn status
+        are unchanged.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGroupRestoreTimeoutResult" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /study-group/sessions/{id}/round:
     post:
       operationId: runStudyGroupRound
@@ -2065,6 +2090,13 @@ components:
         timedOutRound:
           type: ["integer", "null"]
           description: "Round index of the earliest timed-out turn — what the user will resume."
+        dismissedTimeoutAt:
+          type: ["string", "null"]
+          format: date-time
+          description: "Only populated when the list endpoint is called with `?includeDismissed=true`. Set when the session has at least one previously-dismissed sweeper-timeout turn the user could choose to restore."
+        dismissedTimeoutRound:
+          type: ["integer", "null"]
+          description: "Round index of the earliest dismissed timed-out turn. Only populated when `?includeDismissed=true`."
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     StudyGroupRoundInput:
@@ -2090,6 +2122,13 @@ components:
         sessionsCleared:
           type: integer
           description: Number of distinct sessions whose stuck warning was cleared.
+    StudyGroupRestoreTimeoutResult:
+      type: object
+      required: [restored]
+      properties:
+        restored:
+          type: integer
+          description: How many previously-dismissed timed-out turn rows had their dismissedAt cleared.
     StudyGroupSessionInput:
       type: object
       properties:

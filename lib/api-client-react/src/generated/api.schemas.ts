@@ -966,6 +966,16 @@ export interface StudyGroupSession {
    * @nullable
    */
   timedOutRound?: number | null;
+  /**
+   * Only populated when the list endpoint is called with `?includeDismissed=true`. Set when the session has at least one previously-dismissed sweeper-timeout turn the user could choose to restore.
+   * @nullable
+   */
+  dismissedTimeoutAt?: string | null;
+  /**
+   * Round index of the earliest dismissed timed-out turn. Only populated when `?includeDismissed=true`.
+   * @nullable
+   */
+  dismissedTimeoutRound?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -985,6 +995,11 @@ export interface StudyGroupDismissAllTimeoutsResult {
   dismissed: number;
   /** Number of distinct sessions whose stuck warning was cleared. */
   sessionsCleared: number;
+}
+
+export interface StudyGroupRestoreTimeoutResult {
+  /** How many previously-dismissed timed-out turn rows had their dismissedAt cleared. */
+  restored: number;
 }
 
 export interface StudyGroupSessionInput {
@@ -1380,6 +1395,13 @@ export type GetDashboardTopicHistoryParams = {
 
 export type ListGameSessionsParams = {
   gameId?: string;
+};
+
+export type ListStudyGroupSessionsParams = {
+  /**
+   * When true, also surface previously dismissed timeout warnings via `dismissedTimeoutAt` / `dismissedTimeoutRound` so the user can restore them.
+   */
+  includeDismissed?: boolean;
 };
 
 export type GetStudyGroupLibraryParams = {

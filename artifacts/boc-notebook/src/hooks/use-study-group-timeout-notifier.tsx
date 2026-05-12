@@ -112,7 +112,7 @@ export function useStudyGroupTimeoutNotifier() {
   const seenRef = useRef<SeenMap>(readSeen());
   const initializedRef = useRef(false);
 
-  const { data: sessions = [] } = useListStudyGroupSessions({
+  const { data: sessions = [] } = useListStudyGroupSessions(undefined, {
     query: {
       queryKey: getListStudyGroupSessionsQueryKey(),
       refetchInterval: POLL_INTERVAL_MS,

@@ -1530,6 +1530,15 @@ export const MarkFixItCompleteResponse = zod.object({
   today: zod.coerce.date(),
 });
 
+export const ListStudyGroupSessionsQueryParams = zod.object({
+  includeDismissed: zod.coerce
+    .boolean()
+    .optional()
+    .describe(
+      "When true, also surface previously dismissed timeout warnings via `dismissedTimeoutAt` \/ `dismissedTimeoutRound` so the user can restore them.",
+    ),
+});
+
 export const ListStudyGroupSessionsResponseItem = zod.object({
   id: zod.number(),
   title: zod.string(),
@@ -1555,6 +1564,18 @@ export const ListStudyGroupSessionsResponseItem = zod.object({
     .nullish()
     .describe(
       "Round index of the earliest timed-out turn — what the user will resume.",
+    ),
+  dismissedTimeoutAt: zod.coerce
+    .date()
+    .nullish()
+    .describe(
+      "Only populated when the list endpoint is called with `?includeDismissed=true`. Set when the session has at least one previously-dismissed sweeper-timeout turn the user could choose to restore.",
+    ),
+  dismissedTimeoutRound: zod
+    .number()
+    .nullish()
+    .describe(
+      "Round index of the earliest dismissed timed-out turn. Only populated when `?includeDismissed=true`.",
     ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -1604,6 +1625,18 @@ export const GetStudyGroupSessionResponse = zod.object({
       .nullish()
       .describe(
         "Round index of the earliest timed-out turn — what the user will resume.",
+      ),
+    dismissedTimeoutAt: zod.coerce
+      .date()
+      .nullish()
+      .describe(
+        "Only populated when the list endpoint is called with `?includeDismissed=true`. Set when the session has at least one previously-dismissed sweeper-timeout turn the user could choose to restore.",
+      ),
+    dismissedTimeoutRound: zod
+      .number()
+      .nullish()
+      .describe(
+        "Round index of the earliest dismissed timed-out turn. Only populated when `?includeDismissed=true`.",
       ),
     createdAt: zod.coerce.date(),
     updatedAt: zod.coerce.date(),
@@ -1692,6 +1725,18 @@ export const UpdateStudyGroupSessionResponse = zod.object({
     .describe(
       "Round index of the earliest timed-out turn — what the user will resume.",
     ),
+  dismissedTimeoutAt: zod.coerce
+    .date()
+    .nullish()
+    .describe(
+      "Only populated when the list endpoint is called with `?includeDismissed=true`. Set when the session has at least one previously-dismissed sweeper-timeout turn the user could choose to restore.",
+    ),
+  dismissedTimeoutRound: zod
+    .number()
+    .nullish()
+    .describe(
+      "Round index of the earliest dismissed timed-out turn. Only populated when `?includeDismissed=true`.",
+    ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -1727,6 +1772,22 @@ export const DismissAllStudyGroupTimeoutsResponse = zod.object({
   sessionsCleared: zod
     .number()
     .describe("Number of distinct sessions whose stuck warning was cleared."),
+});
+
+/**
+ * Reverses `dismissStudyGroupTimeout` by clearing `dismissedAt` on every still-failed sweeper-timeout turn for the session. The dashboard banner and sidebar warning re-appear; transcript and per-turn status are unchanged.
+ * @summary Undo a previous dismissal so the timed-out warning comes back
+ */
+export const RestoreStudyGroupTimeoutParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const RestoreStudyGroupTimeoutResponse = zod.object({
+  restored: zod
+    .number()
+    .describe(
+      "How many previously-dismissed timed-out turn rows had their dismissedAt cleared.",
+    ),
 });
 
 /**

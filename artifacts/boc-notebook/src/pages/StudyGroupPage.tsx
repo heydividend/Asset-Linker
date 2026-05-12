@@ -10,6 +10,7 @@ import {
   useUpdateStudyGroupSession,
   useDeleteStudyGroupSession,
   useDismissStudyGroupTimeout,
+  useRestoreStudyGroupTimeout,
   usePromoteStudyGroupArtifact,
   useGetStudyGroupLearningSignal,
   useGetStudyGroupLibrary,
@@ -1201,7 +1202,10 @@ export default function StudyGroupPage() {
 
   const search = useSearch();
   const [, navigate] = useLocation();
-  const { data: sessions = [], isLoading } = useListStudyGroupSessions();
+  const [showDismissed, setShowDismissed] = useState(false);
+  const { data: sessions = [], isLoading } = useListStudyGroupSessions(
+    showDismissed ? { includeDismissed: true } : undefined,
+  );
   const { data: signal } = useGetStudyGroupLearningSignal();
   const { data: summary } = useGetDashboardSummary();
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -1245,6 +1249,7 @@ export default function StudyGroupPage() {
   }, [search]);
   const del = useDeleteStudyGroupSession();
   const dismissTimeout = useDismissStudyGroupTimeout();
+  const restoreTimeout = useRestoreStudyGroupTimeout();
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -1262,6 +1267,28 @@ export default function StudyGroupPage() {
         onError: (e) => {
           toast({
             title: "Couldn't dismiss",
+            description: e instanceof Error ? e.message : "Try again in a moment.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  }
+
+  function restoreSessionTimeout(id: number, title: string) {
+    restoreTimeout.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getListStudyGroupSessionsQueryKey() });
+          toast({
+            title: "Warning restored",
+            description: `"${title}" is back at the top of your sessions.`,
+          });
+        },
+        onError: (e) => {
+          toast({
+            title: "Couldn't restore",
             description: e instanceof Error ? e.message : "Try again in a moment.",
             variant: "destructive",
           });
@@ -1327,8 +1354,22 @@ export default function StudyGroupPage() {
       <div className="h-full min-h-0 grid grid-cols-1 md:grid-cols-[14rem_1fr] xl:grid-cols-[14rem_1fr_18rem] grid-rows-[minmax(0,1fr)]">
         {/* Sessions list */}
         <aside className="border-r overflow-y-auto p-2 space-y-1 hidden md:block">
-          <div className="text-[11px] uppercase tracking-wide text-muted-foreground px-2 pt-1 pb-1">
-            Sessions
+          <div className="flex items-center justify-between px-2 pt-1 pb-1">
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Sessions
+            </div>
+            <label
+              className="flex items-center gap-1.5 text-[10px] text-muted-foreground cursor-pointer select-none"
+              title="Reveal sessions whose timeout you previously dismissed so you can restore the warning."
+            >
+              <Switch
+                checked={showDismissed}
+                onCheckedChange={setShowDismissed}
+                className="scale-75 origin-right"
+                data-testid="sg-show-dismissed-toggle"
+              />
+              <span>Show dismissed</span>
+            </label>
           </div>
           {isLoading && <p className="text-xs text-muted-foreground px-2">Loading…</p>}
           {!isLoading && sessions.length === 0 && (
@@ -1338,6 +1379,8 @@ export default function StudyGroupPage() {
           )}
           {sessions.map((s) => {
             const isStuck = s.timedOutAt != null;
+            const hasDismissed =
+              showDismissed && !isStuck && s.dismissedTimeoutAt != null;
             return (
               <div
                 key={s.id}
@@ -1384,6 +1427,31 @@ export default function StudyGroupPage() {
                         title="Keep the transcript but hide the warning"
                       >
                         Dismiss
+                      </button>
+                    </div>
+                  ) : hasDismissed ? (
+                    <div
+                      className="text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap"
+                      data-testid={`sg-dismissed-label-${s.id}`}
+                    >
+                      <span>
+                        R{s.dismissedTimeoutRound ?? s.roundCount} timeout dismissed
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          restoreSessionTimeout(s.id, s.title);
+                        }}
+                        disabled={
+                          restoreTimeout.isPending &&
+                          restoreTimeout.variables?.id === s.id
+                        }
+                        className="text-[10px] underline text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 disabled:opacity-50"
+                        data-testid={`sg-restore-timeout-${s.id}`}
+                        title="Bring the timed-out warning back"
+                      >
+                        Restore warning
                       </button>
                     </div>
                   ) : (

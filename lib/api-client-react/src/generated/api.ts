@@ -46,6 +46,7 @@ import type {
   ListGameSessionsParams,
   ListQuizAttemptsParams,
   ListResourcesParams,
+  ListStudyGroupSessionsParams,
   ListTopicsParams,
   MockExam,
   MockExamAnswerInput,
@@ -84,6 +85,7 @@ import type {
   StudyGroupLearningSignal,
   StudyGroupLibrary,
   StudyGroupPromoteResult,
+  StudyGroupRestoreTimeoutResult,
   StudyGroupRoundInput,
   StudyGroupSession,
   StudyGroupSessionDetail,
@@ -6319,42 +6321,66 @@ export const useMarkFixItComplete = <
   return useMutation(getMarkFixItCompleteMutationOptions(options));
 };
 
-export const getListStudyGroupSessionsUrl = () => {
-  return `/api/study-group/sessions`;
+export const getListStudyGroupSessionsUrl = (
+  params?: ListStudyGroupSessionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/study-group/sessions?${stringifiedParams}`
+    : `/api/study-group/sessions`;
 };
 
 export const listStudyGroupSessions = async (
+  params?: ListStudyGroupSessionsParams,
   options?: RequestInit,
 ): Promise<StudyGroupSession[]> => {
-  return customFetch<StudyGroupSession[]>(getListStudyGroupSessionsUrl(), {
-    ...options,
-    method: "GET",
-  });
+  return customFetch<StudyGroupSession[]>(
+    getListStudyGroupSessionsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
 };
 
-export const getListStudyGroupSessionsQueryKey = () => {
-  return [`/api/study-group/sessions`] as const;
+export const getListStudyGroupSessionsQueryKey = (
+  params?: ListStudyGroupSessionsParams,
+) => {
+  return [`/api/study-group/sessions`, ...(params ? [params] : [])] as const;
 };
 
 export const getListStudyGroupSessionsQueryOptions = <
   TData = Awaited<ReturnType<typeof listStudyGroupSessions>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listStudyGroupSessions>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListStudyGroupSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStudyGroupSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getListStudyGroupSessionsQueryKey();
+    queryOptions?.queryKey ?? getListStudyGroupSessionsQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof listStudyGroupSessions>>
-  > = ({ signal }) => listStudyGroupSessions({ signal, ...requestOptions });
+  > = ({ signal }) =>
+    listStudyGroupSessions(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listStudyGroupSessions>>,
@@ -6371,15 +6397,18 @@ export type ListStudyGroupSessionsQueryError = ErrorType<unknown>;
 export function useListStudyGroupSessions<
   TData = Awaited<ReturnType<typeof listStudyGroupSessions>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listStudyGroupSessions>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListStudyGroupSessionsQueryOptions(options);
+>(
+  params?: ListStudyGroupSessionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listStudyGroupSessions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListStudyGroupSessionsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -6881,6 +6910,94 @@ export const useDismissAllStudyGroupTimeouts = <
   TContext
 > => {
   return useMutation(getDismissAllStudyGroupTimeoutsMutationOptions(options));
+};
+
+/**
+ * Reverses `dismissStudyGroupTimeout` by clearing `dismissedAt` on every still-failed sweeper-timeout turn for the session. The dashboard banner and sidebar warning re-appear; transcript and per-turn status are unchanged.
+ * @summary Undo a previous dismissal so the timed-out warning comes back
+ */
+export const getRestoreStudyGroupTimeoutUrl = (id: number) => {
+  return `/api/study-group/sessions/${id}/restore-timeout`;
+};
+
+export const restoreStudyGroupTimeout = async (
+  id: number,
+  options?: RequestInit,
+): Promise<StudyGroupRestoreTimeoutResult> => {
+  return customFetch<StudyGroupRestoreTimeoutResult>(
+    getRestoreStudyGroupTimeoutUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getRestoreStudyGroupTimeoutMutationOptions = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof restoreStudyGroupTimeout>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof restoreStudyGroupTimeout>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["restoreStudyGroupTimeout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof restoreStudyGroupTimeout>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return restoreStudyGroupTimeout(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RestoreStudyGroupTimeoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof restoreStudyGroupTimeout>>
+>;
+
+export type RestoreStudyGroupTimeoutMutationError = ErrorType<NotFoundResponse>;
+
+/**
+ * @summary Undo a previous dismissal so the timed-out warning comes back
+ */
+export const useRestoreStudyGroupTimeout = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof restoreStudyGroupTimeout>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof restoreStudyGroupTimeout>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getRestoreStudyGroupTimeoutMutationOptions(options));
 };
 
 /**
