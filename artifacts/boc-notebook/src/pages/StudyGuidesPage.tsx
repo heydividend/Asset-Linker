@@ -4,8 +4,20 @@ import {
   useListAllStudyGuides,
   useListNotebooks,
   useGenerateStudyGuide,
+  useDeleteStudyGuide,
   getListAllStudyGuidesQueryKey,
 } from "@workspace/api-client-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/formatDate";
@@ -20,7 +32,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, FileText, Loader2, Sparkles } from "lucide-react";
+import { BookOpen, FileText, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { ListenAsPodcastButton, PodcastList } from "@/components/PodcastPlayer";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,6 +62,23 @@ export default function StudyGuidesPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const genGuide = useGenerateStudyGuide();
+  const delGuide = useDeleteStudyGuide();
+
+  const onDelete = (id: number, title: string) => {
+    delGuide.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getListAllStudyGuidesQueryKey() });
+          toast({ title: "Study guide deleted", description: title });
+        },
+        onError: (err: unknown) => {
+          const msg = err instanceof Error ? err.message : "Delete failed";
+          toast({ title: "Couldn't delete guide", description: msg, variant: "destructive" });
+        },
+      },
+    );
+  };
   const [genOpen, setGenOpen] = useState(false);
   const [genNotebookId, setGenNotebookId] = useState<string>("");
   const [genFormat, setGenFormat] = useState<Format>("outline");
@@ -198,7 +227,38 @@ export default function StudyGuidesPage() {
                 <div className="border-t pt-2 space-y-2">
                   <PodcastList studyGuideId={g.id} />
                 </div>
-                <div className="flex justify-end">
+                <div className="flex justify-end items-center gap-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        title="Delete study guide"
+                        data-testid={`button-delete-guide-${g.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this study guide?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          "{g.title}" and any podcast versions generated from it will be removed. This can't be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel data-testid={`button-cancel-delete-guide-${g.id}`}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => onDelete(g.id, g.title)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          data-testid={`button-confirm-delete-guide-${g.id}`}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                   <ListenAsPodcastButton studyGuideId={g.id} />
                 </div>
               </CardContent>
