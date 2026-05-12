@@ -19,10 +19,13 @@ import { getOrCreateSessionId } from "../lib/sessionId";
 
 const router: IRouter = Router();
 
+import { startOfTodayPT } from "../lib/today";
+
 function startOfTodayUtc(): Date {
-  const d = new Date();
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
+  // Name kept for back-compat; semantics are now "start of today in Pacific"
+  // so the dashboard "today" counters roll over at PT midnight, matching the
+  // rest of the plan/schedule logic.
+  return startOfTodayPT();
 }
 
 router.get("/dashboard/summary", async (req, res): Promise<void> => {

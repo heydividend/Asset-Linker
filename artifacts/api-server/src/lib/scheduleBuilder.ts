@@ -51,9 +51,8 @@ export function eachDay(start: string, end: string): string[] {
   return out;
 }
 
-export function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayStrPT } from "./today";
+export const todayStr = todayStrPT;
 
 // Domain → chapter focus + body-map regions + matching game ids.
 // Keys are matched case-insensitively on a substring of the domain name.

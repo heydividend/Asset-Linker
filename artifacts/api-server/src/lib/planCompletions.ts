@@ -1,9 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db, planCompletions } from "@workspace/db";
 
-export function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+export { todayStrPT as todayStr } from "./today";
 
 // Idempotent insert; safe to call repeatedly when the same activity finishes
 // multiple times in one day. Returns true if a new row was created.

@@ -5,25 +5,28 @@ import { getOrCreateSessionId } from "../lib/sessionId";
 
 const router: IRouter = Router();
 
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayStrPT as todayStr } from "../lib/today";
 
 function computeStreak(dates: string[]): number {
   if (dates.length === 0) return 0;
   const set = new Set(dates);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  const cursor = new Date(today);
-  if (!set.has(fmt(cursor))) {
-    cursor.setDate(cursor.getDate() - 1);
-    if (!set.has(fmt(cursor))) return 0;
+  // Walk back day-by-day in Pacific time using YYYY-MM-DD string math so
+  // streak rollover happens at PT midnight, not server UTC midnight.
+  const stepBack = (ymd: string) => {
+    const [y, m, d] = ymd.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() - 1);
+    return dt.toISOString().slice(0, 10);
+  };
+  let cursor = todayStr();
+  if (!set.has(cursor)) {
+    cursor = stepBack(cursor);
+    if (!set.has(cursor)) return 0;
   }
   let streak = 0;
-  while (set.has(fmt(cursor))) {
+  while (set.has(cursor)) {
     streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
+    cursor = stepBack(cursor);
   }
   return streak;
 }
