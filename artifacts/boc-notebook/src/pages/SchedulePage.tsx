@@ -179,7 +179,7 @@ export default function SchedulePage() {
                 {data.daysRemaining} <span className="text-lg font-normal opacity-90">days until exam</span>
               </p>
               <p className="text-xs opacity-80 mt-1">
-                {data.startDate} → {data.examDate} · day {data.daysCompleted + 1} of {data.totalDays}
+                {formatDate(data.startDate)} → {formatDate(data.examDate)} · day {data.daysCompleted + 1} of {data.totalDays}
               </p>
             </div>
             <div className="w-40 space-y-2">
