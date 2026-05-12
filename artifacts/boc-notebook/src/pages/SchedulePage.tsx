@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { AskAiButton } from "@/components/AskAiButton";
 import { Calendar, CalendarDays, Clock, Flame, GraduationCap, Sparkles, Pencil } from "lucide-react";
 import { useState } from "react";
+import { formatDate } from "@/lib/formatDate";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -204,7 +205,11 @@ export default function SchedulePage() {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <CardTitle className="text-base">
-                          {new Date(d.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+                          {(() => {
+                            const dt = new Date(d.date + "T00:00:00");
+                            const wk = dt.toLocaleDateString(undefined, { weekday: "long" });
+                            return `${wk}, ${formatDate(dt)}`;
+                          })()}
                         </CardTitle>
                         <Badge variant="outline" className={phase.className}>
                           {d.phase === "exam_day" ? <GraduationCap className="h-3 w-3 mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}

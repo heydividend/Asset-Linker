@@ -8,6 +8,7 @@ import {
   getGetFixItStreakQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatDate } from "@/lib/formatDate";
 import { useTrendWindow } from "@/hooks/use-trend-window";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -292,11 +293,7 @@ export function FixItPlanCard() {
         date,
         completed: completedSet.has(date),
         isToday: i === 0,
-        label: d.toLocaleDateString(undefined, {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        }),
+        label: `${d.toLocaleDateString(undefined, { weekday: "short" })} ${formatDate(d)}`,
       });
     }
     const completedCount = days.filter((d) => d.completed).length;

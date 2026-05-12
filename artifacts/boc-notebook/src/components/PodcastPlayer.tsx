@@ -8,6 +8,7 @@ import {
   type AudioOverview,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatDateTime } from "@/lib/formatDate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -180,7 +181,7 @@ function PodcastRow({ audio, studyGuideId }: { audio: AudioOverview; studyGuideI
           <div className="flex items-center gap-2 text-sm">
             <Headphones className="h-4 w-4 text-primary" />
             <span className="font-medium">{voice}</span>
-            <span className="text-xs text-muted-foreground">{new Date(created).toLocaleString()}</span>
+            <span className="text-xs text-muted-foreground">{formatDateTime(created)}</span>
           </div>
           <Badge variant={status === "ready" ? "default" : status === "failed" ? "destructive" : "secondary"}>
             {status === "pending" && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}

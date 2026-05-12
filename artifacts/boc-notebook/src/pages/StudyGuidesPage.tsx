@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatDate } from "@/lib/formatDate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -189,7 +190,7 @@ export default function StudyGuidesPage() {
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Created {new Date(g.createdAt).toLocaleDateString()}
+                        Created {formatDate(g.createdAt)}
                       </p>
                     </div>
                   </div>

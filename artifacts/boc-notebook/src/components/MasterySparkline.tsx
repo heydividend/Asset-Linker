@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { TrendingUp, TrendingDown, Minus, CheckCircle2, XCircle, ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formatDate, formatDateShort } from "@/lib/formatDate";
 
 export type TrendDirection = "up" | "down" | "flat";
 
@@ -28,13 +29,13 @@ export function formatRelativeAttempt(iso: string | null | undefined): string {
   if (days === 1) return "yesterday";
   if (days < 7) return `${days}d ago`;
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return formatDateShort(d);
 }
 
 function formatAttemptDate(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  const date = d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const date = formatDate(d);
   const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return `${date} · ${time}`;
 }

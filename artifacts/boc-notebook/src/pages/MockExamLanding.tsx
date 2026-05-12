@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Stethoscope, ShieldAlert, Clock, ListChecks, Award, Trash2 } from "lucide-react";
+import { formatDateTime } from "@/lib/formatDate";
 
 export default function MockExamLanding() {
   const [, navigate] = useLocation();
@@ -109,7 +110,7 @@ export default function MockExamLanding() {
                         <button className="w-full flex items-center justify-between text-left">
                           <div className="flex items-center gap-3">
                             <Badge variant="outline">{m.totalQuestions}q</Badge>
-                            <span className="font-medium">{new Date(m.startedAt).toLocaleString()}</span>
+                            <span className="font-medium">{formatDateTime(m.startedAt)}</span>
                             {!m.submitted && <Badge variant="secondary">In progress</Badge>}
                           </div>
                           {m.submitted && (

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, BookOpen } from "lucide-react";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
+import { formatDateTime } from "@/lib/formatDate";
 import { ListenAsPodcastButton, PodcastList } from "@/components/PodcastPlayer";
 
 export default function StudyGuideDetail() {
@@ -39,7 +40,7 @@ export default function StudyGuideDetail() {
                   {guide.notebookTitle}
                 </span>
               </Link>
-              <span>· {new Date(guide.createdAt).toLocaleString()}</span>
+              <span>· {formatDateTime(guide.createdAt)}</span>
             </div>
           </div>
         </div>

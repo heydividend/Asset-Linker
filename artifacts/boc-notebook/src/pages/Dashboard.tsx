@@ -15,6 +15,7 @@ import {
   type StudyPlanItemKind,
   type ContinueLearningItem,
 } from "@workspace/api-client-react";
+import { formatDate } from "@/lib/formatDate";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -462,7 +463,7 @@ export default function Dashboard() {
                   <span className="text-sm font-normal opacity-90">days until exam</span>
                 </p>
                 <p className="text-[11px] opacity-80 mt-0.5 truncate">
-                  {schedule.startDate} → {schedule.examDate} · day {schedule.daysCompleted + 1} of{" "}
+                  {formatDate(schedule.startDate)} → {formatDate(schedule.examDate)} · day {schedule.daysCompleted + 1} of{" "}
                   {schedule.totalDays}
                 </p>
               </div>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import { formatDateTime } from "@/lib/formatDate";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListTopics,
@@ -762,7 +763,7 @@ export default function BodyMapPage() {
                                   | undefined;
                                 if (!p) return "";
                                 const d = new Date(p.answeredAt);
-                                return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} — ${p.correct ? "Correct" : "Incorrect"}`;
+                                return `${formatDateTime(d)} — ${p.correct ? "Correct" : "Incorrect"}`;
                               }}
                             />
                             <ReferenceLine
