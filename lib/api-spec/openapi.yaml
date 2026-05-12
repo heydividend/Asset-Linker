@@ -2040,6 +2040,9 @@ components:
           type: string
           enum: [pending, streaming, done, failed]
           description: "Per-turn checkpoint. Non-'done' turns in the latest round can be resumed."
+        reason:
+          type: ["string", "null"]
+          description: "Why this turn ended in its current state. 'sweeper_timeout' means the periodic sweeper or startup recovery flipped a stuck 'streaming' row to 'failed' because it took too long. NULL for normal failures and successes."
         turnOrder: { type: integer, description: "0-based order within the round for planned turns." }
         createdAt: { type: string, format: date-time }
     StudyGroupArtifact:

@@ -401,8 +401,12 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
   }, [detail, pendingMessages]);
 
   // Detect resume/retry state from the persisted transcript.
-  const { incompleteRound, hasFailed } = useMemo(() => {
-    const msgs = (detail?.messages ?? []) as (TempMessage & { status?: string; turnOrder?: number })[];
+  const { incompleteRound, hasFailed, sweeperHealed } = useMemo(() => {
+    const msgs = (detail?.messages ?? []) as (TempMessage & {
+      status?: string;
+      turnOrder?: number;
+      reason?: string | null;
+    })[];
     const planned = msgs.filter((m) =>
       ["question", "answer", "verdict", "takeaway"].includes(m.kind),
     );
@@ -416,7 +420,20 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
     } else if (session.pendingExtractionRound != null) {
       round = session.pendingExtractionRound;
     }
-    return { incompleteRound: round, hasFailed: failed };
+    // Sweeper-healed: any failed turn in the resumable round was flipped by
+    // the timeout sweeper (reason='sweeper_timeout'), not by a normal stream
+    // error. The banner only makes sense while there's still something to
+    // retry, so gate it on `failed`.
+    const healed =
+      failed &&
+      round != null &&
+      incomplete.some(
+        (m) =>
+          m.roundIndex === round &&
+          m.status === "failed" &&
+          m.reason === "sweeper_timeout",
+      );
+    return { incompleteRound: round, hasFailed: failed, sweeperHealed: healed };
   }, [detail, session.pendingExtractionRound]);
   const canResume = incompleteRound != null && !streaming;
 
@@ -776,6 +793,26 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
           {canResume ? `Resume round ${incompleteRound}` : "Start round"}
         </Button>
       </div>
+
+      {/* Sweeper-healed banner: shown when the periodic timeout sweeper
+          flipped a stuck 'streaming' turn to 'failed'. Without this, users
+          see the round suddenly jump from "thinking…" to a Retry button
+          with no explanation. */}
+      {sweeperHealed && (
+        <div
+          className="border-b bg-amber-50 dark:bg-amber-950/30 px-4 py-2 flex items-start gap-2 text-amber-900 dark:text-amber-200"
+          data-testid="sg-sweeper-timeout-banner"
+          role="status"
+        >
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <div className="text-xs leading-snug">
+            <span className="font-medium">Round {incompleteRound} timed out.</span>{" "}
+            This turn took too long and was paused automatically — tap{" "}
+            <span className="font-medium">Retry last round</span> above to pick
+            up where the group left off.
+          </div>
+        </div>
+      )}
 
       {/* Audio read-out toolbar */}
       {speech.supported && playlistTotal > 0 && (

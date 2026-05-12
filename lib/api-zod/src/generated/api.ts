@@ -1602,6 +1602,12 @@ export const GetStudyGroupSessionResponse = zod.object({
         .describe(
           "Per-turn checkpoint. Non-'done' turns in the latest round can be resumed.",
         ),
+      reason: zod
+        .string()
+        .nullish()
+        .describe(
+          "Why this turn ended in its current state. 'sweeper_timeout' means the periodic sweeper or startup recovery flipped a stuck 'streaming' row to 'failed' because it took too long. NULL for normal failures and successes.",
+        ),
       turnOrder: zod
         .number()
         .describe("0-based order within the round for planned turns."),

@@ -203,7 +203,7 @@ export const sessionAborters = new Map<number, AbortController>();
 export async function recoverStuckStudyGroupRounds(): Promise<number> {
   const updated = await db
     .update(studyGroupMessages)
-    .set({ status: "failed", updatedAt: new Date() })
+    .set({ status: "failed", reason: "sweeper_timeout", updatedAt: new Date() })
     .where(eq(studyGroupMessages.status, "streaming"))
     .returning({ id: studyGroupMessages.id });
   return updated.length;
@@ -236,7 +236,7 @@ export async function sweepStaleStudyGroupRounds(now: Date = new Date()): Promis
   if (stale.length === 0) return 0;
   const updated = await db
     .update(studyGroupMessages)
-    .set({ status: "failed", updatedAt: new Date() })
+    .set({ status: "failed", reason: "sweeper_timeout", updatedAt: new Date() })
     .where(
       and(
         inArray(
@@ -412,7 +412,7 @@ async function runPlannedTurn(
   const { row, systemPrompt, userPrompt, stream, abortSignal } = input;
   await db
     .update(studyGroupMessages)
-    .set({ status: "streaming", content: "", updatedAt: new Date() })
+    .set({ status: "streaming", content: "", reason: null, updatedAt: new Date() })
     .where(eq(studyGroupMessages.id, row.id));
   stream.push({
     type: "message_start",
@@ -870,7 +870,7 @@ router.post("/study-group/sessions/:id/round", async (req, res): Promise<void> =
       if (isRetry) {
         await db
           .update(studyGroupMessages)
-          .set({ status: "pending", content: "", updatedAt: new Date() })
+          .set({ status: "pending", content: "", reason: null, updatedAt: new Date() })
           .where(
             and(
               eq(studyGroupMessages.sessionId, id),
