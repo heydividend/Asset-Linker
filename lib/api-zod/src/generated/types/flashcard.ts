@@ -13,6 +13,8 @@ export interface Flashcard {
   back: string;
   /** @nullable */
   topicId?: number | null;
+  /** How this card was created (manual, ai, study_group, …) */
+  source: string;
   easeFactor: number;
   intervalDays: number;
   repetitions: number;

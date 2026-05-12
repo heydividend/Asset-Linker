@@ -70,6 +70,8 @@ export interface Flashcard {
   back: string;
   /** @nullable */
   topicId?: number | null;
+  /** How this card was created (manual, ai, study_group, …) */
+  source: string;
   easeFactor: number;
   intervalDays: number;
   repetitions: number;
@@ -443,6 +445,18 @@ export const QuizInputMode = {
   region: "region",
 } as const;
 
+/**
+ * Filter the question pool by where the question came from.
+ */
+export type QuizInputSourceKind =
+  (typeof QuizInputSourceKind)[keyof typeof QuizInputSourceKind];
+
+export const QuizInputSourceKind = {
+  study_group: "study_group",
+  ai: "ai",
+  manual: "manual",
+} as const;
+
 export interface QuizInput {
   mode: QuizInputMode;
   /**
@@ -454,6 +468,10 @@ export interface QuizInput {
   topicId?: number;
   topicIds?: number[];
   domainId?: number;
+  /** Filter the question pool by where the question came from. */
+  sourceKind?: QuizInputSourceKind;
+  /** Only include questions still flagged pendingReview (admin/review surface). */
+  pendingReviewOnly?: boolean;
 }
 
 export interface QuizAnswerInput {
@@ -1022,6 +1040,51 @@ export interface StudyGroupLearningSignalNote {
   topic?: string | null;
 }
 
+export interface StudyGroupLibraryFlashcard {
+  artifactId: number;
+  flashcardId: number;
+  sessionId: number;
+  sessionTitle: string;
+  roundIndex: number;
+  /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  topicName?: string | null;
+  front: string;
+  back: string;
+  createdAt: string;
+  /** @nullable */
+  promotedAt?: string | null;
+}
+
+export interface StudyGroupLibraryQuestion {
+  artifactId: number;
+  questionId: number;
+  sessionId: number;
+  sessionTitle: string;
+  roundIndex: number;
+  /** @nullable */
+  topicId?: number | null;
+  /** @nullable */
+  topicName?: string | null;
+  stem: string;
+  choices: string[];
+  correctIndex: number;
+  /** @nullable */
+  rationale?: string | null;
+  pendingReview: boolean;
+  createdAt: string;
+  /** @nullable */
+  promotedAt?: string | null;
+}
+
+export interface StudyGroupLibrary {
+  flashcards: StudyGroupLibraryFlashcard[];
+  questions: StudyGroupLibraryQuestion[];
+  /** Promoted study-group questions still flagged pendingReview. */
+  pendingReviewCount: number;
+}
+
 export interface StudyGroupLearningSignal {
   sessions: number;
   reasoningPatterns: number;
@@ -1043,11 +1106,22 @@ export type ListTopicsParams = {
   domainId?: number;
 };
 
+export type ListAllFlashcardsParams = {
+  /**
+   * Filter by flashcard source (e.g. study_group, manual, ai).
+   */
+  source?: string;
+};
+
 export type ListDueFlashcardsParams = {
   /**
    * Comma-separated topic IDs to restrict due cards to (used by focused region review).
    */
   topicIds?: string;
+  /**
+   * Filter by flashcard source (e.g. study_group).
+   */
+  source?: string;
 };
 
 export type ListAllStudyGuidesParams = {
@@ -1093,4 +1167,11 @@ export type GetDashboardTopicHistoryParams = {
 
 export type ListGameSessionsParams = {
   gameId?: string;
+};
+
+export type GetStudyGroupLibraryParams = {
+  /**
+   * When true, only return questions still flagged pendingReview.
+   */
+  pendingReview?: boolean;
 };

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearch } from "wouter";
+import { useSearch, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListStudyGroupSessions,
@@ -9,6 +9,7 @@ import {
   useDeleteStudyGroupSession,
   usePromoteStudyGroupArtifact,
   useGetStudyGroupLearningSignal,
+  useGetStudyGroupLibrary,
   useListTopics,
   useListDomains,
   useGetDashboardSummary,
@@ -19,6 +20,8 @@ import {
   type StudyGroupArtifact,
   type StudyGroupSession,
 } from "@workspace/api-client-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +59,11 @@ import {
   Wand2,
   Stethoscope,
   CheckCircle2,
+  ArrowRight,
+  AlertTriangle,
+  BookOpen,
+  FileQuestion,
+  Library as LibraryIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -122,7 +130,7 @@ function speakerStyle(s: string): SpeakerStyle {
   return SPEAKERS[s] ?? SPEAKERS.system;
 }
 
-function MessageBubble({ message }: { message: TempMessage }) {
+function MessageBubble({ message, highlighted }: { message: TempMessage; highlighted?: boolean }) {
   const style = speakerStyle(message.speaker);
   const kindLabel = KIND_LABELS[message.kind] ?? message.kind;
   const isStudent = message.speaker === "student";
@@ -138,8 +146,13 @@ function MessageBubble({ message }: { message: TempMessage }) {
   }
   return (
     <div
-      className={cn("flex gap-3 items-start", isStudent && "flex-row-reverse")}
+      className={cn(
+        "flex gap-3 items-start rounded-md transition-colors",
+        isStudent && "flex-row-reverse",
+        highlighted && "bg-amber-100/40 dark:bg-amber-900/20 ring-2 ring-amber-300 p-2 -mx-2",
+      )}
       data-testid={`sg-msg-${message.id}`}
+      data-round={message.roundIndex}
     >
       <div
         className={cn(
@@ -273,9 +286,10 @@ function ArtifactCard({
 
 interface SessionPanelProps {
   session: StudyGroupSession;
+  focusRound?: { round: number; nonce: number } | null;
 }
 
-function SessionPanel({ session }: SessionPanelProps) {
+function SessionPanel({ session, focusRound }: SessionPanelProps) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const detailKey = getGetStudyGroupSessionQueryKey(session.id);
@@ -304,6 +318,23 @@ function SessionPanel({ session }: SessionPanelProps) {
       transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
     }
   }, [merged.length, pendingMessages]);
+
+  // Scroll to + highlight the first message of the focused round whenever the
+  // Library tab deep-links into this session.
+  useEffect(() => {
+    if (!focusRound || !transcriptRef.current) return;
+    const container = transcriptRef.current;
+    // Wait for messages to render before locating the round bubble.
+    const id = window.setTimeout(() => {
+      const target = container.querySelector<HTMLElement>(
+        `[data-round="${focusRound.round}"]`,
+      );
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 50);
+    return () => window.clearTimeout(id);
+  }, [focusRound, merged.length]);
 
   useEffect(() => {
     return () => {
@@ -522,7 +553,11 @@ function SessionPanel({ session }: SessionPanelProps) {
           </p>
         )}
         {merged.map((m) => (
-          <MessageBubble key={`${m.id}-${m.kind}`} message={m} />
+          <MessageBubble
+            key={`${m.id}-${m.kind}`}
+            message={m}
+            highlighted={focusRound != null && m.roundIndex === focusRound.round}
+          />
         ))}
         {streaming && (
           <div className="text-xs text-muted-foreground italic flex items-center gap-2">
@@ -697,15 +732,22 @@ export default function StudyGroupPage() {
   }, [setChatOpen]);
 
   const search = useSearch();
+  const [, navigate] = useLocation();
   const { data: sessions = [], isLoading } = useListStudyGroupSessions();
   const { data: signal } = useGetStudyGroupLearningSignal();
   const { data: summary } = useGetDashboardSummary();
   const [activeId, setActiveId] = useState<number | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [defaultTopicId, setDefaultTopicId] = useState<number | undefined>();
+  const [tab, setTab] = useState<"sessions" | "library">("sessions");
+  // Round to highlight when arriving via a deep-link from the Library tab.
+  // Bumped on each navigation so the SessionPanel re-scrolls even if the same
+  // round was already targeted.
+  const [focusRound, setFocusRound] = useState<{ round: number; nonce: number } | null>(null);
 
   // Auto-open the new-session dialog if a ?topicId= is supplied (deep link
-  // from QuizRunner / Dashboard).
+  // from QuizRunner / Dashboard). Also handle ?session=<id> deep links from
+  // the Library tab to switch to Sessions and select that round.
   useEffect(() => {
     const params = new URLSearchParams(search);
     const tid = params.get("topicId");
@@ -716,6 +758,22 @@ export default function StudyGroupPage() {
         setNewOpen(true);
       }
     }
+    const sid = params.get("session");
+    if (sid) {
+      const n = Number(sid);
+      if (!Number.isNaN(n) && n > 0) {
+        setActiveId(n);
+        setTab("sessions");
+      }
+    }
+    const round = params.get("round");
+    if (round) {
+      const r = Number(round);
+      if (!Number.isNaN(r) && r >= 0) {
+        setFocusRound({ round: r, nonce: Date.now() });
+      }
+    }
+    if (params.get("tab") === "library") setTab("library");
   }, [search]);
   const del = useDeleteStudyGroupSession();
   const qc = useQueryClient();
@@ -763,7 +821,19 @@ export default function StudyGroupPage() {
           New session
         </Button>
       </div>
-      <div className="flex-1 min-h-0 grid grid-cols-[14rem_1fr_18rem]">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as "sessions" | "library")} className="flex-1 min-h-0 flex flex-col">
+        <div className="border-b px-4">
+          <TabsList className="h-9">
+            <TabsTrigger value="sessions" data-testid="tab-sessions">
+              <Users className="h-3.5 w-3.5 mr-1.5" /> Sessions
+            </TabsTrigger>
+            <TabsTrigger value="library" data-testid="tab-library">
+              <LibraryIcon className="h-3.5 w-3.5 mr-1.5" /> Library
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="sessions" className="flex-1 min-h-0 m-0">
+      <div className="h-full grid grid-cols-[14rem_1fr_18rem]">
         {/* Sessions list */}
         <aside className="border-r overflow-y-auto p-2 space-y-1">
           <div className="text-[11px] uppercase tracking-wide text-muted-foreground px-2 pt-1 pb-1">
@@ -807,7 +877,7 @@ export default function StudyGroupPage() {
         {/* Active session */}
         <section className="min-w-0 flex flex-col h-full">
           {activeSession ? (
-            <SessionPanel session={activeSession} key={activeSession.id} />
+            <SessionPanel session={activeSession} key={activeSession.id} focusRound={focusRound} />
           ) : (
             <div className="flex-1 grid place-items-center text-center p-8">
               <div className="max-w-md space-y-3">
@@ -873,6 +943,18 @@ export default function StudyGroupPage() {
           )}
         </aside>
       </div>
+        </TabsContent>
+        <TabsContent value="library" className="flex-1 min-h-0 m-0 overflow-y-auto">
+          <LibraryTab
+            onOpenSession={(id, roundIndex) => {
+              setActiveId(id);
+              setTab("sessions");
+              setFocusRound({ round: roundIndex, nonce: Date.now() });
+              navigate(`/study-group?session=${id}&round=${roundIndex}`);
+            }}
+          />
+        </TabsContent>
+      </Tabs>
 
       <NewSessionDialog
         open={newOpen}
@@ -880,6 +962,157 @@ export default function StudyGroupPage() {
         defaultTopicId={defaultTopicId}
         onCreated={(s) => setActiveId(s.id)}
       />
+    </div>
+  );
+}
+
+function LibraryTab({ onOpenSession }: { onOpenSession: (sessionId: number, roundIndex: number) => void }) {
+  const [pendingOnly, setPendingOnly] = useState(false);
+  const params = pendingOnly ? { pendingReview: true } : undefined;
+  const { data, isLoading } = useGetStudyGroupLibrary(params);
+  const flashcards = data?.flashcards ?? [];
+  const questions = data?.questions ?? [];
+  const pendingCount = data?.pendingReviewCount ?? 0;
+
+  return (
+    <div className="p-4 space-y-4 max-w-5xl mx-auto" data-testid="study-group-library">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-base font-semibold flex items-center gap-2">
+            <LibraryIcon className="h-4 w-4" /> Study group library
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Everything promoted to your flashcards and question bank from a study-group session.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {pendingCount > 0 && (
+            <Badge
+              variant="outline"
+              className="text-[11px] gap-1 border-amber-300 text-amber-700 dark:text-amber-300"
+              data-testid="badge-pending-review-count"
+            >
+              <AlertTriangle className="h-3 w-3" />
+              {pendingCount} pending review
+            </Badge>
+          )}
+          <label className="flex items-center gap-2 text-xs">
+            <Switch
+              checked={pendingOnly}
+              onCheckedChange={setPendingOnly}
+              data-testid="toggle-pending-review"
+            />
+            Only pending review
+          </label>
+        </div>
+      </div>
+
+      {isLoading && <p className="text-sm text-muted-foreground">Loading library…</p>}
+
+      {!isLoading && flashcards.length === 0 && questions.length === 0 && (
+        <Card>
+          <CardContent className="p-6 text-center space-y-2">
+            <LibraryIcon className="h-8 w-8 text-muted-foreground mx-auto" />
+            <p className="text-sm font-medium">No saved items yet</p>
+            <p className="text-xs text-muted-foreground">
+              When you promote a candidate flashcard or question from a study group session, it lands here.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {flashcards.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+            <BookOpen className="h-3.5 w-3.5" /> Flashcards ({flashcards.length})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {flashcards.map((f) => (
+              <Card key={`f-${f.artifactId}`} data-testid={`library-flashcard-${f.flashcardId}`}>
+                <CardContent className="p-3 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[11px] text-muted-foreground truncate">
+                      {f.sessionTitle} · R{f.roundIndex}
+                      {f.topicName ? ` · ${f.topicName}` : ""}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-1.5 text-[11px]"
+                      onClick={() => onOpenSession(f.sessionId, f.roundIndex)}
+                      data-testid={`library-open-session-flashcard-${f.flashcardId}`}
+                    >
+                      View round <ArrowRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </div>
+                  <p className="text-sm font-medium">{f.front}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-3">{f.back}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {questions.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+            <FileQuestion className="h-3.5 w-3.5" /> Questions ({questions.length})
+          </h3>
+          <div className="space-y-2">
+            {questions.map((q) => (
+              <Card key={`q-${q.artifactId}`} data-testid={`library-question-${q.questionId}`}>
+                <CardContent className="p-3 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1.5">
+                      <span>
+                        {q.sessionTitle} · R{q.roundIndex}
+                        {q.topicName ? ` · ${q.topicName}` : ""}
+                      </span>
+                      {q.pendingReview && (
+                        <Badge
+                          variant="outline"
+                          className="h-4 px-1 text-[10px] border-amber-300 text-amber-700 dark:text-amber-300 gap-1"
+                          data-testid={`library-question-pending-${q.questionId}`}
+                        >
+                          <AlertTriangle className="h-2.5 w-2.5" /> pending review
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-1.5 text-[11px]"
+                      onClick={() => onOpenSession(q.sessionId, q.roundIndex)}
+                      data-testid={`library-open-session-question-${q.questionId}`}
+                    >
+                      View round <ArrowRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </div>
+                  <p className="text-sm font-medium">{q.stem}</p>
+                  <ul className="text-xs text-muted-foreground space-y-0.5">
+                    {q.choices.map((c, i) => (
+                      <li
+                        key={i}
+                        className={
+                          i === q.correctIndex
+                            ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                            : ""
+                        }
+                      >
+                        {String.fromCharCode(65 + i)}. {c}
+                      </li>
+                    ))}
+                  </ul>
+                  {q.rationale && (
+                    <p className="text-[11px] text-muted-foreground italic">{q.rationale}</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

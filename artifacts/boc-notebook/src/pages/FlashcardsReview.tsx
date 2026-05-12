@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label";
 import { AskAiButton } from "@/components/AskAiButton";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, CheckCheck, Target, X, Play, Wand2, Loader2, Pencil, Send, ThumbsUp, ThumbsDown, MinusCircle, ListChecks, Check } from "lucide-react";
+import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, CheckCheck, Target, X, Play, Wand2, Loader2, Pencil, Send, ThumbsUp, ThumbsDown, MinusCircle, ListChecks, Check, Users } from "lucide-react";
 import { Link, useSearch, useLocation } from "wouter";
 import { rememberFixItQuizId } from "@/lib/fixItPlan";
 
@@ -188,7 +188,7 @@ export default function FlashcardsReview() {
     </Dialog>
   );
 
-  const { focusTopicIdsParam, focusTopicIds, focusRegion, thenQuiz, quizCount, fixIt } = useMemo(() => {
+  const { focusTopicIdsParam, focusTopicIds, focusRegion, thenQuiz, quizCount, fixIt, sourceFilter } = useMemo(() => {
     const params = new URLSearchParams(search);
     const raw = params.get("topicIds") ?? "";
     const ids = raw
@@ -203,16 +203,37 @@ export default function FlashcardsReview() {
       thenQuiz: params.get("thenQuiz") === "1",
       quizCount: Number.isFinite(cnt) && cnt > 0 ? Math.min(50, cnt) : 10,
       fixIt: params.get("fixIt") === "1",
+      sourceFilter: params.get("source") || "",
     };
   }, [search]);
 
-  const queryParams = focusTopicIdsParam ? { topicIds: focusTopicIdsParam } : undefined;
-  const { data: cards = [], isLoading } = useListDueFlashcards(queryParams, {
-    query: { queryKey: getListDueFlashcardsQueryKey(queryParams), enabled: mode === "review" },
+  const dueParams = useMemo(() => {
+    const p: { topicIds?: string; source?: string } = {};
+    if (focusTopicIdsParam) p.topicIds = focusTopicIdsParam;
+    if (sourceFilter) p.source = sourceFilter;
+    return Object.keys(p).length > 0 ? p : undefined;
+  }, [focusTopicIdsParam, sourceFilter]);
+  const allParams = useMemo(() => {
+    return sourceFilter ? { source: sourceFilter } : undefined;
+  }, [sourceFilter]);
+  const { data: cards = [], isLoading } = useListDueFlashcards(dueParams, {
+    query: { queryKey: getListDueFlashcardsQueryKey(dueParams), enabled: mode === "review" },
   });
-  const { data: allCards = [], isLoading: isLoadingAll } = useListAllFlashcards({
-    query: { queryKey: getListAllFlashcardsQueryKey(), enabled: mode === "browse" },
+  const { data: allCards = [], isLoading: isLoadingAll } = useListAllFlashcards(allParams, {
+    query: { queryKey: getListAllFlashcardsQueryKey(allParams), enabled: mode === "browse" },
   });
+
+  const isStudyGroup = sourceFilter === "study_group";
+  const toggleStudyGroup = () => {
+    const params = new URLSearchParams(search);
+    if (isStudyGroup) {
+      params.delete("source");
+    } else {
+      params.set("source", "study_group");
+    }
+    const qs = params.toString();
+    navigate(qs ? `/flashcards?${qs}` : "/flashcards");
+  };
 
   const liveCard = cards[0];
   const card = tourPreview?.active ? TOUR_SAMPLE_CARD : liveCard;
@@ -417,8 +438,22 @@ export default function FlashcardsReview() {
                 <Target className="h-3 w-3" /> {focusRegion}
               </Badge>
             )}
+            {isStudyGroup && (
+              <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1" data-testid="badge-source-study-group">
+                <Users className="h-3 w-3" /> From study group
+              </Badge>
+            )}
           </h1>
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={isStudyGroup ? "default" : "outline"}
+              onClick={toggleStudyGroup}
+              data-testid="button-filter-study-group-empty"
+              title="Show only flashcards saved from a study-group session"
+            >
+              <Users className="h-3 w-3 mr-1" /> {isStudyGroup ? "Showing study group" : "From study group"}
+            </Button>
             <Button size="sm" variant="outline" onClick={() => setGenOpen(true)} data-testid="button-generate-flashcards-empty">
               <Wand2 className="h-3 w-3 mr-1" /> Generate
             </Button>
@@ -514,8 +549,22 @@ export default function FlashcardsReview() {
               <Target className="h-3 w-3" /> {focusRegion}
             </Badge>
           )}
+          {isStudyGroup && (
+            <Badge variant="outline" className="ml-2 text-xs flex items-center gap-1" data-testid="badge-source-study-group">
+              <Users className="h-3 w-3" /> From study group
+            </Badge>
+          )}
         </h1>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant={isStudyGroup ? "default" : "outline"}
+            onClick={toggleStudyGroup}
+            data-testid="button-filter-study-group"
+            title="Show only flashcards saved from a study-group session"
+          >
+            <Users className="h-3 w-3 mr-1" /> {isStudyGroup ? "Showing study group" : "From study group"}
+          </Button>
           {thenQuiz && isFocused && (
             <Button
               size="sm"

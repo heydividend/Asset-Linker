@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ClipboardList, Play, Sparkles, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ClipboardList, Play, Sparkles, Trash2, Users } from "lucide-react";
 
 const MODES = [
   { value: "adaptive", label: "Adaptive (focus on your weak areas)" },
@@ -55,6 +56,8 @@ export default function QuizHub() {
   const [domainId, setDomainId] = useState<string>("");
   const [topicId, setTopicId] = useState<string>("");
   const [notebookId, setNotebookId] = useState<string>("");
+  const [studyGroupOnly, setStudyGroupOnly] = useState(false);
+  const [pendingReviewOnly, setPendingReviewOnly] = useState(false);
 
   const search = useSearch();
   useEffect(() => {
@@ -70,6 +73,11 @@ export default function QuizHub() {
       setDomainId(d);
     }
     if (nb) setNotebookId(nb);
+    if (p.get("source") === "study_group") setStudyGroupOnly(true);
+    if (p.get("pendingReview") === "1" || p.get("pendingReview") === "true") {
+      setStudyGroupOnly(true);
+      setPendingReviewOnly(true);
+    }
   }, [search]);
 
   const needsDomain = mode === "domain" && !domainId;
@@ -85,13 +93,15 @@ export default function QuizHub() {
       toast({ title: "Pick a topic", description: "Choose which topic to quiz on.", variant: "destructive" });
       return;
     }
-    const data: { mode: typeof mode; count: number; notebookId?: number; topicId?: number; domainId?: number } = {
+    const data: { mode: typeof mode; count: number; notebookId?: number; topicId?: number; domainId?: number; sourceKind?: "study_group"; pendingReviewOnly?: boolean } = {
       mode,
       count: Number(count),
     };
     if (mode === "domain" && domainId) data.domainId = Number(domainId);
     if (mode === "topic" && topicId) data.topicId = Number(topicId);
     if (notebookId) data.notebookId = Number(notebookId);
+    if (studyGroupOnly) data.sourceKind = "study_group";
+    if (pendingReviewOnly) data.pendingReviewOnly = true;
     start.mutate(
       { data },
       {
@@ -176,6 +186,35 @@ export default function QuizHub() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="rounded-md border p-3 space-y-2 bg-muted/30">
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-sm font-medium flex items-center gap-1.5" htmlFor="quiz-source-study-group">
+                  <Users className="h-3.5 w-3.5" /> From study group only
+                </label>
+                <Switch
+                  id="quiz-source-study-group"
+                  checked={studyGroupOnly}
+                  onCheckedChange={(v) => {
+                    setStudyGroupOnly(v);
+                    if (!v) setPendingReviewOnly(false);
+                  }}
+                  data-testid="toggle-quiz-source-study-group"
+                />
+              </div>
+              {studyGroupOnly && (
+                <div className="flex items-center justify-between gap-3 pl-5">
+                  <label className="text-xs text-muted-foreground" htmlFor="quiz-pending-review">
+                    Only questions still flagged pending review
+                  </label>
+                  <Switch
+                    id="quiz-pending-review"
+                    checked={pendingReviewOnly}
+                    onCheckedChange={setPendingReviewOnly}
+                    data-testid="toggle-quiz-pending-review"
+                  />
+                </div>
+              )}
             </div>
             <Button onClick={onStart} disabled={startDisabled} data-testid="button-start-quiz">
               <Play className="h-4 w-4 mr-2" /> Start quiz

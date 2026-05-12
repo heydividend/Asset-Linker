@@ -697,6 +697,81 @@ router.post("/study-group/artifacts/:id/promote", async (req, res): Promise<void
   res.status(400).json({ error: `Cannot promote ${a.kind}` });
 });
 
+router.get("/study-group/library", async (req, res): Promise<void> => {
+  const pendingOnly = req.query.pendingReview === "true" || req.query.pendingReview === "1";
+
+  // Promoted flashcards (artifact -> session -> flashcard, optional topic).
+  const fcRows = await db
+    .select({
+      artifactId: studyGroupArtifacts.id,
+      flashcardId: flashcards.id,
+      sessionId: studyGroupSessions.id,
+      sessionTitle: studyGroupSessions.title,
+      roundIndex: studyGroupArtifacts.roundIndex,
+      topicId: flashcards.topicId,
+      topicName: topics.name,
+      front: flashcards.front,
+      back: flashcards.back,
+      createdAt: flashcards.createdAt,
+      promotedAt: studyGroupArtifacts.promotedAt,
+    })
+    .from(studyGroupArtifacts)
+    .innerJoin(flashcards, eq(flashcards.id, studyGroupArtifacts.promotedRefId))
+    .innerJoin(studyGroupSessions, eq(studyGroupSessions.id, studyGroupArtifacts.sessionId))
+    .leftJoin(topics, eq(topics.id, flashcards.topicId))
+    .where(
+      and(
+        eq(studyGroupArtifacts.kind, "flashcard_candidate"),
+        isNotNull(studyGroupArtifacts.promotedRefId),
+        eq(flashcards.source, "study_group"),
+      ),
+    )
+    .orderBy(desc(studyGroupArtifacts.promotedAt));
+
+  // Promoted questions
+  const qConditions = [
+    eq(studyGroupArtifacts.kind, "question_candidate"),
+    isNotNull(studyGroupArtifacts.promotedRefId),
+    eq(questions.sourceKind, "study_group"),
+  ];
+  if (pendingOnly) qConditions.push(eq(questions.pendingReview, true));
+  const qRows = await db
+    .select({
+      artifactId: studyGroupArtifacts.id,
+      questionId: questions.id,
+      sessionId: studyGroupSessions.id,
+      sessionTitle: studyGroupSessions.title,
+      roundIndex: studyGroupArtifacts.roundIndex,
+      topicId: questions.topicId,
+      topicName: topics.name,
+      stem: questions.stem,
+      choices: questions.choices,
+      correctIndex: questions.correctIndex,
+      rationale: questions.rationale,
+      pendingReview: questions.pendingReview,
+      createdAt: questions.createdAt,
+      promotedAt: studyGroupArtifacts.promotedAt,
+    })
+    .from(studyGroupArtifacts)
+    .innerJoin(questions, eq(questions.id, studyGroupArtifacts.promotedRefId))
+    .innerJoin(studyGroupSessions, eq(studyGroupSessions.id, studyGroupArtifacts.sessionId))
+    .leftJoin(topics, eq(topics.id, questions.topicId))
+    .where(and(...qConditions))
+    .orderBy(desc(studyGroupArtifacts.promotedAt));
+
+  // Pending-review count is a global view of the study-group queue, not affected by the filter.
+  const [{ pending }] = await db
+    .select({ pending: sql<number>`cast(count(*) as int)` })
+    .from(questions)
+    .where(and(eq(questions.sourceKind, "study_group"), eq(questions.pendingReview, true)));
+
+  res.json({
+    flashcards: fcRows,
+    questions: qRows,
+    pendingReviewCount: Number(pending) || 0,
+  });
+});
+
 router.get("/study-group/learning-signal", async (_req, res): Promise<void> => {
   const [{ sessions }] = await db
     .select({ sessions: sql<number>`cast(count(*) as int)` })

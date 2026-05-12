@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { QuizInputMode } from "./quizInputMode";
+import type { QuizInputSourceKind } from "./quizInputSourceKind";
 
 export interface QuizInput {
   mode: QuizInputMode;
@@ -18,4 +19,8 @@ export interface QuizInput {
   topicId?: number;
   topicIds?: number[];
   domainId?: number;
+  /** Filter the question pool by where the question came from. */
+  sourceKind?: QuizInputSourceKind;
+  /** Only include questions still flagged pendingReview (admin/review surface). */
+  pendingReviewOnly?: boolean;
 }

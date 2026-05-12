@@ -11,4 +11,8 @@ export type ListDueFlashcardsParams = {
    * Comma-separated topic IDs to restrict due cards to (used by focused region review).
    */
   topicIds?: string;
+  /**
+   * Filter by flashcard source (e.g. study_group).
+   */
+  source?: string;
 };

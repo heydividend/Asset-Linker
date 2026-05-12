@@ -321,10 +321,12 @@ Return JSON: {"conciseAnswer":"...","distractors":["...","..."]}`,
   res.json({ choices: all, correctIndex, back: card.back });
 });
 
-router.get("/flashcards", async (_req, res): Promise<void> => {
+router.get("/flashcards", async (req, res): Promise<void> => {
+  const source = typeof req.query.source === "string" ? req.query.source.trim() : "";
   const rows = await db
     .select()
     .from(flashcards)
+    .where(source ? eq(flashcards.source, source) : undefined)
     .orderBy(desc(flashcards.createdAt));
   res.json(rows);
 });
@@ -335,15 +337,16 @@ router.get("/flashcards/due", async (req, res): Promise<void> => {
     .split(",")
     .map((s) => Number(s.trim()))
     .filter((n) => Number.isInteger(n) && n > 0);
+  const source = typeof req.query.source === "string" ? req.query.source.trim() : "";
 
-  const where = topicIds.length > 0
-    ? and(lte(flashcards.dueAt, new Date()), inArray(flashcards.topicId, topicIds))
-    : lte(flashcards.dueAt, new Date());
+  const conditions = [lte(flashcards.dueAt, new Date())];
+  if (topicIds.length > 0) conditions.push(inArray(flashcards.topicId, topicIds));
+  if (source) conditions.push(eq(flashcards.source, source));
 
   const rows = await db
     .select()
     .from(flashcards)
-    .where(where)
+    .where(conditions.length === 1 ? conditions[0] : and(...conditions))
     .orderBy(asc(flashcards.dueAt))
     .limit(100);
   res.json(rows);

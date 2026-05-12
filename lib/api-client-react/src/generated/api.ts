@@ -36,7 +36,9 @@ import type {
   GameSummaryEntry,
   GetDashboardTopicHistoryParams,
   GetDashboardTopicMasteryParams,
+  GetStudyGroupLibraryParams,
   HealthStatus,
+  ListAllFlashcardsParams,
   ListAllStudyGuidesParams,
   ListDueFlashcardsParams,
   ListGameSessionsParams,
@@ -75,6 +77,7 @@ import type {
   ScrapeJobInput,
   StudyGroupInterjectInput,
   StudyGroupLearningSignal,
+  StudyGroupLibrary,
   StudyGroupPromoteResult,
   StudyGroupSession,
   StudyGroupSessionDetail,
@@ -1785,41 +1788,60 @@ export const useReviewFlashcard = <
 /**
  * @summary All flashcards across notebooks (browse / re-study mode)
  */
-export const getListAllFlashcardsUrl = () => {
-  return `/api/flashcards`;
+export const getListAllFlashcardsUrl = (params?: ListAllFlashcardsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/flashcards?${stringifiedParams}`
+    : `/api/flashcards`;
 };
 
 export const listAllFlashcards = async (
+  params?: ListAllFlashcardsParams,
   options?: RequestInit,
 ): Promise<Flashcard[]> => {
-  return customFetch<Flashcard[]>(getListAllFlashcardsUrl(), {
+  return customFetch<Flashcard[]>(getListAllFlashcardsUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListAllFlashcardsQueryKey = () => {
-  return [`/api/flashcards`] as const;
+export const getListAllFlashcardsQueryKey = (
+  params?: ListAllFlashcardsParams,
+) => {
+  return [`/api/flashcards`, ...(params ? [params] : [])] as const;
 };
 
 export const getListAllFlashcardsQueryOptions = <
   TData = Awaited<ReturnType<typeof listAllFlashcards>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listAllFlashcards>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListAllFlashcardsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAllFlashcards>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListAllFlashcardsQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getListAllFlashcardsQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof listAllFlashcards>>
-  > = ({ signal }) => listAllFlashcards({ signal, ...requestOptions });
+  > = ({ signal }) => listAllFlashcards(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listAllFlashcards>>,
@@ -1840,15 +1862,18 @@ export type ListAllFlashcardsQueryError = ErrorType<unknown>;
 export function useListAllFlashcards<
   TData = Awaited<ReturnType<typeof listAllFlashcards>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listAllFlashcards>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListAllFlashcardsQueryOptions(options);
+>(
+  params?: ListAllFlashcardsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listAllFlashcards>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAllFlashcardsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -6839,6 +6864,106 @@ export const usePromoteStudyGroupArtifact = <
 > => {
   return useMutation(getPromoteStudyGroupArtifactMutationOptions(options));
 };
+
+/**
+ * @summary Feed of every artifact saved from study-group sessions (promoted flashcards + questions, plus pending review state).
+ */
+export const getGetStudyGroupLibraryUrl = (
+  params?: GetStudyGroupLibraryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/study-group/library?${stringifiedParams}`
+    : `/api/study-group/library`;
+};
+
+export const getStudyGroupLibrary = async (
+  params?: GetStudyGroupLibraryParams,
+  options?: RequestInit,
+): Promise<StudyGroupLibrary> => {
+  return customFetch<StudyGroupLibrary>(getGetStudyGroupLibraryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStudyGroupLibraryQueryKey = (
+  params?: GetStudyGroupLibraryParams,
+) => {
+  return [`/api/study-group/library`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetStudyGroupLibraryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStudyGroupLibrary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetStudyGroupLibraryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStudyGroupLibrary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStudyGroupLibraryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStudyGroupLibrary>>
+  > = ({ signal }) =>
+    getStudyGroupLibrary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStudyGroupLibrary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStudyGroupLibraryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStudyGroupLibrary>>
+>;
+export type GetStudyGroupLibraryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Feed of every artifact saved from study-group sessions (promoted flashcards + questions, plus pending review state).
+ */
+
+export function useGetStudyGroupLibrary<
+  TData = Awaited<ReturnType<typeof getStudyGroupLibrary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetStudyGroupLibraryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStudyGroupLibrary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStudyGroupLibraryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 export const getGetStudyGroupLearningSignalUrl = () => {
   return `/api/study-group/learning-signal`;

@@ -85,6 +85,9 @@ export const GetNotebookResponse = zod.object({
       front: zod.string(),
       back: zod.string(),
       topicId: zod.number().nullish(),
+      source: zod
+        .string()
+        .describe("How this card was created (manual, ai, study_group, …)"),
       easeFactor: zod.number(),
       intervalDays: zod.number(),
       repetitions: zod.number(),
@@ -219,6 +222,9 @@ export const ListFlashcardsResponseItem = zod.object({
   front: zod.string(),
   back: zod.string(),
   topicId: zod.number().nullish(),
+  source: zod
+    .string()
+    .describe("How this card was created (manual, ai, study_group, …)"),
   easeFactor: zod.number(),
   intervalDays: zod.number(),
   repetitions: zod.number(),
@@ -279,6 +285,9 @@ export const UpdateFlashcardResponse = zod.object({
   front: zod.string(),
   back: zod.string(),
   topicId: zod.number().nullish(),
+  source: zod
+    .string()
+    .describe("How this card was created (manual, ai, study_group, …)"),
   easeFactor: zod.number(),
   intervalDays: zod.number(),
   repetitions: zod.number(),
@@ -374,6 +383,9 @@ export const ReviewFlashcardResponse = zod.object({
   front: zod.string(),
   back: zod.string(),
   topicId: zod.number().nullish(),
+  source: zod
+    .string()
+    .describe("How this card was created (manual, ai, study_group, …)"),
   easeFactor: zod.number(),
   intervalDays: zod.number(),
   repetitions: zod.number(),
@@ -385,12 +397,22 @@ export const ReviewFlashcardResponse = zod.object({
 /**
  * @summary All flashcards across notebooks (browse / re-study mode)
  */
+export const ListAllFlashcardsQueryParams = zod.object({
+  source: zod.coerce
+    .string()
+    .optional()
+    .describe("Filter by flashcard source (e.g. study_group, manual, ai)."),
+});
+
 export const ListAllFlashcardsResponseItem = zod.object({
   id: zod.number(),
   notebookId: zod.number(),
   front: zod.string(),
   back: zod.string(),
   topicId: zod.number().nullish(),
+  source: zod
+    .string()
+    .describe("How this card was created (manual, ai, study_group, …)"),
   easeFactor: zod.number(),
   intervalDays: zod.number(),
   repetitions: zod.number(),
@@ -412,6 +434,10 @@ export const ListDueFlashcardsQueryParams = zod.object({
     .describe(
       "Comma-separated topic IDs to restrict due cards to (used by focused region review).",
     ),
+  source: zod.coerce
+    .string()
+    .optional()
+    .describe("Filter by flashcard source (e.g. study_group)."),
 });
 
 export const ListDueFlashcardsResponseItem = zod.object({
@@ -420,6 +446,9 @@ export const ListDueFlashcardsResponseItem = zod.object({
   front: zod.string(),
   back: zod.string(),
   topicId: zod.number().nullish(),
+  source: zod
+    .string()
+    .describe("How this card was created (manual, ai, study_group, …)"),
   easeFactor: zod.number(),
   intervalDays: zod.number(),
   repetitions: zod.number(),
@@ -627,6 +656,16 @@ export const StartQuizBody = zod.object({
   topicId: zod.number().optional(),
   topicIds: zod.array(zod.number()).optional(),
   domainId: zod.number().optional(),
+  sourceKind: zod
+    .enum(["study_group", "ai", "manual"])
+    .optional()
+    .describe("Filter the question pool by where the question came from."),
+  pendingReviewOnly: zod
+    .boolean()
+    .optional()
+    .describe(
+      "Only include questions still flagged pendingReview (admin\/review surface).",
+    ),
 });
 
 export const GetQuizParams = zod.object({
@@ -1587,6 +1626,55 @@ export const InterjectStudyGroupBody = zod.object({
  */
 export const PromoteStudyGroupArtifactParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Feed of every artifact saved from study-group sessions (promoted flashcards + questions, plus pending review state).
+ */
+export const GetStudyGroupLibraryQueryParams = zod.object({
+  pendingReview: zod.coerce
+    .boolean()
+    .optional()
+    .describe("When true, only return questions still flagged pendingReview."),
+});
+
+export const GetStudyGroupLibraryResponse = zod.object({
+  flashcards: zod.array(
+    zod.object({
+      artifactId: zod.number(),
+      flashcardId: zod.number(),
+      sessionId: zod.number(),
+      sessionTitle: zod.string(),
+      roundIndex: zod.number(),
+      topicId: zod.number().nullish(),
+      topicName: zod.string().nullish(),
+      front: zod.string(),
+      back: zod.string(),
+      createdAt: zod.coerce.date(),
+      promotedAt: zod.coerce.date().nullish(),
+    }),
+  ),
+  questions: zod.array(
+    zod.object({
+      artifactId: zod.number(),
+      questionId: zod.number(),
+      sessionId: zod.number(),
+      sessionTitle: zod.string(),
+      roundIndex: zod.number(),
+      topicId: zod.number().nullish(),
+      topicName: zod.string().nullish(),
+      stem: zod.string(),
+      choices: zod.array(zod.string()),
+      correctIndex: zod.number(),
+      rationale: zod.string().nullish(),
+      pendingReview: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      promotedAt: zod.coerce.date().nullish(),
+    }),
+  ),
+  pendingReviewCount: zod
+    .number()
+    .describe("Promoted study-group questions still flagged pendingReview."),
 });
 
 export const GetStudyGroupLearningSignalResponse = zod.object({

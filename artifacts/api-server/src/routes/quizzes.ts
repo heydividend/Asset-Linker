@@ -79,7 +79,7 @@ router.get("/quizzes", async (req, res): Promise<void> => {
 });
 
 router.post("/quizzes", async (req, res): Promise<void> => {
-  const { mode = "adaptive", count = 10, notebookId, topicId, topicIds, domainId } = req.body ?? {};
+  const { mode = "adaptive", count = 10, notebookId, topicId, topicIds, domainId, sourceKind, pendingReviewOnly } = req.body ?? {};
 
   const conditions = [eq(questions.enabled, true)];
   if (Array.isArray(topicIds) && topicIds.length > 0) {
@@ -88,6 +88,12 @@ router.post("/quizzes", async (req, res): Promise<void> => {
     conditions.push(eq(questions.topicId, topicId));
   }
   if (domainId) conditions.push(eq(questions.domainId, domainId));
+  if (typeof sourceKind === "string" && sourceKind) {
+    conditions.push(eq(questions.sourceKind, sourceKind));
+  }
+  if (pendingReviewOnly === true) {
+    conditions.push(eq(questions.pendingReview, true));
+  }
 
   let qrows = await db
     .select({ id: questions.id })
@@ -104,10 +110,20 @@ router.post("/quizzes", async (req, res): Promise<void> => {
       .limit(5);
     const tids = weak.map((w) => w.topicId).filter(Boolean) as number[];
     if (tids.length > 0) {
+      // Preserve all active filters (sourceKind, pendingReview, etc.) when
+      // narrowing to weakness topics so study-group / review-queue toggles
+      // continue to apply in weakness mode.
+      const weaknessConditions = [eq(questions.enabled, true), inArray(questions.topicId, tids)];
+      if (typeof sourceKind === "string" && sourceKind) {
+        weaknessConditions.push(eq(questions.sourceKind, sourceKind));
+      }
+      if (pendingReviewOnly === true) {
+        weaknessConditions.push(eq(questions.pendingReview, true));
+      }
       qrows = await db
         .select({ id: questions.id })
         .from(questions)
-        .where(and(eq(questions.enabled, true), inArray(questions.topicId, tids)))
+        .where(and(...weaknessConditions))
         .orderBy(sql`random()`)
         .limit(count);
     }
