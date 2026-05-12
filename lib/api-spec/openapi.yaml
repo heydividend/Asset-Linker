@@ -2023,6 +2023,13 @@ components:
         pendingExtractionRound:
           type: ["integer", "null"]
           description: "If set, the named round has all turns done but its artifact extraction has not yet completed."
+        timedOutAt:
+          type: ["string", "null"]
+          format: date-time
+          description: "Set when the session has at least one turn marked failed because the stale-stream sweeper / startup recovery flipped a stuck 'streaming' row. The UI surfaces these as resumable timed-out sessions at the top of the sidebar."
+        timedOutRound:
+          type: ["integer", "null"]
+          description: "Round index of the earliest timed-out turn — what the user will resume."
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     StudyGroupRoundInput:
@@ -2058,7 +2065,7 @@ components:
           description: "Per-turn checkpoint. Non-'done' turns in the latest round can be resumed."
         reason:
           type: ["string", "null"]
-          description: "Why this turn ended in its current state. 'sweeper_timeout' means the periodic sweeper or startup recovery flipped a stuck 'streaming' row to 'failed' because it took too long. NULL for normal failures and successes."
+          description: "Why this turn ended in its current state. 'sweeper_timeout' = the periodic stale-stream sweeper / startup recovery / takeover flipped a stuck 'streaming' row to 'failed'. 'stream_error' = the model stream errored or returned no content. NULL for normal failures and successes."
         turnOrder: { type: integer, description: "0-based order within the round for planned turns." }
         createdAt: { type: string, format: date-time }
     StudyGroupArtifact:

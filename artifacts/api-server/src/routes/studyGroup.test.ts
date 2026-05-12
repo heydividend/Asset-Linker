@@ -105,6 +105,11 @@ describe("stuck-round healing logic", () => {
 
       const row = await getMessage(msgId);
       assert.equal(row.status, "failed");
+      assert.equal(
+        row.reason,
+        "sweeper_timeout",
+        "swept rows should be tagged 'sweeper_timeout' so the UI can surface a Resume affordance",
+      );
       assert.ok(
         row.updatedAt.getTime() > STALE.getTime(),
         `updatedAt should be refreshed (was ${row.updatedAt.toISOString()})`,

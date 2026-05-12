@@ -503,14 +503,24 @@ async function runPlannedTurn(
     // Superseded by a newer handler — leave as 'failed' so resume picks it up.
     await db
       .update(studyGroupMessages)
-      .set({ status: "failed", content: full, updatedAt: new Date() })
+      .set({
+        status: "failed",
+        reason: "sweeper_timeout",
+        content: full,
+        updatedAt: new Date(),
+      })
       .where(eq(studyGroupMessages.id, row.id));
     return { ok: false, content: full, aborted: true };
   }
   if (streamFailed || !full.trim()) {
     await db
       .update(studyGroupMessages)
-      .set({ status: "failed", content: full, updatedAt: new Date() })
+      .set({
+        status: "failed",
+        reason: "stream_error",
+        content: full,
+        updatedAt: new Date(),
+      })
       .where(eq(studyGroupMessages.id, row.id));
     stream.push({
       type: "error",
@@ -606,7 +616,63 @@ router.get("/study-group/sessions", async (_req, res): Promise<void> => {
     .from(studyGroupSessions)
     .orderBy(desc(studyGroupSessions.createdAt))
     .limit(50);
-  res.json(rows);
+  // Enrich each session with the earliest timed-out turn, so the sidebar can
+  // surface "this round timed out — resume?" prominently and sort stuck
+  // sessions to the top.
+  const ids = rows.map((r) => r.id);
+  const timedOutByPid = new Map<
+    number,
+    { roundIndex: number; updatedAt: Date }
+  >();
+  if (ids.length > 0) {
+    const stuck = await db
+      .select({
+        sessionId: studyGroupMessages.sessionId,
+        roundIndex: studyGroupMessages.roundIndex,
+        updatedAt: studyGroupMessages.updatedAt,
+      })
+      .from(studyGroupMessages)
+      .where(
+        and(
+          inArray(studyGroupMessages.sessionId, ids),
+          eq(studyGroupMessages.status, "failed"),
+          eq(studyGroupMessages.reason, "sweeper_timeout"),
+        ),
+      );
+    for (const s of stuck) {
+      const cur = timedOutByPid.get(s.sessionId);
+      // Track earliest round (what resume targets), but prefer most recent
+      // updatedAt for the timestamp surfaced in the UI.
+      if (!cur) {
+        timedOutByPid.set(s.sessionId, {
+          roundIndex: s.roundIndex,
+          updatedAt: s.updatedAt,
+        });
+      } else {
+        timedOutByPid.set(s.sessionId, {
+          roundIndex: Math.min(cur.roundIndex, s.roundIndex),
+          updatedAt:
+            s.updatedAt > cur.updatedAt ? s.updatedAt : cur.updatedAt,
+        });
+      }
+    }
+  }
+  const enriched = rows.map((r) => {
+    const stuck = timedOutByPid.get(r.id);
+    return {
+      ...r,
+      timedOutAt: stuck ? stuck.updatedAt.toISOString() : null,
+      timedOutRound: stuck ? stuck.roundIndex : null,
+    };
+  });
+  // Stuck sessions float to the top; otherwise preserve createdAt-desc order.
+  enriched.sort((a, b) => {
+    const aStuck = a.timedOutAt != null ? 1 : 0;
+    const bStuck = b.timedOutAt != null ? 1 : 0;
+    if (aStuck !== bStuck) return bStuck - aStuck;
+    return 0;
+  });
+  res.json(enriched);
 });
 
 router.post("/study-group/sessions", async (req, res): Promise<void> => {

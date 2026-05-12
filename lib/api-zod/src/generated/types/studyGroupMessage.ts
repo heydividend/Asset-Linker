@@ -21,7 +21,7 @@ export interface StudyGroupMessage {
   /** Per-turn checkpoint. Non-'done' turns in the latest round can be resumed. */
   status: StudyGroupMessageStatus;
   /**
-   * Why this turn ended in its current state. 'sweeper_timeout' means the periodic sweeper or startup recovery flipped a stuck 'streaming' row to 'failed' because it took too long. NULL for normal failures and successes.
+   * Why this turn ended in its current state. 'sweeper_timeout' = the periodic stale-stream sweeper / startup recovery / takeover flipped a stuck 'streaming' row to 'failed'. 'stream_error' = the model stream errored or returned no content. NULL for normal failures and successes.
    * @nullable
    */
   reason?: string | null;

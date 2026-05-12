@@ -26,10 +26,12 @@ export const studyGroupMessages = pgTable("study_group_messages", {
   roundIndex: integer("round_index").notNull().default(0),
   questionId: integer("question_id"),
   status: text("status").notNull().default("done"), // pending | streaming | done | failed
-  // When the periodic sweeper or startup recovery flips a stuck 'streaming'
-  // row to 'failed', it records 'sweeper_timeout' here so the dashboard can
-  // explain WHY the round suddenly went from "thinking…" to "retry" instead
-  // of treating it as a generic failure. NULL for normal failures.
+  // When the periodic sweeper / startup recovery / takeover flips a stuck
+  // 'streaming' row to 'failed', it records 'sweeper_timeout' here so the
+  // dashboard can explain WHY the round suddenly went from "thinking…" to
+  // "retry" instead of treating it as a generic failure. 'stream_error' is
+  // recorded when the model stream errored or returned no content. NULL for
+  // normal failures and successes.
   reason: text("reason"),
   turnOrder: integer("turn_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

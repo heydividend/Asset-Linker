@@ -23,6 +23,16 @@ export interface StudyGroupSession {
    * @nullable
    */
   pendingExtractionRound?: number | null;
+  /**
+   * Set when the session has at least one turn marked failed because the stale-stream sweeper / startup recovery flipped a stuck 'streaming' row. The UI surfaces these as resumable timed-out sessions at the top of the sidebar.
+   * @nullable
+   */
+  timedOutAt?: Date | null;
+  /**
+   * Round index of the earliest timed-out turn — what the user will resume.
+   * @nullable
+   */
+  timedOutRound?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

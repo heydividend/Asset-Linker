@@ -158,7 +158,10 @@ function MessageBubble({
   const kindLabel = KIND_LABELS[message.kind] ?? message.kind;
   const isStudent = message.speaker === "student";
   const isSystem = message.speaker === "system";
-  const isFailed = (message as { status?: string }).status === "failed";
+  const status = (message as { status?: string }).status;
+  const failedReason = (message as { reason?: string | null }).reason;
+  const isFailed = status === "failed";
+  const isTimedOut = isFailed && failedReason === "sweeper_timeout";
   const speakId = `sg-msg-${message.id}`;
   const speech = useSpeech();
   const speakingThis = speech.isSpeaking(speakId);
@@ -252,20 +255,32 @@ function MessageBubble({
             isStudent && "bg-primary/5 border-primary/30",
             message.kind === "verdict" && "bg-amber-50 dark:bg-amber-950/30 border-amber-300/60",
             message.kind === "takeaway" && "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300/60",
-            isFailed && "bg-rose-50 dark:bg-rose-950/30 border-rose-300/60",
+            isFailed &&
+              !isTimedOut &&
+              "bg-rose-50 dark:bg-rose-950/30 border-rose-300/60",
+            isTimedOut &&
+              "bg-amber-50/60 dark:bg-amber-950/30 border-dashed border-amber-400/70",
             message.__pending && "opacity-90",
           )}
         >
           <MarkdownMessage
             content={
               message.content ||
-              (isFailed
-                ? "_(turn was interrupted — click **Retry last round** to pick up here)_"
-                : message.__pending
-                  ? "_typing…_"
-                  : "")
+              (isTimedOut
+                ? "_(this turn timed out — click **Resume round** at the top to pick up here)_"
+                : isFailed
+                  ? "_(turn was interrupted — click **Retry last round** to pick up here)_"
+                  : message.__pending
+                    ? "_typing…_"
+                    : "")
             }
           />
+          {isTimedOut && message.content && (
+            <div className="mt-1.5 text-[11px] text-amber-700 dark:text-amber-300 inline-flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              cut off when the round timed out
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -421,9 +436,7 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
     const planned = msgs.filter((m) =>
       ["question", "answer", "verdict", "takeaway"].includes(m.kind),
     );
-    const incomplete = planned.filter(
-      (m) => m.status && m.status !== "done",
-    );
+    const incomplete = planned.filter((m) => m.status && m.status !== "done");
     const failed = incomplete.some((m) => m.status === "failed");
     let round: number | null = null;
     if (incomplete.length > 0) {
@@ -799,7 +812,7 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
           {isPaused ? <Play className="h-3.5 w-3.5 mr-1" /> : <Pause className="h-3.5 w-3.5 mr-1" />}
           {isPaused ? "Resume" : "Pause"}
         </Button>
-        {hasFailed && canResume && (
+        {hasFailed && !sweeperHealed && canResume && (
           <Button
             size="sm"
             variant="outline"
@@ -814,38 +827,61 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
         )}
         <Button
           size="sm"
-          onClick={() => handleStartRound()}
+          onClick={() => handleStartRound({ retry: sweeperHealed })}
           disabled={streaming || isPaused}
           data-testid="button-sg-start-round"
+          variant={sweeperHealed ? "default" : undefined}
+          className={cn(
+            sweeperHealed &&
+              "bg-amber-600 hover:bg-amber-700 text-white border-amber-700",
+          )}
         >
           {streaming ? (
             <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+          ) : sweeperHealed ? (
+            <RotateCcw className="h-3.5 w-3.5 mr-1" />
           ) : canResume ? (
             <Play className="h-3.5 w-3.5 mr-1" />
           ) : (
             <Wand2 className="h-3.5 w-3.5 mr-1" />
           )}
-          {canResume ? `Resume round ${incompleteRound}` : "Start round"}
+          {sweeperHealed
+            ? `Resume round ${incompleteRound}`
+            : canResume
+              ? `Resume round ${incompleteRound}`
+              : "Start round"}
         </Button>
       </div>
 
       {/* Sweeper-healed banner: shown when the periodic timeout sweeper
           flipped a stuck 'streaming' turn to 'failed'. Without this, users
           see the round suddenly jump from "thinking…" to a Retry button
-          with no explanation. */}
-      {sweeperHealed && (
+          with no explanation. The inline Resume button is a one-tap path
+          back into the round. */}
+      {sweeperHealed && !streaming && (
         <div
-          className="border-b bg-amber-50 dark:bg-amber-950/30 px-4 py-2 flex items-start gap-2 text-amber-900 dark:text-amber-200"
+          className="border-b bg-amber-50 dark:bg-amber-950/30 px-4 py-2 flex items-center gap-2 text-amber-900 dark:text-amber-200"
           data-testid="sg-sweeper-timeout-banner"
           role="status"
         >
-          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-          <div className="text-xs leading-snug">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
+          <div className="flex-1 min-w-0 text-xs leading-snug">
             <span className="font-medium">Round {incompleteRound} timed out.</span>{" "}
-            This turn took too long and was paused automatically — tap{" "}
-            <span className="font-medium">Retry last round</span> above to pick
-            up where the group left off.
+            <span className="text-amber-800/80 dark:text-amber-200/80">
+              This turn took too long and was paused automatically — pick up
+              where the group left off; your partial transcript is saved.
+            </span>
           </div>
+          <Button
+            size="sm"
+            onClick={() => handleStartRound({ retry: true })}
+            disabled={isPaused}
+            data-testid="button-sg-resume-timed-out"
+            className="bg-amber-600 hover:bg-amber-700 text-white border-amber-700 shrink-0"
+          >
+            <RotateCcw className="h-3.5 w-3.5 mr-1" />
+            Resume round
+          </Button>
         </div>
       )}
 
@@ -1245,33 +1281,56 @@ export default function StudyGroupPage() {
               No sessions yet. Click "New session" to start one.
             </p>
           )}
-          {sessions.map((s) => (
-            <div
-              key={s.id}
-              className={cn(
-                "group flex items-center gap-1 rounded-md px-2 py-1.5 cursor-pointer text-sm",
-                activeId === s.id ? "bg-primary/10" : "hover:bg-accent",
-              )}
-              onClick={() => setActiveId(s.id)}
-              data-testid={`sg-session-${s.id}`}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="truncate text-[13px] font-medium">{s.title}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  R{s.roundCount} · {s.status}
-                </div>
-              </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                onClick={(e) => { e.stopPropagation(); deleteSession(s.id); }}
-                data-testid={`sg-delete-${s.id}`}
+          {sessions.map((s) => {
+            const isStuck = s.timedOutAt != null;
+            return (
+              <div
+                key={s.id}
+                className={cn(
+                  "group flex items-center gap-1 rounded-md px-2 py-1.5 cursor-pointer text-sm",
+                  activeId === s.id ? "bg-primary/10" : "hover:bg-accent",
+                  isStuck &&
+                    "ring-1 ring-amber-300/70 dark:ring-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20",
+                )}
+                onClick={() => setActiveId(s.id)}
+                data-testid={`sg-session-${s.id}`}
+                data-stuck={isStuck ? "true" : undefined}
               >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate text-[13px] font-medium flex items-center gap-1">
+                    {isStuck && (
+                      <AlertTriangle
+                        className="h-3 w-3 text-amber-600 dark:text-amber-300 shrink-0"
+                        aria-label="Round timed out"
+                      />
+                    )}
+                    <span className="truncate">{s.title}</span>
+                  </div>
+                  {isStuck ? (
+                    <div
+                      className="text-[11px] text-amber-700 dark:text-amber-300 font-medium"
+                      data-testid={`sg-stuck-label-${s.id}`}
+                    >
+                      Round {s.timedOutRound ?? s.roundCount} timed out — tap to resume
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-muted-foreground">
+                      R{s.roundCount} · {s.status}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                  onClick={(e) => { e.stopPropagation(); deleteSession(s.id); }}
+                  data-testid={`sg-delete-${s.id}`}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            );
+          })}
         </aside>
 
         {/* Active session */}

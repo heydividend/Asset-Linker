@@ -1544,6 +1544,18 @@ export const ListStudyGroupSessionsResponseItem = zod.object({
     .describe(
       "If set, the named round has all turns done but its artifact extraction has not yet completed.",
     ),
+  timedOutAt: zod.coerce
+    .date()
+    .nullish()
+    .describe(
+      "Set when the session has at least one turn marked failed because the stale-stream sweeper \/ startup recovery flipped a stuck 'streaming' row. The UI surfaces these as resumable timed-out sessions at the top of the sidebar.",
+    ),
+  timedOutRound: zod
+    .number()
+    .nullish()
+    .describe(
+      "Round index of the earliest timed-out turn — what the user will resume.",
+    ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -1581,6 +1593,18 @@ export const GetStudyGroupSessionResponse = zod.object({
       .describe(
         "If set, the named round has all turns done but its artifact extraction has not yet completed.",
       ),
+    timedOutAt: zod.coerce
+      .date()
+      .nullish()
+      .describe(
+        "Set when the session has at least one turn marked failed because the stale-stream sweeper \/ startup recovery flipped a stuck 'streaming' row. The UI surfaces these as resumable timed-out sessions at the top of the sidebar.",
+      ),
+    timedOutRound: zod
+      .number()
+      .nullish()
+      .describe(
+        "Round index of the earliest timed-out turn — what the user will resume.",
+      ),
     createdAt: zod.coerce.date(),
     updatedAt: zod.coerce.date(),
   }),
@@ -1606,7 +1630,7 @@ export const GetStudyGroupSessionResponse = zod.object({
         .string()
         .nullish()
         .describe(
-          "Why this turn ended in its current state. 'sweeper_timeout' means the periodic sweeper or startup recovery flipped a stuck 'streaming' row to 'failed' because it took too long. NULL for normal failures and successes.",
+          "Why this turn ended in its current state. 'sweeper_timeout' = the periodic stale-stream sweeper \/ startup recovery \/ takeover flipped a stuck 'streaming' row to 'failed'. 'stream_error' = the model stream errored or returned no content. NULL for normal failures and successes.",
         ),
       turnOrder: zod
         .number()
@@ -1655,6 +1679,18 @@ export const UpdateStudyGroupSessionResponse = zod.object({
     .nullish()
     .describe(
       "If set, the named round has all turns done but its artifact extraction has not yet completed.",
+    ),
+  timedOutAt: zod.coerce
+    .date()
+    .nullish()
+    .describe(
+      "Set when the session has at least one turn marked failed because the stale-stream sweeper \/ startup recovery flipped a stuck 'streaming' row. The UI surfaces these as resumable timed-out sessions at the top of the sidebar.",
+    ),
+  timedOutRound: zod
+    .number()
+    .nullish()
+    .describe(
+      "Round index of the earliest timed-out turn — what the user will resume.",
     ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
