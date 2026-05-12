@@ -195,6 +195,18 @@ function startSseStream(res: import("express").Response): StreamHandle {
 // ---- Per-session in-flight handler tracking (so a reconnect can supersede) ----
 const sessionAborters = new Map<number, AbortController>();
 
+// Startup sweep: heal any rows left in 'streaming' from a previous process
+// (crash/redeploy mid-round). Flipping them to 'failed' makes the round show
+// up as resumable on the dashboard without the user clicking anything.
+export async function recoverStuckStudyGroupRounds(): Promise<number> {
+  const updated = await db
+    .update(studyGroupMessages)
+    .set({ status: "failed" })
+    .where(eq(studyGroupMessages.status, "streaming"))
+    .returning({ id: studyGroupMessages.id });
+  return updated.length;
+}
+
 async function takeOverSession(sessionId: number): Promise<AbortController> {
   const prev = sessionAborters.get(sessionId);
   if (prev) {
