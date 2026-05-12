@@ -884,7 +884,9 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
         >
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
           <div className="flex-1 min-w-0 text-xs leading-snug">
-            <span className="font-medium">Round {incompleteRound} timed out.</span>{" "}
+            <span className="font-medium">
+              Round {incompleteRound} on “{session.title}” timed out.
+            </span>{" "}
             <span className="text-amber-800/80 dark:text-amber-200/80">
               This turn took too long and was paused automatically — pick up
               where the group left off; your partial transcript is saved.
@@ -893,12 +895,13 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
           <Button
             size="sm"
             onClick={() => handleStartRound({ retry: true })}
-            disabled={isPaused}
-            data-testid="button-sg-resume-timed-out"
+            disabled={isPaused || !canResume}
+            data-testid="button-sg-sweeper-banner-retry"
+            title={`Retry round ${incompleteRound} on ${session.title}`}
             className="bg-amber-600 hover:bg-amber-700 text-white border-amber-700 shrink-0"
           >
             <RotateCcw className="h-3.5 w-3.5 mr-1" />
-            Resume round
+            Retry round
           </Button>
         </div>
       )}
