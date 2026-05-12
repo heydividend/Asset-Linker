@@ -1,4 +1,5 @@
 import { test, expect, request, type APIRequestContext, type Page } from "@playwright/test";
+import { Client } from "pg";
 
 /**
  * End-to-end coverage for the AI Study Group feature.
@@ -228,6 +229,61 @@ test.describe("Study Group end-to-end", () => {
     await expect(topicSelect).not.toContainText("Auto");
 
     await api.dispose();
+  });
+
+  test('shows the sweeper-timeout banner when a round was healed by the timeout sweeper', async ({
+    page,
+  }) => {
+    // Pins the user-facing explanation contract: when the periodic
+    // sweeper flips a stuck 'streaming' row to 'failed' with
+    // reason='sweeper_timeout', the StudyGroupPage MUST render
+    // <div data-testid="sg-sweeper-timeout-banner"> on the affected
+    // session. Backend coverage of the reason write lives in
+    // artifacts/api-server/src/routes/studyGroup.test.ts; this test
+    // proves the dashboard side of the contract end-to-end.
+    const databaseUrl = process.env.DATABASE_URL;
+    test.skip(
+      !databaseUrl,
+      "DATABASE_URL not set — sweeper-timeout banner test needs direct DB seeding",
+    );
+
+    const db = new Client({ connectionString: databaseUrl });
+    await db.connect();
+    let sessionId: number | null = null;
+    try {
+      const sessionInsert = await db.query<{ id: number }>(
+        `INSERT INTO study_group_sessions (title, status, round_count)
+         VALUES ($1, 'idle', 1)
+         RETURNING id`,
+        [`pw-sweeper-timeout ${Date.now().toString(36)}`],
+      );
+      sessionId = sessionInsert.rows[0].id;
+
+      // A single failed mentor question in round 0, marked as
+      // sweeper_timeout, is enough to satisfy the banner condition
+      // (incompleteRound != null && hasFailed && sweeperHealed).
+      await db.query(
+        `INSERT INTO study_group_messages
+           (session_id, speaker, kind, content, round_index, status, reason, turn_order)
+         VALUES ($1, 'mentor', 'question', $2, 0, 'failed', 'sweeper_timeout', 0)`,
+        [sessionId, "Test question (timed out by sweeper)"],
+      );
+
+      await page.goto(`/study-group?session=${sessionId}`);
+      await dismissOnboardingIfPresent(page);
+
+      const banner = page.getByTestId("sg-sweeper-timeout-banner");
+      await expect(banner).toBeVisible();
+      await expect(banner).toContainText(/timed out/i);
+    } finally {
+      if (sessionId != null) {
+        // ON DELETE CASCADE on study_group_messages cleans up the row.
+        await db
+          .query(`DELETE FROM study_group_sessions WHERE id = $1`, [sessionId])
+          .catch(() => undefined);
+      }
+      await db.end().catch(() => undefined);
+    }
   });
 
   test('Dashboard "Group" button routes to /study-group?topicId=N', async ({

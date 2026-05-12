@@ -111,6 +111,40 @@ describe("stuck-round healing logic", () => {
       );
     });
 
+    it("stamps reason='sweeper_timeout' on the swept row so the dashboard can explain it", async () => {
+      // Pinning this contract guards the user-facing timeout banner: the
+      // dashboard only renders <sg-sweeper-timeout-banner> when it sees
+      // reason === 'sweeper_timeout'. If a future refactor changes the
+      // sentinel string (or drops the column write), this test fails loudly
+      // instead of silently breaking the explanation in the UI.
+      const sessionId = await createSession("sweep stamps reason");
+      const msgId = await seedMessage(sessionId, {
+        status: "streaming",
+        updatedAt: STALE,
+      });
+
+      const updated = await sweepStaleStudyGroupRounds(NOW);
+      assert.equal(updated, 1);
+
+      const row = await getMessage(msgId);
+      assert.equal(row.status, "failed");
+      assert.equal(row.reason, "sweeper_timeout");
+    });
+
+    it("does not set reason on rows it leaves alone", async () => {
+      const sessionId = await createSession("sweep preserves untouched reason");
+      const freshId = await seedMessage(sessionId, {
+        status: "streaming",
+        updatedAt: FRESH,
+      });
+
+      await sweepStaleStudyGroupRounds(NOW);
+
+      const row = await getMessage(freshId);
+      assert.equal(row.status, "streaming");
+      assert.equal(row.reason, null);
+    });
+
     it("leaves recent (non-stale) streaming rows alone", async () => {
       const sessionId = await createSession("sweep recent streaming");
       const msgId = await seedMessage(sessionId, {
