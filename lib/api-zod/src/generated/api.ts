@@ -292,6 +292,31 @@ export const DeleteFlashcardParams = zod.object({
 });
 
 /**
+ * @summary Generate a 3-option multiple-choice version of this flashcard
+ */
+export const GetFlashcardChoicesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const getFlashcardChoicesResponseChoicesMin = 3;
+export const getFlashcardChoicesResponseChoicesMax = 3;
+
+export const getFlashcardChoicesResponseCorrectIndexMin = 0;
+export const getFlashcardChoicesResponseCorrectIndexMax = 2;
+
+export const GetFlashcardChoicesResponse = zod.object({
+  choices: zod
+    .array(zod.string())
+    .min(getFlashcardChoicesResponseChoicesMin)
+    .max(getFlashcardChoicesResponseChoicesMax),
+  correctIndex: zod
+    .number()
+    .min(getFlashcardChoicesResponseCorrectIndexMin)
+    .max(getFlashcardChoicesResponseCorrectIndexMax),
+  back: zod.string().describe("Full original answer for the reveal step."),
+});
+
+/**
  * @summary Grade a typed free-text answer against the card's back using the AI tutor
  */
 export const GradeFlashcardAnswerParams = zod.object({

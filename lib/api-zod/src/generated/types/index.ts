@@ -20,6 +20,7 @@ export * from "./domainFlashcardCount";
 export * from "./domainScore";
 export * from "./fixItStreak";
 export * from "./flashcard";
+export * from "./flashcardChoices";
 export * from "./flashcardGenInput";
 export * from "./flashcardGradeInput";
 export * from "./flashcardGradeResult";

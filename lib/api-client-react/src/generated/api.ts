@@ -23,6 +23,7 @@ import type {
   Domain,
   FixItStreak,
   Flashcard,
+  FlashcardChoices,
   FlashcardGenInput,
   FlashcardGradeInput,
   FlashcardGradeResult,
@@ -1513,6 +1514,90 @@ export const useDeleteFlashcard = <
   TContext
 > => {
   return useMutation(getDeleteFlashcardMutationOptions(options));
+};
+
+/**
+ * @summary Generate a 3-option multiple-choice version of this flashcard
+ */
+export const getGetFlashcardChoicesUrl = (id: number) => {
+  return `/api/flashcards/${id}/choices`;
+};
+
+export const getFlashcardChoices = async (
+  id: number,
+  options?: RequestInit,
+): Promise<FlashcardChoices> => {
+  return customFetch<FlashcardChoices>(getGetFlashcardChoicesUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getGetFlashcardChoicesMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getFlashcardChoices>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getFlashcardChoices>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["getFlashcardChoices"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getFlashcardChoices>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return getFlashcardChoices(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetFlashcardChoicesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getFlashcardChoices>>
+>;
+
+export type GetFlashcardChoicesMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate a 3-option multiple-choice version of this flashcard
+ */
+export const useGetFlashcardChoices = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getFlashcardChoices>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof getFlashcardChoices>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getGetFlashcardChoicesMutationOptions(options));
 };
 
 /**

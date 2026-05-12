@@ -261,6 +261,66 @@ Return JSON:
   });
 });
 
+router.post("/flashcards/:id/choices", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const [card] = await db.select().from(flashcards).where(eq(flashcards.id, id));
+  if (!card) {
+    res.status(404).json({ error: "Flashcard not found" });
+    return;
+  }
+
+  // Build a short, multiple-choice friendly version of the back, then ask the
+  // AI for 2 plausible-but-wrong distractors in the same style/length. We
+  // shuffle on the server so the client can't trivially read off the index.
+  let dist: { distractors?: string[]; conciseAnswer?: string };
+  try {
+    dist = await chatJson<typeof dist>(
+      `You are writing a 3-option multiple-choice question for a BOC Athletic Training student.
+
+QUESTION: ${card.front}
+OFFICIAL ANSWER (full): ${card.back}
+
+Tasks:
+1. Produce a CONCISE version of the official answer (one short phrase or sentence — no leading letters, no "Correct:" labels, no explanation).
+2. Produce TWO plausible but clearly INCORRECT distractor answers that:
+   - Match the concise answer's length and tone
+   - Are clinically plausible mistakes a student might make
+   - Are NOT obviously the correct answer
+   - Do NOT start with letters/labels
+
+Return JSON: {"conciseAnswer":"...","distractors":["...","..."]}`,
+    );
+  } catch (err) {
+    req.log.error({ err }, "flashcard choices generation failed");
+    res.status(502).json({ error: "AI distractor generation failed" });
+    return;
+  }
+
+  const correctText = String(dist.conciseAnswer ?? "").trim() || card.back.split("\n")[0]!.trim();
+  const wrongs = (dist.distractors ?? [])
+    .map((s) => String(s ?? "").trim())
+    .filter((s) => s && s.toLowerCase() !== correctText.toLowerCase())
+    .slice(0, 2);
+  if (wrongs.length < 2) {
+    res.status(502).json({ error: "AI did not return enough distractors" });
+    return;
+  }
+
+  // Shuffle. The correctIndex is sent so the client can render the result —
+  // this isn't a security boundary, just a study aid.
+  const all = [correctText, ...wrongs];
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j]!, all[i]!];
+  }
+  const correctIndex = all.findIndex((c) => c === correctText);
+  res.json({ choices: all, correctIndex, back: card.back });
+});
+
 router.get("/flashcards", async (_req, res): Promise<void> => {
   const rows = await db
     .select()

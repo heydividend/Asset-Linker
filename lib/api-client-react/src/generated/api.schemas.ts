@@ -202,6 +202,21 @@ export interface FlashcardGenInput {
   topicId?: number;
 }
 
+export interface FlashcardChoices {
+  /**
+   * @minItems 3
+   * @maxItems 3
+   */
+  choices: string[];
+  /**
+   * @minimum 0
+   * @maximum 2
+   */
+  correctIndex: number;
+  /** Full original answer for the reveal step. */
+  back: string;
+}
+
 export interface FlashcardGradeInput {
   /** Free-text answer typed by the student */
   answer: string;

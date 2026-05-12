@@ -4,6 +4,7 @@ import {
   useListAllFlashcards,
   useReviewFlashcard,
   useGradeFlashcardAnswer,
+  useGetFlashcardChoices,
   useStartQuiz,
   useListNotebooks,
   useGenerateFlashcards,
@@ -13,7 +14,7 @@ import {
   getListQuizAttemptsQueryKey,
   getGetNotebookQueryKey,
 } from "@workspace/api-client-react";
-import type { FlashcardGradeResult } from "@workspace/api-client-react";
+import type { FlashcardGradeResult, FlashcardChoices } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ import { Label } from "@/components/ui/label";
 import { AskAiButton } from "@/components/AskAiButton";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, CheckCheck, Target, X, Play, Wand2, Loader2, Pencil, Send, ThumbsUp, ThumbsDown, MinusCircle } from "lucide-react";
+import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, CheckCheck, Target, X, Play, Wand2, Loader2, Pencil, Send, ThumbsUp, ThumbsDown, MinusCircle, ListChecks, Check } from "lucide-react";
 import { Link, useSearch, useLocation } from "wouter";
 import { rememberFixItQuizId } from "@/lib/fixItPlan";
 
@@ -39,6 +40,7 @@ const TOUR_SAMPLE_CARD = {
 export default function FlashcardsReview() {
   const review = useReviewFlashcard();
   const grade = useGradeFlashcardAnswer();
+  const fetchChoices = useGetFlashcardChoices();
   const startQuiz = useStartQuiz();
   const generate = useGenerateFlashcards();
   const { data: notebooks = [] } = useListNotebooks();
@@ -59,6 +61,11 @@ export default function FlashcardsReview() {
   const [answering, setAnswering] = useState(false);
   const [typedAnswer, setTypedAnswer] = useState("");
   const [gradeResult, setGradeResult] = useState<FlashcardGradeResult | null>(null);
+  // Multiple-choice mode: AI generates 3 options (1 correct, 2 distractors).
+  // mcChoices is null until the user picks "Multiple choice" and the AI returns;
+  // mcPicked records which index they chose so we can highlight right/wrong.
+  const [mcChoices, setMcChoices] = useState<FlashcardChoices | null>(null);
+  const [mcPicked, setMcPicked] = useState<number | null>(null);
 
   useEffect(() => {
     const onPreview = (e: Event) => {
@@ -216,6 +223,8 @@ export default function FlashcardsReview() {
     setAnswering(false);
     setTypedAnswer("");
     setGradeResult(null);
+    setMcChoices(null);
+    setMcPicked(null);
   }, [card?.id]);
 
   const effectiveRevealed = tourPreview?.active ? tourPreview.revealed : revealed;
@@ -271,12 +280,56 @@ export default function FlashcardsReview() {
           setAnswering(false);
           setTypedAnswer("");
           setGradeResult(null);
+          setMcChoices(null);
+          setMcPicked(null);
           setReviewedCount((c) => c + 1);
           qc.invalidateQueries({ queryKey: getListDueFlashcardsQueryKey() });
           qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
         },
       },
     );
+  };
+
+  const startMultipleChoice = () => {
+    if (!card) return;
+    if (tourPreview?.active) {
+      // Tour mode: fake 3 options so the walkthrough doesn't depend on the AI.
+      setMcChoices({
+        choices: [
+          "Grade 5 (Normal) — full ROM against gravity with maximal resistance",
+          "Grade 3 (Fair) — full ROM against gravity with no resistance",
+          "Grade 4 (Good) — full ROM against gravity with moderate resistance",
+        ],
+        correctIndex: 0,
+        back: card.back,
+      });
+      return;
+    }
+    fetchChoices.mutate(
+      { id: card.id },
+      {
+        onSuccess: (result) => {
+          setMcChoices(result);
+        },
+        onError: (e) => {
+          toast({
+            title: "Couldn't build multiple choice",
+            description: e instanceof Error ? e.message : "Try again or use type/reveal.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  const pickChoice = (idx: number) => {
+    if (mcPicked != null) return; // lock after first pick
+    setMcPicked(idx);
+    if (tourPreview?.active) {
+      setTourPreview({ active: true, revealed: true });
+    } else {
+      setRevealed(true);
+    }
   };
 
   const submitTypedAnswer = () => {
@@ -318,6 +371,17 @@ export default function FlashcardsReview() {
     setTypedAnswer("");
     setGradeResult(null);
   };
+
+  const cancelMultipleChoice = () => {
+    setMcChoices(null);
+    setMcPicked(null);
+  };
+
+  const mcSuggestedQuality = mcChoices && mcPicked != null
+    ? mcPicked === mcChoices.correctIndex
+      ? 4
+      : 1
+    : null;
 
   if (mode === "browse") {
     return (
@@ -542,11 +606,75 @@ export default function FlashcardsReview() {
                 </div>
               )}
 
+              {/* Multiple-choice picker (before reveal). Shown when the user
+                  asked for choices; locks after the first pick. */}
+              {!effectiveRevealed && mcChoices && (
+                <div className="w-full text-left space-y-2">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Pick the correct answer
+                  </p>
+                  <div className="grid gap-2">
+                    {mcChoices.choices.map((choice, idx) => {
+                      const picked = mcPicked === idx;
+                      const isCorrect = idx === mcChoices.correctIndex;
+                      const showState = mcPicked != null;
+                      const variant = !showState
+                        ? "outline"
+                        : isCorrect
+                          ? "default"
+                          : picked
+                            ? "destructive"
+                            : "outline";
+                      return (
+                        <Button
+                          key={idx}
+                          variant={variant}
+                          className="justify-start text-left whitespace-normal h-auto py-3"
+                          disabled={mcPicked != null}
+                          onClick={() => pickChoice(idx)}
+                          data-testid={`button-mc-choice-${idx}`}
+                        >
+                          <span className="mr-2 font-semibold">{String.fromCharCode(65 + idx)}.</span>
+                          <span className="flex-1">{choice}</span>
+                          {showState && isCorrect && <Check className="h-4 w-4 ml-2 shrink-0" />}
+                          {showState && picked && !isCorrect && (
+                            <X className="h-4 w-4 ml-2 shrink-0" />
+                          )}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Loading state while AI generates choices */}
+              {!effectiveRevealed && !mcChoices && fetchChoices.isPending && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Building 3 options...
+                </div>
+              )}
+
               {/* AI grading result + official answer */}
               {effectiveRevealed && (
                 <div className="w-full text-left space-y-3">
                   {gradeResult && (
                     <GradeResultPanel result={gradeResult} typedAnswer={typedAnswer} />
+                  )}
+                  {mcChoices && mcPicked != null && (
+                    <div
+                      className={`rounded-md border p-3 text-sm ${
+                        mcPicked === mcChoices.correctIndex
+                          ? "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950"
+                          : "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950"
+                      }`}
+                      data-testid="mc-result-panel"
+                    >
+                      <p className="font-medium">
+                        {mcPicked === mcChoices.correctIndex
+                          ? "Correct!"
+                          : `Not quite — you picked ${String.fromCharCode(65 + mcPicked)}, correct was ${String.fromCharCode(65 + mcChoices.correctIndex)}.`}
+                      </p>
+                    </div>
                   )}
                   <div>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
@@ -558,8 +686,22 @@ export default function FlashcardsReview() {
               )}
             </div>
             <div className="mt-6">
-              {!effectiveRevealed && !answering ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {!effectiveRevealed && !answering && !mcChoices ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={startMultipleChoice}
+                    disabled={fetchChoices.isPending}
+                    data-testid="button-multiple-choice"
+                  >
+                    {fetchChoices.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <ListChecks className="h-4 w-4 mr-2" />
+                    )}
+                    Multiple choice
+                  </Button>
                   <Button
                     variant="outline"
                     size="lg"
@@ -570,6 +712,16 @@ export default function FlashcardsReview() {
                   </Button>
                   <Button size="lg" onClick={handleReveal} data-testid="button-reveal">
                     <Eye className="h-4 w-4 mr-2" /> Just reveal
+                  </Button>
+                </div>
+              ) : !effectiveRevealed && mcChoices ? (
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    onClick={cancelMultipleChoice}
+                    data-testid="button-cancel-mc"
+                  >
+                    Cancel
                   </Button>
                 </div>
               ) : answering && !gradeResult ? (
@@ -611,36 +763,41 @@ export default function FlashcardsReview() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-4 gap-2">
-                  <Button
-                    variant={gradeResult?.suggestedQuality === 1 ? "destructive" : "outline"}
-                    onClick={() => handleRate(1)}
-                    data-testid="button-rate-again"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-1" /> Again
-                  </Button>
-                  <Button
-                    variant={gradeResult?.suggestedQuality === 3 ? "default" : "outline"}
-                    onClick={() => handleRate(3)}
-                    data-testid="button-rate-hard"
-                  >
-                    Hard
-                  </Button>
-                  <Button
-                    variant={gradeResult?.suggestedQuality === 4 ? "default" : "secondary"}
-                    onClick={() => handleRate(4)}
-                    data-testid="button-rate-good"
-                  >
-                    Good
-                  </Button>
-                  <Button
-                    variant={gradeResult?.suggestedQuality === 5 ? "default" : "outline"}
-                    onClick={() => handleRate(5)}
-                    data-testid="button-rate-easy"
-                  >
-                    <Sparkles className="h-4 w-4 mr-1" /> Easy
-                  </Button>
-                </div>
+                (() => {
+                  const suggested = gradeResult?.suggestedQuality ?? mcSuggestedQuality;
+                  return (
+                    <div className="grid grid-cols-4 gap-2">
+                      <Button
+                        variant={suggested === 1 ? "destructive" : "outline"}
+                        onClick={() => handleRate(1)}
+                        data-testid="button-rate-again"
+                      >
+                        <RotateCcw className="h-4 w-4 mr-1" /> Again
+                      </Button>
+                      <Button
+                        variant={suggested === 3 ? "default" : "outline"}
+                        onClick={() => handleRate(3)}
+                        data-testid="button-rate-hard"
+                      >
+                        Hard
+                      </Button>
+                      <Button
+                        variant={suggested === 4 ? "default" : "secondary"}
+                        onClick={() => handleRate(4)}
+                        data-testid="button-rate-good"
+                      >
+                        Good
+                      </Button>
+                      <Button
+                        variant={suggested === 5 ? "default" : "outline"}
+                        onClick={() => handleRate(5)}
+                        data-testid="button-rate-easy"
+                      >
+                        <Sparkles className="h-4 w-4 mr-1" /> Easy
+                      </Button>
+                    </div>
+                  );
+                })()
               )}
             </div>
           </CardContent>

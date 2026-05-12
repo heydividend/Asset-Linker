@@ -274,6 +274,19 @@ paths:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         "204": { description: Deleted }
+  /flashcards/{id}/choices:
+    post:
+      operationId: getFlashcardChoices
+      tags: [flashcards]
+      summary: Generate a 3-option multiple-choice version of this flashcard
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FlashcardChoices" }
   /flashcards/{id}/grade:
     post:
       operationId: gradeFlashcardAnswer
@@ -1192,6 +1205,17 @@ components:
         topicId:
           type: integer
           description: "If set, all generated cards are locked to this topic. Otherwise each card is auto-tagged by the model from the available topics."
+    FlashcardChoices:
+      type: object
+      required: [choices, correctIndex, back]
+      properties:
+        choices:
+          type: array
+          items: { type: string }
+          minItems: 3
+          maxItems: 3
+        correctIndex: { type: integer, minimum: 0, maximum: 2 }
+        back: { type: string, description: "Full original answer for the reveal step." }
     FlashcardGradeInput:
       type: object
       required: [answer]
