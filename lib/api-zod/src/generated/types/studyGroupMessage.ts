@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { StudyGroupMessageSpeaker } from "./studyGroupMessageSpeaker";
+import type { StudyGroupMessageStatus } from "./studyGroupMessageStatus";
 
 export interface StudyGroupMessage {
   id: number;
@@ -17,5 +18,9 @@ export interface StudyGroupMessage {
   roundIndex: number;
   /** @nullable */
   questionId?: number | null;
+  /** Per-turn checkpoint. Non-'done' turns in the latest round can be resumed. */
+  status: StudyGroupMessageStatus;
+  /** 0-based order within the round for planned turns. */
+  turnOrder: number;
   createdAt: Date;
 }

@@ -156,6 +156,7 @@ function speakerLabel(speaker: string): string {
 interface StreamHandle {
   push: (event: Record<string, unknown>) => void;
   end: () => void;
+  alive: () => boolean;
 }
 
 function startSseStream(res: import("express").Response): StreamHandle {
@@ -164,15 +165,61 @@ function startSseStream(res: import("express").Response): StreamHandle {
   res.setHeader("Connection", "keep-alive");
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders?.();
+  let alive = true;
+  res.on("close", () => {
+    alive = false;
+  });
   return {
     push: (event) => {
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
+      if (!alive) return;
+      try {
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      } catch {
+        alive = false;
+      }
     },
     end: () => {
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      res.end();
+      if (!alive) return;
+      try {
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        res.end();
+      } catch {
+        // client gone
+      }
+      alive = false;
     },
+    alive: () => alive,
   };
+}
+
+// ---- Per-session in-flight handler tracking (so a reconnect can supersede) ----
+const sessionAborters = new Map<number, AbortController>();
+
+async function takeOverSession(sessionId: number): Promise<AbortController> {
+  const prev = sessionAborters.get(sessionId);
+  if (prev) {
+    prev.abort();
+  }
+  const ac = new AbortController();
+  sessionAborters.set(sessionId, ac);
+  // Reset any rows still marked 'streaming' from an older handler — they
+  // will be treated as 'failed' (resumable) by the planner below.
+  await db
+    .update(studyGroupMessages)
+    .set({ status: "failed" })
+    .where(
+      and(
+        eq(studyGroupMessages.sessionId, sessionId),
+        eq(studyGroupMessages.status, "streaming"),
+      ),
+    );
+  return ac;
+}
+
+function releaseSession(sessionId: number, ac: AbortController) {
+  if (sessionAborters.get(sessionId) === ac) {
+    sessionAborters.delete(sessionId);
+  }
 }
 
 interface AgentTurnInput {
@@ -185,10 +232,11 @@ interface AgentTurnInput {
   userPrompt: string;
   stream: StreamHandle;
   history: { role: "user" | "assistant"; content: string }[];
+  abortSignal?: AbortSignal;
 }
 
 async function runAgentTurn(input: AgentTurnInput): Promise<{ messageId: number; content: string }> {
-  const { sessionId, roundIndex, speaker, kind, questionId, systemPrompt, userPrompt, stream, history } = input;
+  const { sessionId, roundIndex, speaker, kind, questionId, systemPrompt, userPrompt, stream, history, abortSignal } = input;
   stream.push({
     type: "message_start",
     speaker,
@@ -208,6 +256,13 @@ async function runAgentTurn(input: AgentTurnInput): Promise<{ messageId: number;
       system: systemPrompt,
       messages,
     });
+    if (abortSignal) {
+      const onAbort = () => {
+        try { stream$.abort?.(); } catch { /* ignore */ }
+      };
+      if (abortSignal.aborted) onAbort();
+      else abortSignal.addEventListener("abort", onAbort, { once: true });
+    }
     for await (const event of stream$) {
       if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
         const delta = event.delta.text;
@@ -230,6 +285,7 @@ async function runAgentTurn(input: AgentTurnInput): Promise<{ messageId: number;
       content: full,
       roundIndex,
       questionId,
+      status: "done",
     })
     .returning();
   stream.push({
@@ -241,6 +297,171 @@ async function runAgentTurn(input: AgentTurnInput): Promise<{ messageId: number;
     content: full,
   });
   return { messageId: saved.id, content: full };
+}
+
+// ---- Planned-turn runner (updates an existing pending row, supports resume) ----
+type PlannedSpeaker = "mentor" | "alex" | "jordan";
+type PlannedKind = "question" | "answer" | "verdict" | "takeaway";
+interface PlannedTurnSpec {
+  speaker: PlannedSpeaker;
+  kind: PlannedKind;
+  turnOrder: number;
+}
+const ROUND_PLAN: PlannedTurnSpec[] = [
+  { speaker: "mentor", kind: "question", turnOrder: 0 },
+  { speaker: "alex", kind: "answer", turnOrder: 1 },
+  { speaker: "jordan", kind: "answer", turnOrder: 2 },
+  { speaker: "mentor", kind: "verdict", turnOrder: 3 },
+  { speaker: "mentor", kind: "takeaway", turnOrder: 4 },
+];
+
+interface RunPlannedTurnInput {
+  row: typeof studyGroupMessages.$inferSelect;
+  systemPrompt: string;
+  userPrompt: string;
+  stream: StreamHandle;
+  abortSignal: AbortSignal;
+}
+
+async function runPlannedTurn(
+  input: RunPlannedTurnInput,
+): Promise<{ ok: boolean; content: string; aborted: boolean }> {
+  const { row, systemPrompt, userPrompt, stream, abortSignal } = input;
+  await db
+    .update(studyGroupMessages)
+    .set({ status: "streaming", content: "" })
+    .where(eq(studyGroupMessages.id, row.id));
+  stream.push({
+    type: "message_start",
+    messageId: row.id,
+    speaker: row.speaker,
+    speakerLabel: speakerLabel(row.speaker),
+    kind: row.kind,
+    roundIndex: row.roundIndex,
+  });
+  let full = "";
+  let streamFailed = false;
+  try {
+    const stream$ = anthropic.messages.stream({
+      model: "claude-haiku-4-5",
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    });
+    const onAbort = () => {
+      try { stream$.abort?.(); } catch { /* ignore */ }
+    };
+    if (abortSignal.aborted) onAbort();
+    else abortSignal.addEventListener("abort", onAbort, { once: true });
+    for await (const event of stream$) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+        const delta = event.delta.text;
+        if (delta) {
+          full += delta;
+          stream.push({ type: "message_delta", speaker: row.speaker, content: delta });
+        }
+      }
+    }
+  } catch {
+    streamFailed = true;
+  }
+  if (abortSignal.aborted) {
+    // Superseded by a newer handler — leave as 'failed' so resume picks it up.
+    await db
+      .update(studyGroupMessages)
+      .set({ status: "failed", content: full })
+      .where(eq(studyGroupMessages.id, row.id));
+    return { ok: false, content: full, aborted: true };
+  }
+  if (streamFailed || !full.trim()) {
+    await db
+      .update(studyGroupMessages)
+      .set({ status: "failed", content: full })
+      .where(eq(studyGroupMessages.id, row.id));
+    stream.push({
+      type: "error",
+      messageId: row.id,
+      speaker: row.speaker,
+      error: "agent stream failed",
+    });
+    return { ok: false, content: full, aborted: false };
+  }
+  await db
+    .update(studyGroupMessages)
+    .set({ status: "done", content: full })
+    .where(eq(studyGroupMessages.id, row.id));
+  stream.push({
+    type: "message_end",
+    messageId: row.id,
+    speaker: row.speaker,
+    kind: row.kind,
+    roundIndex: row.roundIndex,
+    content: full,
+  });
+  return { ok: true, content: full, aborted: false };
+}
+
+function buildTopicBlock(topicName: string, domainName: string | null, focus: string | null): string {
+  const focusBlock = focus ? `Group focus from the user: ${focus}\n\n` : "";
+  return `Topic: ${topicName}${domainName ? ` (Domain: ${domainName})` : ""}.\n${focusBlock}`;
+}
+
+function buildPlannedPrompt(
+  spec: PlannedTurnSpec,
+  ctx: {
+    topicBlock: string;
+    roundIndex: number;
+    question: {
+      id: number | null;
+      stem: string;
+      choices: string[] | null;
+      correctIndex: number | null;
+      rationale: string | null;
+    };
+    doneByOrder: Map<number, string>;
+  },
+): { systemPrompt: string; userPrompt: string } {
+  const { topicBlock, roundIndex, question: q, doneByOrder } = ctx;
+  if (spec.kind === "question") {
+    let userPrompt: string;
+    if (q.id != null && q.choices) {
+      const choicesText = q.choices.map((c, i) => `${String.fromCharCode(65 + i)}. ${c}`).join("\n");
+      userPrompt = `${topicBlock}Open round ${roundIndex} of the study group. Restate this real BOC-style question in your own words and pose it to Alex and Jordan. Add a brief framing sentence about WHY this concept matters clinically. Do NOT reveal the answer yet. Keep it under 120 words.\n\nQuestion stem: ${q.stem}\nChoices:\n${choicesText}`;
+    } else {
+      userPrompt = `${topicBlock}Open round ${roundIndex} of the study group. Pose a single high-yield BOC-style multiple-choice question on this topic with 4 lettered choices (A–D). Add a brief framing sentence about why the concept matters clinically. Do NOT reveal the answer yet. Keep the whole turn under 160 words.`;
+    }
+    return { systemPrompt: MENTOR_PERSONA, userPrompt };
+  }
+  const mentorOpen = doneByOrder.get(0) ?? "";
+  const alexAnswer = doneByOrder.get(1) ?? "";
+  const jordanAnswer = doneByOrder.get(2) ?? "";
+  const verdict = doneByOrder.get(3) ?? "";
+  if (spec.kind === "answer" && spec.speaker === "alex") {
+    return {
+      systemPrompt: ALEX_PERSONA,
+      userPrompt: `Dr. Mentor just posed this in our study group:\n\n${mentorOpen}\n\nAnswer the question. Pick a letter, then in 3–5 sentences walk through the test-taking moves you used (eliminate distractors, name the answer family, flag any extreme-statement traps). Stay under 130 words.`,
+    };
+  }
+  if (spec.kind === "answer" && spec.speaker === "jordan") {
+    return {
+      systemPrompt: JORDAN_PERSONA,
+      userPrompt: `Dr. Mentor posed this:\n\n${mentorOpen}\n\nAlex just said:\n\n${alexAnswer}\n\nGive your own answer with a clinical anchor (mechanism, red flag, RTP criterion, contraindication). If Alex was wrong or used a strategy that misfires here, respectfully challenge it in one sentence. Stay under 130 words.`,
+    };
+  }
+  if (spec.kind === "verdict") {
+    const verdictPrompt = q.id != null && q.correctIndex != null && q.choices
+      ? `Adjudicate the round. Correct answer is **${String.fromCharCode(65 + q.correctIndex)}. ${q.choices[q.correctIndex]}**. Reference rationale (use as ground truth, do not quote verbatim): ${q.rationale ?? "(none provided)"}\n\nIn 4–6 sentences: name the correct letter; say which peer (or both) reasoned correctly and which trap any miss fell into; close with a one-line clinical pearl. Use **bold** for the correct answer.`
+      : `Adjudicate the round you posed. Reveal the correct letter you had in mind, evaluate Alex's and Jordan's reasoning, name any traps, and close with a one-line clinical pearl. 4–6 sentences. Use **bold** for the correct answer.`;
+    return {
+      systemPrompt: MENTOR_PERSONA,
+      userPrompt: `${verdictPrompt}\n\nAlex said:\n${alexAnswer}\n\nJordan said:\n${jordanAnswer}`,
+    };
+  }
+  // takeaway
+  return {
+    systemPrompt: MENTOR_PERSONA,
+    userPrompt: `Wrap the round (which closed with this verdict: "${verdict}") with a "**Key takeaway:**" line (≤ 30 words) the group should remember. Then a separate "**Watch out for:**" line naming the single most likely trap a BOC test-taker falls for here.`,
+  };
 }
 
 // ---------- Routes ----------
@@ -342,6 +563,121 @@ router.patch("/study-group/sessions/:id", async (req, res): Promise<void> => {
   res.json(updated);
 });
 
+async function runExtractionForRound(
+  sessionId: number,
+  roundIndex: number,
+  topicId: number,
+  topicName: string,
+  rows: (typeof studyGroupMessages.$inferSelect)[],
+): Promise<{ kind: string; id: number; payload: Record<string, unknown> }[]> {
+  // Per-kind idempotency: only re-extract kinds that don't already exist for this round.
+  const existing = await db
+    .select()
+    .from(studyGroupArtifacts)
+    .where(
+      and(
+        eq(studyGroupArtifacts.sessionId, sessionId),
+        eq(studyGroupArtifacts.roundIndex, roundIndex),
+      ),
+    );
+  const haveKind = new Set(existing.map((a) => a.kind));
+  if (haveKind.size >= 4) {
+    return existing.map((a) => ({ kind: a.kind, id: a.id, payload: a.payload }));
+  }
+  const byKey = new Map(rows.map((r) => [`${r.speaker}:${r.kind}:${r.turnOrder}`, r.content]));
+  const mentorOpen = byKey.get("mentor:question:0") ?? "";
+  const alexAns = byKey.get("alex:answer:1") ?? "";
+  const jordanAns = byKey.get("jordan:answer:2") ?? "";
+  const verdict = byKey.get("mentor:verdict:3") ?? "";
+  const takeaway = byKey.get("mentor:takeaway:4") ?? "";
+  const transcript = `Q: ${mentorOpen}\nAlex: ${alexAns}\nJordan: ${jordanAns}\nMentor verdict: ${verdict}\nTakeaway: ${takeaway}`;
+  type Extracted = {
+    flashcard?: { front?: string; back?: string };
+    reasoning_pattern?: string;
+    question?: { stem?: string; choices?: string[]; correctIndex?: number; rationale?: string };
+    mastery_signal?: { direction?: "up" | "down" | "neutral"; note?: string };
+  };
+  let extracted: Extracted = {};
+  try {
+    extracted = await chatJson<Extracted>(
+      `From the following BOC Athletic Training study-group round on "${topicName}", extract structured artifacts.\n\nReturn JSON of the form:\n{\n  "flashcard": {"front": "<concise question>", "back": "<answer with one clinical anchor>"},\n  "reasoning_pattern": "<one sentence naming the test-taking pattern this round reinforced>",\n  "question": {"stem": "<new BOC-style stem>", "choices": ["A","B","C","D"], "correctIndex": <int 0-3>, "rationale": "<short rationale>"},\n  "mastery_signal": {"direction": "up|down|neutral", "note": "<short note>"}\n}\n\nROUND TRANSCRIPT:\n${transcript.slice(0, 5000)}`,
+      "You extract structured study artifacts. Reply with strict JSON only.",
+    );
+  } catch {
+    extracted = {};
+  }
+  const created: { kind: string; id: number; payload: Record<string, unknown> }[] = existing.map(
+    (a) => ({ kind: a.kind, id: a.id, payload: a.payload }),
+  );
+  if (!haveKind.has("flashcard_candidate") && extracted.flashcard?.front && extracted.flashcard?.back) {
+    const [a] = await db
+      .insert(studyGroupArtifacts)
+      .values({
+        sessionId,
+        roundIndex,
+        kind: "flashcard_candidate",
+        topicId,
+        payload: { front: extracted.flashcard.front, back: extracted.flashcard.back },
+      })
+      .returning();
+    created.push({ kind: a.kind, id: a.id, payload: a.payload });
+  }
+  if (!haveKind.has("reasoning_pattern") && extracted.reasoning_pattern) {
+    const [a] = await db
+      .insert(studyGroupArtifacts)
+      .values({
+        sessionId,
+        roundIndex,
+        kind: "reasoning_pattern",
+        topicId,
+        payload: { note: extracted.reasoning_pattern },
+      })
+      .returning();
+    created.push({ kind: a.kind, id: a.id, payload: a.payload });
+  }
+  if (
+    !haveKind.has("question_candidate") &&
+    extracted.question?.stem &&
+    Array.isArray(extracted.question.choices) &&
+    extracted.question.choices.length >= 2 &&
+    typeof extracted.question.correctIndex === "number"
+  ) {
+    const [a] = await db
+      .insert(studyGroupArtifacts)
+      .values({
+        sessionId,
+        roundIndex,
+        kind: "question_candidate",
+        topicId,
+        payload: {
+          stem: extracted.question.stem,
+          choices: extracted.question.choices,
+          correctIndex: extracted.question.correctIndex,
+          rationale: extracted.question.rationale ?? "",
+        },
+      })
+      .returning();
+    created.push({ kind: a.kind, id: a.id, payload: a.payload });
+  }
+  if (!haveKind.has("mastery_signal") && extracted.mastery_signal?.direction) {
+    const [a] = await db
+      .insert(studyGroupArtifacts)
+      .values({
+        sessionId,
+        roundIndex,
+        kind: "mastery_signal",
+        topicId,
+        payload: {
+          direction: extracted.mastery_signal.direction,
+          note: extracted.mastery_signal.note ?? "",
+        },
+      })
+      .returning();
+    created.push({ kind: a.kind, id: a.id, payload: a.payload });
+  }
+  return created;
+}
+
 router.post("/study-group/sessions/:id/round", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {
@@ -362,190 +698,212 @@ router.post("/study-group/sessions/:id/round", async (req, res): Promise<void> =
     res.status(400).json({ error: "Topic missing" });
     return;
   }
+
+  const isRetry = req.body?.retry === true;
+
+  // Take over the session: abort any older handler and reset orphaned 'streaming' rows.
+  const ac = await takeOverSession(id);
   const stream = startSseStream(res);
-  const roundIndex = session.roundCount + 1;
-
-  // Mark active
-  await db
-    .update(studyGroupSessions)
-    .set({ status: "active", updatedAt: new Date() })
-    .where(eq(studyGroupSessions.id, id));
-
-  // Pick a question or generate a topic-anchored prompt
-  const q = await pickQuestionForTopic(t.topicId);
-  const focusBlock = session.focus ? `Group focus from the user: ${session.focus}\n\n` : "";
-  const topicBlock = `Topic: ${t.topicName}${t.domainName ? ` (Domain: ${t.domainName})` : ""}.\n${focusBlock}`;
-
-  // Round 1: Mentor opens with the question
-  let mentorPrompt: string;
-  if (q.id != null && q.choices) {
-    const choicesText = q.choices.map((c, i) => `${String.fromCharCode(65 + i)}. ${c}`).join("\n");
-    mentorPrompt = `${topicBlock}Open round ${roundIndex} of the study group. Restate this real BOC-style question in your own words and pose it to Alex and Jordan. Add a brief framing sentence about WHY this concept matters clinically. Do NOT reveal the answer yet. Keep it under 120 words.\n\nQuestion stem: ${q.stem}\nChoices:\n${choicesText}`;
-  } else {
-    mentorPrompt = `${topicBlock}Open round ${roundIndex} of the study group. Pose a single high-yield BOC-style multiple-choice question on this topic with 4 lettered choices (A–D). Add a brief framing sentence about why the concept matters clinically. Do NOT reveal the answer yet. Keep the whole turn under 160 words.`;
-  }
-
-  const mentorOpen = await runAgentTurn({
-    sessionId: id,
-    roundIndex,
-    speaker: "mentor",
-    kind: "question",
-    questionId: q.id,
-    systemPrompt: MENTOR_PERSONA,
-    userPrompt: mentorPrompt,
-    stream,
-    history: [],
+  res.on("close", () => {
+    // We do NOT abort on client disconnect — the server keeps running so the
+    // round always reaches a checkpointed state. The new POST that supersedes
+    // us will call takeOverSession() and abort our anthropic streams.
   });
 
-  // Alex answers
-  const alexAns = await runAgentTurn({
-    sessionId: id,
-    roundIndex,
-    speaker: "alex",
-    kind: "answer",
-    questionId: q.id,
-    systemPrompt: ALEX_PERSONA,
-    userPrompt: `Dr. Mentor just posed this in our study group:\n\n${mentorOpen.content}\n\nAnswer the question. Pick a letter, then in 3–5 sentences walk through the test-taking moves you used (eliminate distractors, name the answer family, flag any extreme-statement traps). Stay under 130 words.`,
-    stream,
-    history: [],
-  });
-
-  // Jordan answers and may challenge Alex
-  const jordanAns = await runAgentTurn({
-    sessionId: id,
-    roundIndex,
-    speaker: "jordan",
-    kind: "answer",
-    questionId: q.id,
-    systemPrompt: JORDAN_PERSONA,
-    userPrompt: `Dr. Mentor posed this:\n\n${mentorOpen.content}\n\nAlex just said:\n\n${alexAns.content}\n\nGive your own answer with a clinical anchor (mechanism, red flag, RTP criterion, contraindication). If Alex was wrong or used a strategy that misfires here, respectfully challenge it in one sentence. Stay under 130 words.`,
-    stream,
-    history: [],
-  });
-
-  // Mentor verdict
-  const verdictPrompt = q.id != null && q.correctIndex != null && q.choices
-    ? `Adjudicate the round. Correct answer is **${String.fromCharCode(65 + q.correctIndex)}. ${q.choices[q.correctIndex]}**. Reference rationale (use as ground truth, do not quote verbatim): ${q.rationale ?? "(none provided)"}\n\nIn 4–6 sentences: name the correct letter; say which peer (or both) reasoned correctly and which trap any miss fell into; close with a one-line clinical pearl. Use **bold** for the correct answer.`
-    : `Adjudicate the round you posed. Reveal the correct letter you had in mind, evaluate Alex's and Jordan's reasoning, name any traps, and close with a one-line clinical pearl. 4–6 sentences. Use **bold** for the correct answer.`;
-  const verdict = await runAgentTurn({
-    sessionId: id,
-    roundIndex,
-    speaker: "mentor",
-    kind: "verdict",
-    questionId: q.id,
-    systemPrompt: MENTOR_PERSONA,
-    userPrompt: `${verdictPrompt}\n\nAlex said:\n${alexAns.content}\n\nJordan said:\n${jordanAns.content}`,
-    stream,
-    history: [],
-  });
-
-  // Takeaway (group-extracted)
-  const takeaway = await runAgentTurn({
-    sessionId: id,
-    roundIndex,
-    speaker: "mentor",
-    kind: "takeaway",
-    questionId: q.id,
-    systemPrompt: MENTOR_PERSONA,
-    userPrompt: `Wrap the round with a "**Key takeaway:**" line (≤ 30 words) the group should remember. Then a separate "**Watch out for:**" line naming the single most likely trap a BOC test-taker falls for here.`,
-    stream,
-    history: [],
-  });
-
-  // Extract structured artifacts (flashcard candidate + reasoning pattern + question candidate)
-  const transcript = `Q: ${mentorOpen.content}\nAlex: ${alexAns.content}\nJordan: ${jordanAns.content}\nMentor verdict: ${verdict.content}\nTakeaway: ${takeaway.content}`;
-  type Extracted = {
-    flashcard?: { front?: string; back?: string };
-    reasoning_pattern?: string;
-    question?: { stem?: string; choices?: string[]; correctIndex?: number; rationale?: string };
-    mastery_signal?: { direction?: "up" | "down" | "neutral"; note?: string };
-  };
-  let extracted: Extracted = {};
   try {
-    extracted = await chatJson<Extracted>(
-      `From the following BOC Athletic Training study-group round on "${t.topicName}", extract structured artifacts.\n\nReturn JSON of the form:\n{\n  "flashcard": {"front": "<concise question>", "back": "<answer with one clinical anchor>"},\n  "reasoning_pattern": "<one sentence naming the test-taking pattern this round reinforced>",\n  "question": {"stem": "<new BOC-style stem>", "choices": ["A","B","C","D"], "correctIndex": <int 0-3>, "rationale": "<short rationale>"},\n  "mastery_signal": {"direction": "up|down|neutral", "note": "<short note>"}\n}\n\nROUND TRANSCRIPT:\n${transcript.slice(0, 5000)}`,
-      "You extract structured study artifacts. Reply with strict JSON only.",
+    // Decide which round to run: resume an unfinished one, or start a new one.
+    const incompleteRows = await db
+      .select()
+      .from(studyGroupMessages)
+      .where(
+        and(
+          eq(studyGroupMessages.sessionId, id),
+          inArray(studyGroupMessages.status, ["pending", "failed"]),
+          inArray(studyGroupMessages.kind, ["question", "answer", "verdict", "takeaway"]),
+        ),
+      )
+      .orderBy(asc(studyGroupMessages.roundIndex), asc(studyGroupMessages.turnOrder));
+
+    let roundIndex: number;
+    let questionId: number | null;
+    let resuming = false;
+
+    if (incompleteRows.length > 0) {
+      // Resume the earliest incomplete round.
+      roundIndex = incompleteRows[0].roundIndex;
+      questionId = incompleteRows.find((r) => r.questionId != null)?.questionId ?? null;
+      resuming = true;
+      if (isRetry) {
+        await db
+          .update(studyGroupMessages)
+          .set({ status: "pending", content: "" })
+          .where(
+            and(
+              eq(studyGroupMessages.sessionId, id),
+              eq(studyGroupMessages.roundIndex, roundIndex),
+              eq(studyGroupMessages.status, "failed"),
+            ),
+          );
+      }
+    } else if (session.pendingExtractionRound != null) {
+      // All turns done; only extraction is pending.
+      roundIndex = session.pendingExtractionRound;
+      const anyRow = await db
+        .select()
+        .from(studyGroupMessages)
+        .where(
+          and(
+            eq(studyGroupMessages.sessionId, id),
+            eq(studyGroupMessages.roundIndex, roundIndex),
+          ),
+        )
+        .limit(1);
+      questionId = anyRow[0]?.questionId ?? null;
+      resuming = true;
+    } else {
+      // Start a new round: plan turns and persist placeholder rows up-front.
+      roundIndex = session.roundCount + 1;
+      const q = await pickQuestionForTopic(t.topicId);
+      questionId = q.id;
+      await db.insert(studyGroupMessages).values(
+        ROUND_PLAN.map((p) => ({
+          sessionId: id,
+          speaker: p.speaker,
+          kind: p.kind,
+          content: "",
+          roundIndex,
+          questionId: q.id,
+          status: "pending" as const,
+          turnOrder: p.turnOrder,
+        })),
+      );
+      await db
+        .update(studyGroupSessions)
+        .set({ status: "active", pendingExtractionRound: roundIndex, updatedAt: new Date() })
+        .where(eq(studyGroupSessions.id, id));
+    }
+
+    // Load (or reload) the round's planned turn rows.
+    let plannedRows = await db
+      .select()
+      .from(studyGroupMessages)
+      .where(
+        and(
+          eq(studyGroupMessages.sessionId, id),
+          eq(studyGroupMessages.roundIndex, roundIndex),
+          inArray(studyGroupMessages.kind, ["question", "answer", "verdict", "takeaway"]),
+        ),
+      )
+      .orderBy(asc(studyGroupMessages.turnOrder));
+
+    // Resolve question metadata (so we can rebuild prompts on resume).
+    let qMeta: {
+      id: number | null;
+      stem: string;
+      choices: string[] | null;
+      correctIndex: number | null;
+      rationale: string | null;
+    };
+    if (questionId != null) {
+      const [qrow] = await db.select().from(questions).where(eq(questions.id, questionId));
+      qMeta = qrow
+        ? {
+            id: qrow.id,
+            stem: qrow.stem,
+            choices: qrow.choices,
+            correctIndex: qrow.correctIndex,
+            rationale: qrow.rationale ?? null,
+          }
+        : { id: null, stem: "", choices: null, correctIndex: null, rationale: null };
+    } else {
+      qMeta = { id: null, stem: "", choices: null, correctIndex: null, rationale: null };
+    }
+
+    const topicBlock = buildTopicBlock(t.topicName, t.domainName, session.focus);
+
+    // Send a "round_resume" event so the client can render the round's existing
+    // state immediately (re-emit message_end for already-done turns).
+    if (resuming) {
+      stream.push({ type: "round_resume", roundIndex, retry: isRetry });
+      for (const r of plannedRows.filter((r) => r.status === "done")) {
+        stream.push({
+          type: "message_end",
+          messageId: r.id,
+          speaker: r.speaker,
+          kind: r.kind,
+          roundIndex: r.roundIndex,
+          content: r.content,
+        });
+      }
+    }
+
+    // Run remaining turns sequentially.
+    for (const spec of ROUND_PLAN) {
+      const row = plannedRows.find((r) => r.turnOrder === spec.turnOrder);
+      if (!row) continue;
+      if (row.status === "done") continue;
+      const doneByOrder = new Map<number, string>();
+      for (const r of plannedRows) {
+        if (r.status === "done") doneByOrder.set(r.turnOrder, r.content);
+      }
+      const { systemPrompt, userPrompt } = buildPlannedPrompt(spec, {
+        topicBlock,
+        roundIndex,
+        question: qMeta,
+        doneByOrder,
+      });
+      const result = await runPlannedTurn({
+        row,
+        systemPrompt,
+        userPrompt,
+        stream,
+        abortSignal: ac.signal,
+      });
+      if (!result.ok) {
+        if (result.aborted) {
+          // Client disconnected & a new handler took over; just stop.
+          return;
+        }
+        // The turn failed — leave this round resumable, stop here.
+        stream.end();
+        return;
+      }
+      // Refresh local cache so subsequent prompts see the just-completed content.
+      plannedRows = plannedRows.map((r) =>
+        r.id === row.id ? { ...r, status: "done", content: result.content } : r,
+      );
+    }
+
+    // All planned turns done — run extraction (idempotent).
+    const created = await runExtractionForRound(
+      id,
+      roundIndex,
+      t.topicId,
+      t.topicName,
+      plannedRows,
     );
-  } catch {
-    extracted = {};
-  }
-  const created: { kind: string; id: number; payload: Record<string, unknown> }[] = [];
-  if (extracted.flashcard?.front && extracted.flashcard?.back) {
-    const [a] = await db
-      .insert(studyGroupArtifacts)
-      .values({
-        sessionId: id,
-        roundIndex,
-        kind: "flashcard_candidate",
-        topicId: t.topicId,
-        payload: { front: extracted.flashcard.front, back: extracted.flashcard.back },
-      })
-      .returning();
-    created.push({ kind: a.kind, id: a.id, payload: a.payload });
-  }
-  if (extracted.reasoning_pattern) {
-    const [a] = await db
-      .insert(studyGroupArtifacts)
-      .values({
-        sessionId: id,
-        roundIndex,
-        kind: "reasoning_pattern",
-        topicId: t.topicId,
-        payload: { note: extracted.reasoning_pattern },
-      })
-      .returning();
-    created.push({ kind: a.kind, id: a.id, payload: a.payload });
-  }
-  if (
-    extracted.question?.stem &&
-    Array.isArray(extracted.question.choices) &&
-    extracted.question.choices.length >= 2 &&
-    typeof extracted.question.correctIndex === "number"
-  ) {
-    const [a] = await db
-      .insert(studyGroupArtifacts)
-      .values({
-        sessionId: id,
-        roundIndex,
-        kind: "question_candidate",
-        topicId: t.topicId,
-        payload: {
-          stem: extracted.question.stem,
-          choices: extracted.question.choices,
-          correctIndex: extracted.question.correctIndex,
-          rationale: extracted.question.rationale ?? "",
-        },
-      })
-      .returning();
-    created.push({ kind: a.kind, id: a.id, payload: a.payload });
-  }
-  if (extracted.mastery_signal?.direction) {
-    const [a] = await db
-      .insert(studyGroupArtifacts)
-      .values({
-        sessionId: id,
-        roundIndex,
-        kind: "mastery_signal",
-        topicId: t.topicId,
-        payload: {
-          direction: extracted.mastery_signal.direction,
-          note: extracted.mastery_signal.note ?? "",
-        },
-      })
-      .returning();
-    created.push({ kind: a.kind, id: a.id, payload: a.payload });
-  }
 
-  // Bump round counter
-  await db
-    .update(studyGroupSessions)
-    .set({ roundCount: roundIndex, updatedAt: new Date() })
-    .where(eq(studyGroupSessions.id, id));
+    // Mark the round complete.
+    const [{ maxRound }] = await db
+      .select({ maxRound: sql<number>`coalesce(max(${studyGroupSessions.roundCount}), 0)` })
+      .from(studyGroupSessions)
+      .where(eq(studyGroupSessions.id, id));
+    await db
+      .update(studyGroupSessions)
+      .set({
+        roundCount: Math.max(roundIndex, Number(maxRound) || 0),
+        pendingExtractionRound: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(studyGroupSessions.id, id));
 
-  for (const a of created) {
-    stream.push({ type: "artifact", artifact: a });
+    for (const a of created) {
+      stream.push({ type: "artifact", artifact: a });
+    }
+    stream.end();
+  } finally {
+    releaseSession(id, ac);
   }
-  stream.end();
 });
 
 router.post("/study-group/sessions/:id/interject", async (req, res): Promise<void> => {

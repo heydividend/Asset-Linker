@@ -1509,6 +1509,12 @@ export const ListStudyGroupSessionsResponseItem = zod.object({
   focus: zod.string().nullish(),
   status: zod.enum(["idle", "active", "paused", "finished"]),
   roundCount: zod.number(),
+  pendingExtractionRound: zod
+    .number()
+    .nullish()
+    .describe(
+      "If set, the named round has all turns done but its artifact extraction has not yet completed.",
+    ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -1540,6 +1546,12 @@ export const GetStudyGroupSessionResponse = zod.object({
     focus: zod.string().nullish(),
     status: zod.enum(["idle", "active", "paused", "finished"]),
     roundCount: zod.number(),
+    pendingExtractionRound: zod
+      .number()
+      .nullish()
+      .describe(
+        "If set, the named round has all turns done but its artifact extraction has not yet completed.",
+      ),
     createdAt: zod.coerce.date(),
     updatedAt: zod.coerce.date(),
   }),
@@ -1556,6 +1568,14 @@ export const GetStudyGroupSessionResponse = zod.object({
       content: zod.string(),
       roundIndex: zod.number(),
       questionId: zod.number().nullish(),
+      status: zod
+        .enum(["pending", "streaming", "done", "failed"])
+        .describe(
+          "Per-turn checkpoint. Non-'done' turns in the latest round can be resumed.",
+        ),
+      turnOrder: zod
+        .number()
+        .describe("0-based order within the round for planned turns."),
       createdAt: zod.coerce.date(),
     }),
   ),
@@ -1595,6 +1615,12 @@ export const UpdateStudyGroupSessionResponse = zod.object({
   focus: zod.string().nullish(),
   status: zod.enum(["idle", "active", "paused", "finished"]),
   roundCount: zod.number(),
+  pendingExtractionRound: zod
+    .number()
+    .nullish()
+    .describe(
+      "If set, the named round has all turns done but its artifact extraction has not yet completed.",
+    ),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -1604,10 +1630,19 @@ export const DeleteStudyGroupSessionParams = zod.object({
 });
 
 /**
- * @summary Stream the next study-group round (SSE)
+ * @summary Stream the next study-group round (SSE) — resumes any unfinished round
  */
 export const RunStudyGroupRoundParams = zod.object({
   id: zod.coerce.number(),
+});
+
+export const RunStudyGroupRoundBody = zod.object({
+  retry: zod
+    .boolean()
+    .optional()
+    .describe(
+      "If true, reset any 'failed' turns in the latest unfinished round to 'pending' and re-run them.",
+    ),
 });
 
 /**

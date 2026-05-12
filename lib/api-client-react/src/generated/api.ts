@@ -79,6 +79,7 @@ import type {
   StudyGroupLearningSignal,
   StudyGroupLibrary,
   StudyGroupPromoteResult,
+  StudyGroupRoundInput,
   StudyGroupSession,
   StudyGroupSessionDetail,
   StudyGroupSessionInput,
@@ -6607,7 +6608,7 @@ export const useDeleteStudyGroupSession = <
 };
 
 /**
- * @summary Stream the next study-group round (SSE)
+ * @summary Stream the next study-group round (SSE) — resumes any unfinished round
  */
 export const getRunStudyGroupRoundUrl = (id: number) => {
   return `/api/study-group/sessions/${id}/round`;
@@ -6615,11 +6616,14 @@ export const getRunStudyGroupRoundUrl = (id: number) => {
 
 export const runStudyGroupRound = async (
   id: number,
+  studyGroupRoundInput?: StudyGroupRoundInput,
   options?: RequestInit,
 ): Promise<unknown> => {
   return customFetch<unknown>(getRunStudyGroupRoundUrl(id), {
     ...options,
     method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(studyGroupRoundInput),
   });
 };
 
@@ -6630,14 +6634,14 @@ export const getRunStudyGroupRoundMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof runStudyGroupRound>>,
     TError,
-    { id: number },
+    { id: number; data: BodyType<StudyGroupRoundInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof runStudyGroupRound>>,
   TError,
-  { id: number },
+  { id: number; data: BodyType<StudyGroupRoundInput> },
   TContext
 > => {
   const mutationKey = ["runStudyGroupRound"];
@@ -6651,11 +6655,11 @@ export const getRunStudyGroupRoundMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof runStudyGroupRound>>,
-    { id: number }
+    { id: number; data: BodyType<StudyGroupRoundInput> }
   > = (props) => {
-    const { id } = props ?? {};
+    const { id, data } = props ?? {};
 
-    return runStudyGroupRound(id, requestOptions);
+    return runStudyGroupRound(id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -6664,11 +6668,11 @@ export const getRunStudyGroupRoundMutationOptions = <
 export type RunStudyGroupRoundMutationResult = NonNullable<
   Awaited<ReturnType<typeof runStudyGroupRound>>
 >;
-
+export type RunStudyGroupRoundMutationBody = BodyType<StudyGroupRoundInput>;
 export type RunStudyGroupRoundMutationError = ErrorType<unknown>;
 
 /**
- * @summary Stream the next study-group round (SSE)
+ * @summary Stream the next study-group round (SSE) — resumes any unfinished round
  */
 export const useRunStudyGroupRound = <
   TError = ErrorType<unknown>,
@@ -6677,14 +6681,14 @@ export const useRunStudyGroupRound = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof runStudyGroupRound>>,
     TError,
-    { id: number },
+    { id: number; data: BodyType<StudyGroupRoundInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof runStudyGroupRound>>,
   TError,
-  { id: number },
+  { id: number; data: BodyType<StudyGroupRoundInput> },
   TContext
 > => {
   return useMutation(getRunStudyGroupRoundMutationOptions(options));

@@ -64,6 +64,7 @@ import {
   BookOpen,
   FileQuestion,
   Library as LibraryIcon,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -135,6 +136,7 @@ function MessageBubble({ message, highlighted }: { message: TempMessage; highlig
   const kindLabel = KIND_LABELS[message.kind] ?? message.kind;
   const isStudent = message.speaker === "student";
   const isSystem = message.speaker === "system";
+  const isFailed = (message as { status?: string }).status === "failed";
   if (isSystem) {
     return (
       <div className="flex justify-center py-1">
@@ -186,10 +188,20 @@ function MessageBubble({ message, highlighted }: { message: TempMessage; highlig
             isStudent && "bg-primary/5 border-primary/30",
             message.kind === "verdict" && "bg-amber-50 dark:bg-amber-950/30 border-amber-300/60",
             message.kind === "takeaway" && "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300/60",
+            isFailed && "bg-rose-50 dark:bg-rose-950/30 border-rose-300/60",
             message.__pending && "opacity-90",
           )}
         >
-          <MarkdownMessage content={message.content || (message.__pending ? "_typing…_" : "")} />
+          <MarkdownMessage
+            content={
+              message.content ||
+              (isFailed
+                ? "_(turn was interrupted — click **Retry last round** to pick up here)_"
+                : message.__pending
+                  ? "_typing…_"
+                  : "")
+            }
+          />
         </div>
       </div>
     </div>
@@ -305,13 +317,40 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   const merged = useMemo(() => {
-    const persisted = (detail?.messages ?? []) as TempMessage[];
+    // Hide planned-turn placeholders that haven't been spoken yet (status
+    // pending/streaming with no content) — those are filled in by the live
+    // SSE stream's pending messages.
+    const persisted = ((detail?.messages ?? []) as TempMessage[]).filter((m) => {
+      const status = (m as { status?: string }).status;
+      if (!status || status === "done" || status === "failed") return true;
+      return Boolean(m.content);
+    });
     const persistedIds = new Set(persisted.map((m) => m.id));
     return [
       ...persisted,
       ...pendingMessages.filter((m) => !persistedIds.has(m.id)),
     ];
   }, [detail, pendingMessages]);
+
+  // Detect resume/retry state from the persisted transcript.
+  const { incompleteRound, hasFailed } = useMemo(() => {
+    const msgs = (detail?.messages ?? []) as (TempMessage & { status?: string; turnOrder?: number })[];
+    const planned = msgs.filter((m) =>
+      ["question", "answer", "verdict", "takeaway"].includes(m.kind),
+    );
+    const incomplete = planned.filter(
+      (m) => m.status && m.status !== "done",
+    );
+    const failed = incomplete.some((m) => m.status === "failed");
+    let round: number | null = null;
+    if (incomplete.length > 0) {
+      round = Math.min(...incomplete.map((m) => m.roundIndex));
+    } else if (session.pendingExtractionRound != null) {
+      round = session.pendingExtractionRound;
+    }
+    return { incompleteRound: round, hasFailed: failed };
+  }, [detail, session.pendingExtractionRound]);
+  const canResume = incompleteRound != null && !streaming;
 
   useEffect(() => {
     if (transcriptRef.current) {
@@ -451,8 +490,11 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
     }
   }
 
-  async function handleStartRound() {
-    await consumeSseStream(`/api/study-group/sessions/${session.id}/round`, {});
+  async function handleStartRound(opts: { retry?: boolean } = {}) {
+    await consumeSseStream(
+      `/api/study-group/sessions/${session.id}/round`,
+      opts.retry ? { retry: true } : {},
+    );
   }
 
   function handlePauseResume() {
@@ -530,18 +572,33 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
           {isPaused ? <Play className="h-3.5 w-3.5 mr-1" /> : <Pause className="h-3.5 w-3.5 mr-1" />}
           {isPaused ? "Resume" : "Pause"}
         </Button>
+        {hasFailed && canResume && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleStartRound({ retry: true })}
+            disabled={streaming || isPaused}
+            data-testid="button-sg-retry-round"
+            title={`Retry the failed turns in round ${incompleteRound}`}
+          >
+            <RotateCcw className="h-3.5 w-3.5 mr-1" />
+            Retry last round
+          </Button>
+        )}
         <Button
           size="sm"
-          onClick={handleStartRound}
+          onClick={() => handleStartRound()}
           disabled={streaming || isPaused}
           data-testid="button-sg-start-round"
         >
           {streaming ? (
             <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+          ) : canResume ? (
+            <Play className="h-3.5 w-3.5 mr-1" />
           ) : (
             <Wand2 className="h-3.5 w-3.5 mr-1" />
           )}
-          Start round
+          {canResume ? `Resume round ${incompleteRound}` : "Start round"}
         </Button>
       </div>
 

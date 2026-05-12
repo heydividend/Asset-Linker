@@ -936,8 +936,18 @@ export interface StudyGroupSession {
   focus?: string | null;
   status: StudyGroupSessionStatus;
   roundCount: number;
+  /**
+   * If set, the named round has all turns done but its artifact extraction has not yet completed.
+   * @nullable
+   */
+  pendingExtractionRound?: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StudyGroupRoundInput {
+  /** If true, reset any 'failed' turns in the latest unfinished round to 'pending' and re-run them. */
+  retry?: boolean;
 }
 
 export interface StudyGroupSessionInput {
@@ -971,6 +981,19 @@ export const StudyGroupMessageSpeaker = {
   system: "system",
 } as const;
 
+/**
+ * Per-turn checkpoint. Non-'done' turns in the latest round can be resumed.
+ */
+export type StudyGroupMessageStatus =
+  (typeof StudyGroupMessageStatus)[keyof typeof StudyGroupMessageStatus];
+
+export const StudyGroupMessageStatus = {
+  pending: "pending",
+  streaming: "streaming",
+  done: "done",
+  failed: "failed",
+} as const;
+
 export interface StudyGroupMessage {
   id: number;
   sessionId: number;
@@ -981,6 +1004,10 @@ export interface StudyGroupMessage {
   roundIndex: number;
   /** @nullable */
   questionId?: number | null;
+  /** Per-turn checkpoint. Non-'done' turns in the latest round can be resumed. */
+  status: StudyGroupMessageStatus;
+  /** 0-based order within the round for planned turns. */
+  turnOrder: number;
   createdAt: string;
 }
 

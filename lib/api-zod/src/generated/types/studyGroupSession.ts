@@ -18,6 +18,11 @@ export interface StudyGroupSession {
   focus?: string | null;
   status: StudyGroupSessionStatus;
   roundCount: number;
+  /**
+   * If set, the named round has all turns done but its artifact extraction has not yet completed.
+   * @nullable
+   */
+  pendingExtractionRound?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

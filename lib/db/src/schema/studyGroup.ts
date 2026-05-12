@@ -10,6 +10,7 @@ export const studyGroupSessions = pgTable("study_group_sessions", {
   focus: text("focus"),
   status: text("status").notNull().default("idle"),
   roundCount: integer("round_count").notNull().default(0),
+  pendingExtractionRound: integer("pending_extraction_round"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -24,6 +25,8 @@ export const studyGroupMessages = pgTable("study_group_messages", {
   content: text("content").notNull(),
   roundIndex: integer("round_index").notNull().default(0),
   questionId: integer("question_id"),
+  status: text("status").notNull().default("done"), // pending | streaming | done | failed
+  turnOrder: integer("turn_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

@@ -1138,9 +1138,14 @@ paths:
     post:
       operationId: runStudyGroupRound
       tags: [studygroup]
-      summary: Stream the next study-group round (SSE)
+      summary: Stream the next study-group round (SSE) — resumes any unfinished round
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudyGroupRoundInput" }
       responses:
         "200":
           description: SSE stream
@@ -1949,8 +1954,17 @@ components:
         focus: { type: ["string", "null"] }
         status: { type: string, enum: [idle, active, paused, finished] }
         roundCount: { type: integer }
+        pendingExtractionRound:
+          type: ["integer", "null"]
+          description: "If set, the named round has all turns done but its artifact extraction has not yet completed."
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    StudyGroupRoundInput:
+      type: object
+      properties:
+        retry:
+          type: boolean
+          description: "If true, reset any 'failed' turns in the latest unfinished round to 'pending' and re-run them."
     StudyGroupSessionInput:
       type: object
       properties:
@@ -1963,7 +1977,7 @@ components:
         status: { type: string, enum: [active, paused, finished] }
     StudyGroupMessage:
       type: object
-      required: [id, sessionId, speaker, kind, content, roundIndex, createdAt]
+      required: [id, sessionId, speaker, kind, content, roundIndex, createdAt, status, turnOrder]
       properties:
         id: { type: integer }
         sessionId: { type: integer }
@@ -1972,6 +1986,11 @@ components:
         content: { type: string }
         roundIndex: { type: integer }
         questionId: { type: ["integer", "null"] }
+        status:
+          type: string
+          enum: [pending, streaming, done, failed]
+          description: "Per-turn checkpoint. Non-'done' turns in the latest round can be resumed."
+        turnOrder: { type: integer, description: "0-based order within the round for planned turns." }
         createdAt: { type: string, format: date-time }
     StudyGroupArtifact:
       type: object
