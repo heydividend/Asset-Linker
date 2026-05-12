@@ -68,10 +68,12 @@ import {
   StickyNote,
   History,
   Users,
+  AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useListStudyGroupSessions } from "@workspace/api-client-react";
 
 interface ScheduleDay {
   date: string;
@@ -180,6 +182,19 @@ export default function Dashboard() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const { toast } = useToast();
+
+  // Surface any study-group rounds that the server's stale-stream sweeper
+  // flipped to timed_out while the user was elsewhere. Same data the global
+  // toast notifier uses; rendered here as a persistent banner so a user who
+  // landed on the dashboard fresh (no toast yet) still sees the nudge.
+  const { data: sgSessions = [] } = useListStudyGroupSessions();
+  const timedOutSessions = useMemo(
+    () =>
+      sgSessions.filter(
+        (s) => (s as { timedOutAt?: string | null }).timedOutAt != null,
+      ),
+    [sgSessions],
+  );
   const startQuiz = useStartQuiz();
   const markComplete = useMarkPlanItemComplete();
   const generateTopicPodcast = useGenerateTopicPodcast();
@@ -452,6 +467,70 @@ export default function Dashboard() {
       </header>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {timedOutSessions.length > 0 && (
+          <Card
+            className="border-amber-300/70 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-500/50"
+            data-testid="dashboard-study-group-timeout-alert"
+          >
+            <CardContent className="p-3 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-300 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                  {timedOutSessions.length === 1
+                    ? "A study group round timed out"
+                    : `${timedOutSessions.length} study group rounds timed out`}
+                </p>
+                <p className="text-xs text-amber-800/90 dark:text-amber-200/80 mt-0.5">
+                  Your partial transcript is saved — pick up where the group left off.
+                </p>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  {timedOutSessions.slice(0, 3).map((s) => {
+                    const round =
+                      (s as { timedOutRound?: number | null }).timedOutRound ?? 0;
+                    return (
+                      <div
+                        key={s.id}
+                        className="flex items-center gap-2 text-xs"
+                        data-testid={`dashboard-sg-timeout-${s.id}`}
+                      >
+                        <span className="flex-1 min-w-0 truncate text-amber-900 dark:text-amber-100">
+                          <span className="font-medium">Round {round}</span>
+                          <span className="text-amber-800/80 dark:text-amber-200/70">
+                            {" "}
+                            · {s.title}
+                          </span>
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs border-amber-400 text-amber-900 dark:border-amber-500/60 dark:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                          onClick={() =>
+                            navigate(
+                              `/study-group?session=${s.id}&round=${round}`,
+                            )
+                          }
+                          data-testid={`button-dashboard-sg-resume-${s.id}`}
+                        >
+                          Resume
+                          <ArrowRight className="h-3 w-3 ml-1" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                  {timedOutSessions.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => navigate("/study-group")}
+                      className="text-[11px] text-amber-800 dark:text-amber-200 underline self-start"
+                    >
+                      +{timedOutSessions.length - 3} more in Study Group
+                    </button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {loadingSchedule ? (
           <Skeleton className="h-24 w-full" />
         ) : schedule ? (

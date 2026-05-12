@@ -498,11 +498,13 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
   }, [merged.length, pendingMessages]);
 
   // Scroll to + highlight the first message of the focused round whenever the
-  // Library tab deep-links into this session.
+  // Library tab deep-links into this session. When the focused round was
+  // sweeper-healed (timed out), also focus the inline "Resume round" button
+  // so a user arriving from the dashboard alert / global timeout toast lands
+  // exactly on the affordance they came back to use.
   useEffect(() => {
     if (!focusRound || !transcriptRef.current) return;
     const container = transcriptRef.current;
-    // Wait for messages to render before locating the round bubble.
     const id = window.setTimeout(() => {
       const target = container.querySelector<HTMLElement>(
         `[data-round="${focusRound.round}"]`,
@@ -510,9 +512,17 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "center" });
       }
+      if (sweeperHealed && incompleteRound === focusRound.round) {
+        const resumeBtn = document.querySelector<HTMLButtonElement>(
+          '[data-testid="button-sg-resume-timed-out"]',
+        );
+        if (resumeBtn) {
+          resumeBtn.focus({ preventScroll: false });
+        }
+      }
     }, 50);
     return () => window.clearTimeout(id);
-  }, [focusRound, merged.length]);
+  }, [focusRound, merged.length, sweeperHealed, incompleteRound]);
 
   useEffect(() => {
     return () => {

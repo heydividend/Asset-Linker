@@ -23,12 +23,14 @@ import StudyGuidesPage from "@/pages/StudyGuidesPage";
 import StudyGuideDetail from "@/pages/StudyGuideDetail";
 import StudyGroupPage from "@/pages/StudyGroupPage";
 import AILearningPage from "@/pages/AILearningPage";
+import { StudyGroupTimeoutNotifier } from "@/hooks/use-study-group-timeout-notifier";
 
 const queryClient = new QueryClient();
 
 function Router() {
   return (
     <TourProvider>
+      <StudyGroupTimeoutNotifier />
       <Layout>
         <Switch>
         <Route path="/" component={Dashboard} />
