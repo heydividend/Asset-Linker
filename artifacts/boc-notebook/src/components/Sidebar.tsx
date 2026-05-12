@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { BookText, Brain, LayoutDashboard, Stethoscope, Bot, ClipboardList, Activity, ChevronLeft, CalendarDays, Gamepad2, Headphones, Compass, MapPin, FileText, RotateCcw, HelpCircle, Users, Sparkles, Check, PlayCircle } from "lucide-react";
+import { Stethoscope, ChevronLeft, Compass, MapPin, FileText, RotateCcw, HelpCircle, Check, PlayCircle } from "lucide-react";
 import { PAGES } from "@/lib/tour";
 import { HelpDialog } from "./HelpDialog";
 import { VoicePicker } from "./VoicePicker";
@@ -10,21 +10,7 @@ import { ResizeHandle } from "./ResizeHandle";
 import { useLayoutStore } from "@/hooks/use-layout";
 import { useTour } from "./TourProvider";
 import { useState } from "react";
-
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/schedule", label: "Schedule", icon: CalendarDays },
-  { href: "/notebooks", label: "Notebooks", icon: BookText },
-  { href: "/study-guides", label: "Study Guides", icon: Headphones },
-  { href: "/flashcards", label: "Flashcards", icon: Brain },
-  { href: "/quiz", label: "Practice Quizzes", icon: ClipboardList },
-  { href: "/mock-exam", label: "Mock Exam", icon: Stethoscope },
-  { href: "/body-map", label: "Body Map", icon: Activity },
-  { href: "/games", label: "Games", icon: Gamepad2 },
-  { href: "/tutor", label: "AI Tutor", icon: Bot },
-  { href: "/study-group", label: "Study Group", icon: Users },
-  { href: "/ai-learning", label: "AI Learning", icon: Sparkles },
-];
+import { NAV_ITEMS as navItems } from "@/lib/nav";
 
 export function Sidebar() {
   const [location] = useLocation();

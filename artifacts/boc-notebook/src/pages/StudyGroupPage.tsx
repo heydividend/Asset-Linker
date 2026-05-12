@@ -1324,9 +1324,9 @@ export default function StudyGroupPage() {
           </TabsList>
         </div>
         <TabsContent value="sessions" className="flex-1 min-h-0 m-0">
-      <div className="h-full min-h-0 grid grid-cols-[14rem_1fr_18rem] grid-rows-[minmax(0,1fr)]">
+      <div className="h-full min-h-0 grid grid-cols-1 md:grid-cols-[14rem_1fr] xl:grid-cols-[14rem_1fr_18rem] grid-rows-[minmax(0,1fr)]">
         {/* Sessions list */}
-        <aside className="border-r overflow-y-auto p-2 space-y-1">
+        <aside className="border-r overflow-y-auto p-2 space-y-1 hidden md:block">
           <div className="text-[11px] uppercase tracking-wide text-muted-foreground px-2 pt-1 pb-1">
             Sessions
           </div>
@@ -1428,7 +1428,7 @@ export default function StudyGroupPage() {
         </section>
 
         {/* Learning signal panel */}
-        <aside className="border-l overflow-y-auto min-h-0 p-3 space-y-3">
+        <aside className="border-l overflow-y-auto min-h-0 p-3 space-y-3 hidden xl:block">
           <div>
             <h3 className="text-sm font-semibold">Learning signal</h3>
             <p className="text-[11px] text-muted-foreground">

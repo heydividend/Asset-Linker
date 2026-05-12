@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { ChatPanel } from "./ChatPanel";
+import { MobileTopBar } from "./MobileTopBar";
 import { Button } from "@/components/ui/button";
 import { Bot, Menu, Compass, MapPin, FileText } from "lucide-react";
 import { useLocation } from "wouter";
 import { useLayoutStore } from "@/hooks/use-layout";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useTour } from "./TourProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -26,6 +28,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { sidebarCollapsed, setSidebarCollapsed, chatCollapsed, setChatCollapsed } = useLayoutStore();
   const { startTour } = useTour();
   const [tourFabOpen, setTourFabOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  // On mobile, the AI Tutor panel is an overlay that covers the page, so
+  // default it to collapsed on every mobile mount. The user can still pop
+  // it open via the floating Bot button. Desktop persistence is unaffected.
+  const mobileChatForcedRef = useRef(false);
+  useEffect(() => {
+    if (isMobile && !mobileChatForcedRef.current) {
+      mobileChatForcedRef.current = true;
+      if (!chatCollapsed) setChatCollapsed(true);
+    }
+    if (!isMobile) {
+      mobileChatForcedRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile]);
 
   // Auto-collapse the global sidebar on the crowded notebook detail page
   // (which already has its own Sources column + AI Tutor chat). Restore the
@@ -50,6 +68,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background text-foreground flex">
       {!inMockRunner && !sidebarCollapsed && <Sidebar />}
       <main className="flex-1 min-w-0 flex flex-col h-screen overflow-hidden">
+        {!inMockRunner && <MobileTopBar />}
         <div className="flex-1 overflow-y-auto">{children}</div>
       </main>
       {!hideChat && !chatCollapsed && <ChatPanel />}

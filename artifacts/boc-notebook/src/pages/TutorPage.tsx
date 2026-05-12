@@ -12,7 +12,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Plus, Send, Trash2, Loader2, Paperclip, Eraser, ArrowDown } from "lucide-react";
+import { Bot, Plus, Send, Trash2, Loader2, Paperclip, Eraser, ArrowDown, MessagesSquare } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { CopyMessageButton } from "@/components/CopyMessageButton";
@@ -327,10 +328,9 @@ export default function TutorPage() {
     }
   };
 
-  return (
-    <div className="flex h-full">
-      <aside className="w-64 border-r bg-sidebar flex flex-col">
-        <div className="p-3 border-b space-y-2">
+  const convList = (
+    <>
+      <div className="p-3 border-b space-y-2">
           <Button className="w-full" size="sm" onClick={newConv} data-testid="button-new-conversation">
             <Plus className="h-4 w-4 mr-2" /> New chat
           </Button>
@@ -386,12 +386,42 @@ export default function TutorPage() {
             ))}
           </div>
         </ScrollArea>
+    </>
+  );
+
+  return (
+    <div className="flex h-full">
+      <aside className="w-64 border-r bg-sidebar hidden md:flex flex-col">
+        {convList}
       </aside>
-      <main className="flex-1 flex flex-col">
-        <header className="h-12 border-b flex items-center justify-between px-4">
-          <h1 className="text-base font-semibold flex items-center gap-2">
-            <Bot className="h-5 w-5" /> AI Tutor
-          </h1>
+      <main className="flex-1 min-w-0 flex flex-col">
+        <header className="h-12 border-b flex items-center justify-between px-3 md:px-4 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 md:hidden"
+                  data-testid="button-tutor-conversations"
+                  title="Conversations"
+                >
+                  <MessagesSquare className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[80vw] max-w-xs p-0 flex flex-col">
+                <SheetHeader className="px-3 h-12 border-b flex flex-row items-center space-y-0">
+                  <SheetTitle className="text-sm font-semibold">Conversations</SheetTitle>
+                </SheetHeader>
+                <div className="flex-1 min-h-0 flex flex-col bg-sidebar">
+                  {convList}
+                </div>
+              </SheetContent>
+            </Sheet>
+            <h1 className="text-base font-semibold flex items-center gap-2 min-w-0 truncate">
+              <Bot className="h-5 w-5 shrink-0" /> AI Tutor
+            </h1>
+          </div>
           {activeId != null && (
             <Button
               variant="ghost"
