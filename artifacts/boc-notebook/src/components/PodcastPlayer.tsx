@@ -136,6 +136,7 @@ function PodcastRow({ audio, studyGuideId }: { audio: AudioOverview; studyGuideI
   const qc = useQueryClient();
   const { toast } = useToast();
   const regen = useGenerateStudyGuideAudioOverview();
+  const [audioError, setAudioError] = useState(false);
   const { data: live } = useGetAudioOverview(audio.id, {
     query: {
       queryKey: getGetAudioOverviewQueryKey(audio.id),
@@ -163,12 +164,20 @@ function PodcastRow({ audio, studyGuideId }: { audio: AudioOverview; studyGuideI
   }, [status, toast]);
 
   const onRetry = () => {
+    setAudioError(false);
     regen.mutate(
       { id: studyGuideId, data: { voice: voice as Voice } },
       {
         onSuccess: () => {
           qc.invalidateQueries({ queryKey: getListStudyGuideAudioOverviewsQueryKey(studyGuideId) });
           toast({ title: "Retrying podcast generation" });
+        },
+        onError: (err) => {
+          toast({
+            title: "Couldn't retry podcast",
+            description: err instanceof Error ? err.message : "Try again in a moment.",
+            variant: "destructive",
+          });
         },
       },
     );
@@ -188,13 +197,14 @@ function PodcastRow({ audio, studyGuideId }: { audio: AudioOverview; studyGuideI
             {status === "pending" ? "Generating audio…" : status}
           </Badge>
         </div>
-        {status === "ready" && (
+        {status === "ready" && !audioError && (
           <div className="flex items-center gap-2">
             <audio
               controls
               src={`/api/audio-overviews/${audio.id}/audio`}
               className="w-full"
               data-testid={`podcast-audio-${audio.id}`}
+              onError={() => setAudioError(true)}
             />
             <a
               href={`/api/audio-overviews/${audio.id}/audio`}
@@ -204,6 +214,20 @@ function PodcastRow({ audio, studyGuideId }: { audio: AudioOverview; studyGuideI
             >
               <Download className="h-3.5 w-3.5 mr-1" /> Download
             </a>
+          </div>
+        )}
+        {status === "ready" && audioError && (
+          <div className="flex items-center justify-between gap-2 rounded border border-destructive/40 bg-destructive/10 px-3 py-2">
+            <p className="text-xs text-destructive">Audio failed to load.</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onRetry}
+              disabled={regen.isPending}
+              data-testid={`podcast-regen-${audio.id}`}
+            >
+              <RotateCw className="h-3.5 w-3.5 mr-1" /> Regenerate
+            </Button>
           </div>
         )}
         {status === "failed" && (

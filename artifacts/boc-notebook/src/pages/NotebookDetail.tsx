@@ -19,13 +19,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AskAiButton } from "@/components/AskAiButton";
 import { ListenAsPodcastButton, PodcastList } from "@/components/PodcastPlayer";
 import { useToast } from "@/hooks/use-toast";
-import { Bot, FileText, Headphones, Plus, Trash2, BookOpen, Sparkles, Brain, Loader2, ChevronLeft, PanelLeftOpen } from "lucide-react";
+import { Bot, FileText, Headphones, Plus, Trash2, BookOpen, Sparkles, Brain, Loader2, ChevronLeft, PanelLeftOpen, RotateCw } from "lucide-react";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 
 export default function NotebookDetail() {
@@ -180,15 +181,52 @@ export default function NotebookDetail() {
                 >
                   <FileText className="h-3 w-3 inline mr-1 shrink-0" />{n.title}
                 </button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 opacity-0 group-hover:opacity-100 shrink-0"
-                  onClick={() => deleteNote.mutate({ id: n.id }, { onSuccess: invalidate })}
-                  data-testid={`button-delete-note-${n.id}`}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 opacity-0 group-hover:opacity-100 shrink-0"
+                      data-testid={`button-delete-note-${n.id}`}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        "{n.title}" will be permanently removed from this notebook. This can't be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel data-testid={`button-cancel-delete-note-${n.id}`}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() =>
+                          deleteNote.mutate(
+                            { id: n.id },
+                            {
+                              onSuccess: () => {
+                                invalidate();
+                                if (selectedNoteId === n.id) setSelectedNoteId(null);
+                                toast({ title: "Note deleted" });
+                              },
+                              onError: (err) =>
+                                toast({
+                                  title: "Couldn't delete note",
+                                  description: err instanceof Error ? err.message : "Try again in a moment.",
+                                  variant: "destructive",
+                                }),
+                            },
+                          )
+                        }
+                        data-testid={`button-confirm-delete-note-${n.id}`}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             ))}
           </div>
@@ -295,9 +333,46 @@ export default function NotebookDetail() {
                       <div className="flex gap-1 items-center">
                         <ListenAsPodcastButton studyGuideId={g.id} />
                         <AskAiButton notebookId={id} context={`Quiz me on this study guide:\n\n${g.content.slice(0, 4000)}`} size="sm" />
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteGuide.mutate({ id: g.id }, { onSuccess: invalidate })} data-testid={`button-delete-guide-${g.id}`}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" data-testid={`button-delete-guide-${g.id}`}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this study guide?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                "{g.title}" and any podcasts generated from it will be permanently removed. This can't be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel data-testid={`button-cancel-delete-guide-${g.id}`}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() =>
+                                  deleteGuide.mutate(
+                                    { id: g.id },
+                                    {
+                                      onSuccess: () => {
+                                        invalidate();
+                                        toast({ title: "Study guide deleted" });
+                                      },
+                                      onError: (err) =>
+                                        toast({
+                                          title: "Couldn't delete study guide",
+                                          description: err instanceof Error ? err.message : "Try again in a moment.",
+                                          variant: "destructive",
+                                        }),
+                                    },
+                                  )
+                                }
+                                data-testid={`button-confirm-delete-guide-${g.id}`}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                     <div className="max-w-none">
@@ -352,6 +427,10 @@ export default function NotebookDetail() {
 }
 
 function AudioCard({ id, title, status: initial, voice, notebookId, initialStatus }: { id: number; title: string; status: string; voice: string; notebookId: number; initialStatus: string }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const regen = useGenerateAudioOverview();
+  const [audioError, setAudioError] = useState(false);
   const { data: a } = useGetAudioOverview(id, {
     query: {
       queryKey: getGetAudioOverviewQueryKey(id),
@@ -363,6 +442,27 @@ function AudioCard({ id, title, status: initial, voice, notebookId, initialStatu
     },
   });
   const status = a?.status ?? initialStatus;
+  const currentVoice = (a?.voice ?? voice) as "nova" | "alloy" | "echo" | "fable" | "onyx" | "shimmer";
+
+  const onRetry = () => {
+    regen.mutate(
+      { id: notebookId, data: { voice: currentVoice, style: "podcast" } },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getGetNotebookQueryKey(notebookId) });
+          toast({ title: "Retrying podcast generation" });
+        },
+        onError: (err) => {
+          toast({
+            title: "Couldn't retry generation",
+            description: err instanceof Error ? err.message : "Try again in a moment.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
   return (
     <Card data-testid={`card-audio-${id}`}>
       <CardContent className="p-4 space-y-2">
@@ -373,11 +473,42 @@ function AudioCard({ id, title, status: initial, voice, notebookId, initialStatu
           </div>
           <Badge variant={status === "ready" ? "default" : status === "failed" ? "destructive" : "secondary"}>
             {status === "pending" && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-            {status}
+            {status === "pending" ? "Generating audio…" : status}
           </Badge>
         </div>
-        {status === "ready" && (
-          <audio controls src={`/api/audio-overviews/${id}/audio`} className="w-full" data-testid={`audio-player-${id}`} />
+        {status === "ready" && !audioError && (
+          <audio
+            controls
+            src={`/api/audio-overviews/${id}/audio`}
+            className="w-full"
+            data-testid={`audio-player-${id}`}
+            onError={() => setAudioError(true)}
+          />
+        )}
+        {status === "ready" && audioError && (
+          <div className="flex items-center justify-between gap-2 rounded border border-destructive/40 bg-destructive/10 px-3 py-2">
+            <p className="text-xs text-destructive">Audio failed to load.</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onRetry}
+              disabled={regen.isPending}
+              data-testid={`audio-regen-${id}`}
+            >
+              <RotateCw className="h-3.5 w-3.5 mr-1" /> Regenerate
+            </Button>
+          </div>
+        )}
+        {status === "failed" && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onRetry}
+            disabled={regen.isPending}
+            data-testid={`audio-retry-${id}`}
+          >
+            <RotateCw className="h-3.5 w-3.5 mr-1" /> Retry
+          </Button>
         )}
         <div className="flex items-center gap-1">
           <span className="text-xs text-muted-foreground">Voice: {a?.voice ?? voice}</span>

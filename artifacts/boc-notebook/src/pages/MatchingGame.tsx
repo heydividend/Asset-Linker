@@ -208,7 +208,25 @@ export default function MatchingGame() {
                           !isSolved && !isPicked && !isWrong && "border-border hover:border-primary/50",
                         )}
                       >
-                        <img src={p.image} alt="" className="w-full h-full object-cover" loading="lazy" />
+                        <img
+                          src={p.image}
+                          alt={p.label}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            img.style.display = "none";
+                            const fallback = img.nextElementSibling as HTMLElement | null;
+                            if (fallback && fallback.dataset.fallback === "true") fallback.style.display = "flex";
+                          }}
+                        />
+                        <div
+                          data-fallback="true"
+                          style={{ display: "none" }}
+                          className="absolute inset-0 items-center justify-center bg-muted text-xs text-muted-foreground p-2 text-center"
+                        >
+                          Image unavailable
+                        </div>
                         {isSolved && (
                           <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
                             <Check className="h-8 w-8 text-white drop-shadow" />
@@ -278,7 +296,20 @@ export default function MatchingGame() {
                 src={zoomed.image}
                 alt={zoomed.label}
                 className="max-h-[80vh] w-auto object-contain"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  img.style.display = "none";
+                  const fb = img.nextElementSibling as HTMLElement | null;
+                  if (fb && fb.dataset.fallback === "true") fb.style.display = "flex";
+                }}
               />
+              <div
+                data-fallback="true"
+                style={{ display: "none" }}
+                className="items-center justify-center bg-muted text-sm text-muted-foreground p-8"
+              >
+                Image unavailable for "{zoomed.label}"
+              </div>
             </div>
           )}
         </DialogContent>
