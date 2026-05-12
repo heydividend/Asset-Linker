@@ -130,6 +130,7 @@ export * from "./studyGroupSessionInput";
 export * from "./studyGroupSessionStatus";
 export * from "./studyGroupSessionStatusInput";
 export * from "./studyGroupSessionStatusInputStatus";
+export * from "./studyGroupSessionTimeoutStats";
 export * from "./studyGuide";
 export * from "./studyGuideAudioInput";
 export * from "./studyGuideAudioInputVoice";

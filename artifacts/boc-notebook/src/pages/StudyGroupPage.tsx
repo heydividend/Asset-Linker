@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useListStudyGroupSessions,
   useGetStudyGroupSession,
+  useGetStudyGroupSessionTimeoutStats,
+  getGetStudyGroupSessionTimeoutStatsQueryKey,
   useCreateStudyGroupSession,
   useUpdateStudyGroupSession,
   useDeleteStudyGroupSession,
@@ -368,6 +370,15 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
   const { toast } = useToast();
   const detailKey = getGetStudyGroupSessionQueryKey(session.id);
   const { data: detail } = useGetStudyGroupSession(session.id);
+  const { data: timeoutStats } = useGetStudyGroupSessionTimeoutStats(session.id, {
+    query: {
+      queryKey: getGetStudyGroupSessionTimeoutStatsQueryKey(session.id),
+      // Re-poll modestly so the badge updates without manual refresh after a
+      // sweeper-healed round, but doesn't add chatter while idle.
+      refetchInterval: 30_000,
+      refetchOnWindowFocus: true,
+    },
+  });
   const updateStatus = useUpdateStudyGroupSession();
   const promote = usePromoteStudyGroupArtifact();
 
@@ -754,6 +765,30 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
             {session.focus ? ` · focus: ${session.focus}` : ""}
           </div>
         </div>
+        {timeoutStats && timeoutStats.timedOutRounds > 0 && (
+          <Badge
+            variant="outline"
+            className={cn(
+              "gap-1 text-[11px] font-medium",
+              // Highlight when more than ~10% of recent rounds are timing out —
+              // that's the spike that means the AI/network is the culprit, not
+              // the user's flow.
+              timeoutStats.timedOutRounds * 10 > timeoutStats.window
+                ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                : "text-muted-foreground",
+            )}
+            title={
+              `${timeoutStats.timedOutRounds} of the last ${timeoutStats.window} ` +
+              `round${timeoutStats.window === 1 ? "" : "s"} in this session timed out. ` +
+              `If this rate is climbing, the AI or network is likely flaky — ` +
+              `try waiting a moment or switching models.`
+            }
+            data-testid="sg-timeout-rate"
+          >
+            <AlertTriangle className="h-3 w-3" />
+            {timeoutStats.timedOutRounds} of last {timeoutStats.window} timed out
+          </Badge>
+        )}
         <Button
           size="sm"
           variant="outline"

@@ -1228,6 +1228,22 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/StudyGroupLibrary" }
+  /study-group/sessions/{id}/timeout-stats:
+    get:
+      operationId: getStudyGroupSessionTimeoutStats
+      tags: [studygroup]
+      summary: Recent sweeper-timeout rate for a Study Group session
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StudyGroupSessionTimeoutStats" }
   /study-group/learning-signal:
     get:
       operationId: getStudyGroupLearningSignal
@@ -2134,6 +2150,19 @@ components:
           type: array
           items: { $ref: "#/components/schemas/StudyGroupLibraryQuestion" }
         pendingReviewCount: { type: integer, description: "Promoted study-group questions still flagged pendingReview." }
+    StudyGroupSessionTimeoutStats:
+      type: object
+      required: [window, limit, timedOutRounds]
+      properties:
+        window:
+          type: integer
+          description: Actual number of recent rounds inspected (≤ limit; smaller if the session has fewer rounds).
+        limit:
+          type: integer
+          description: Requested upper bound on rounds to inspect.
+        timedOutRounds:
+          type: integer
+          description: How many of the inspected rounds had at least one turn flipped to failed by the sweeper.
     StudyGroupLearningSignal:
       type: object
       required:

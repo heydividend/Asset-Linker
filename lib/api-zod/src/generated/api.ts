@@ -1747,6 +1747,27 @@ export const GetStudyGroupLibraryResponse = zod.object({
     .describe("Promoted study-group questions still flagged pendingReview."),
 });
 
+/**
+ * @summary Recent sweeper-timeout rate for a Study Group session
+ */
+export const GetStudyGroupSessionTimeoutStatsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetStudyGroupSessionTimeoutStatsResponse = zod.object({
+  window: zod
+    .number()
+    .describe(
+      "Actual number of recent rounds inspected (≤ limit; smaller if the session has fewer rounds).",
+    ),
+  limit: zod.number().describe("Requested upper bound on rounds to inspect."),
+  timedOutRounds: zod
+    .number()
+    .describe(
+      "How many of the inspected rounds had at least one turn flipped to failed by the sweeper.",
+    ),
+});
+
 export const GetStudyGroupLearningSignalResponse = zod.object({
   sessions: zod.number(),
   reasoningPatterns: zod.number(),

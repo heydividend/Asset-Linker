@@ -1264,6 +1264,70 @@ router.get("/study-group/library", async (req, res): Promise<void> => {
   });
 });
 
+// Small health stat for the Study Group session header. We tag sweeper-healed
+// rounds with reason='sweeper_timeout' on the offending message; this endpoint
+// rolls those up to the round level so the UI can show "3 of your last 20
+// rounds timed out". A spike in this rate is a signal that the AI/network is
+// flaky, not the user's flow.
+router.get("/study-group/sessions/:id/timeout-stats", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const limitParam = Number(req.query.limit);
+  const limit = Number.isFinite(limitParam) && limitParam > 0 && limitParam <= 100
+    ? Math.floor(limitParam)
+    : 20;
+  const [session] = await db
+    .select({ id: studyGroupSessions.id, roundCount: studyGroupSessions.roundCount })
+    .from(studyGroupSessions)
+    .where(eq(studyGroupSessions.id, id));
+  if (!session) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  // Round 0 is reserved for the system welcome message; real rounds are >= 1.
+  const recentRounds = await db
+    .selectDistinct({ roundIndex: studyGroupMessages.roundIndex })
+    .from(studyGroupMessages)
+    .where(
+      and(
+        eq(studyGroupMessages.sessionId, id),
+        sql`${studyGroupMessages.roundIndex} >= 1`,
+      ),
+    )
+    .orderBy(desc(studyGroupMessages.roundIndex))
+    .limit(limit);
+  const windowRounds = recentRounds.map((r) => r.roundIndex);
+  let timedOutRounds = 0;
+  if (windowRounds.length > 0) {
+    const timedOut = await db
+      .selectDistinct({ roundIndex: studyGroupMessages.roundIndex })
+      .from(studyGroupMessages)
+      .where(
+        and(
+          eq(studyGroupMessages.sessionId, id),
+          // Match the task semantics literally: only FAILED turns flagged by
+          // the sweeper count toward the timeout rate. In practice every
+          // sweeper_timeout row is also status='failed' (that's the whole
+          // point of the sweeper), but this keeps the query self-documenting
+          // and immune to any future code path that might write the reason
+          // without flipping the status.
+          eq(studyGroupMessages.status, "failed"),
+          eq(studyGroupMessages.reason, "sweeper_timeout"),
+          inArray(studyGroupMessages.roundIndex, windowRounds),
+        ),
+      );
+    timedOutRounds = timedOut.length;
+  }
+  res.json({
+    window: windowRounds.length,
+    limit,
+    timedOutRounds,
+  });
+});
+
 router.get("/study-group/learning-signal", async (_req, res): Promise<void> => {
   const [{ sessions }] = await db
     .select({ sessions: sql<number>`cast(count(*) as int)` })

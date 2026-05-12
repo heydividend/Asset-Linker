@@ -87,6 +87,7 @@ import type {
   StudyGroupSessionDetail,
   StudyGroupSessionInput,
   StudyGroupSessionStatusInput,
+  StudyGroupSessionTimeoutStats,
   StudyGuide,
   StudyGuideAudioInput,
   StudyGuideInput,
@@ -7061,6 +7062,101 @@ export function useGetStudyGroupLibrary<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetStudyGroupLibraryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Recent sweeper-timeout rate for a Study Group session
+ */
+export const getGetStudyGroupSessionTimeoutStatsUrl = (id: number) => {
+  return `/api/study-group/sessions/${id}/timeout-stats`;
+};
+
+export const getStudyGroupSessionTimeoutStats = async (
+  id: number,
+  options?: RequestInit,
+): Promise<StudyGroupSessionTimeoutStats> => {
+  return customFetch<StudyGroupSessionTimeoutStats>(
+    getGetStudyGroupSessionTimeoutStatsUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetStudyGroupSessionTimeoutStatsQueryKey = (id: number) => {
+  return [`/api/study-group/sessions/${id}/timeout-stats`] as const;
+};
+
+export const getGetStudyGroupSessionTimeoutStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStudyGroupSessionTimeoutStats>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStudyGroupSessionTimeoutStats>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetStudyGroupSessionTimeoutStatsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getStudyGroupSessionTimeoutStats>>
+  > = ({ signal }) =>
+    getStudyGroupSessionTimeoutStats(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStudyGroupSessionTimeoutStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStudyGroupSessionTimeoutStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStudyGroupSessionTimeoutStats>>
+>;
+export type GetStudyGroupSessionTimeoutStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Recent sweeper-timeout rate for a Study Group session
+ */
+
+export function useGetStudyGroupSessionTimeoutStats<
+  TData = Awaited<ReturnType<typeof getStudyGroupSessionTimeoutStats>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getStudyGroupSessionTimeoutStats>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStudyGroupSessionTimeoutStatsQueryOptions(
+    id,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

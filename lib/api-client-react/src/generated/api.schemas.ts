@@ -1132,6 +1132,15 @@ export interface StudyGroupLibrary {
   pendingReviewCount: number;
 }
 
+export interface StudyGroupSessionTimeoutStats {
+  /** Actual number of recent rounds inspected (≤ limit; smaller if the session has fewer rounds). */
+  window: number;
+  /** Requested upper bound on rounds to inspect. */
+  limit: number;
+  /** How many of the inspected rounds had at least one turn flipped to failed by the sweeper. */
+  timedOutRounds: number;
+}
+
 export interface StudyGroupLearningSignal {
   sessions: number;
   reasoningPatterns: number;
