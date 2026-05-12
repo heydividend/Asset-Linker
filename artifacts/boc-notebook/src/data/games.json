@@ -2425,6 +2425,309 @@
           "image": "/games/ch28-skin/fig_11_02.jpg"
         }
       ]
+    },
+    {
+      "id": "prentice-images",
+      "title": "Prentice Equipment & Procedures",
+      "description": "Match each Prentice 18e test-bank figure to the question it illustrates.",
+      "pairs": [
+        {
+          "label": "What does this apparatus measure?",
+          "image": "/games/prentice-images/image4.jpeg"
+        },
+        {
+          "label": "A track athlete will be traveling to Alaska for two weeks for training. What advice would",
+          "image": "/games/prentice-images/image5.jpeg"
+        },
+        {
+          "label": "A patient would wear this brace when they have suffered from what pathology?",
+          "image": "/games/prentice-images/image7.jpeg"
+        },
+        {
+          "label": "What sport would wear this piece of equipment a necessity in order to prevent injury?",
+          "image": "/games/prentice-images/image8.jpeg"
+        },
+        {
+          "label": "Which of the following materials would be best suited to construct a wedge insert to place",
+          "image": "/games/prentice-images/image9.jpeg"
+        },
+        {
+          "label": "What picture illustrates cast padding?",
+          "image": "/games/prentice-images/image14.jpeg"
+        },
+        {
+          "label": "A downhill skier is complaining about the glare on the snow. What color of tinted contact",
+          "image": "/games/prentice-images/image17.jpeg"
+        },
+        {
+          "label": "What type of knee brace is this?",
+          "image": "/games/prentice-images/image19.jpeg"
+        },
+        {
+          "label": "The technique demonstrated in this diagram would be the most appropriate for which of the",
+          "image": "/games/prentice-images/image20.jpeg"
+        },
+        {
+          "label": "Downloaded by: marcushuddleston | marcus.huddleston@gmail.comDistribution of this document",
+          "image": "/games/prentice-images/image23.jpeg"
+        },
+        {
+          "label": "During a primary survey, if the response illustrated in the picture were to occur, what wo",
+          "image": "/games/prentice-images/image24.jpeg"
+        },
+        {
+          "label": "What is the purpose of performing the maneuver that is illustrated in the picture?",
+          "image": "/games/prentice-images/image25.jpeg"
+        },
+        {
+          "label": "When establishing breathing, if it is confirmed that there is no visual rise and fall of t",
+          "image": "/games/prentice-images/image26.jpeg"
+        },
+        {
+          "label": "The use of the apparatus illustrated in this picture can provide about the same amount of",
+          "image": "/games/prentice-images/image30.jpeg"
+        },
+        {
+          "label": "In the following illustration, what is the correct numerical value assigned to the correct",
+          "image": "/games/prentice-images/image29.jpeg"
+        },
+        {
+          "label": "If a conscious victim with an obstructed airway eventually becomes unresponsive and the vi",
+          "image": "/games/prentice-images/image27.jpeg"
+        },
+        {
+          "label": "Please identify each of the correct locations on the victim\u2019s chest to place Automated Ext",
+          "image": "/games/prentice-images/image31.jpeg"
+        },
+        {
+          "label": "A patient has been thrown from a bull during a rodeo in which a fractured pelvis is suspec",
+          "image": "/games/prentice-images/image36.jpeg"
+        },
+        {
+          "label": "A patient is suffering from a fracture and dislocation of the ankle. Which of the followin",
+          "image": "/games/prentice-images/image37.jpeg"
+        },
+        {
+          "label": "Upon taking a patient\u2019s temperature, you note that it is 98.2 degrees Fahrenheit. How woul",
+          "image": "/games/prentice-images/image42.jpeg"
+        },
+        {
+          "label": "Measure the length from the patient\u2019s jaw to their nose.Measure the length from the patien",
+          "image": "/games/prentice-images/image45.jpeg"
+        },
+        {
+          "label": "What is this airway adjunct device in the figure?",
+          "image": "/games/prentice-images/image47.jpeg"
+        },
+        {
+          "label": "What is the horizontal plane in this diagram that divides the body into upper and lower pa",
+          "image": "/games/prentice-images/image48.jpeg"
+        },
+        {
+          "label": "Which of the following imaging techniques illustrated in the pictures would be the mosteff",
+          "image": "/games/prentice-images/image49.jpeg"
+        },
+        {
+          "label": "P waveQ waveQRS waveS waveT waveP waveQ waveQRS waveS waveT waveDownloaded by: marcushuddl",
+          "image": "/games/prentice-images/image57.jpeg"
+        },
+        {
+          "label": "What human physiological response is illustrated?",
+          "image": "/games/prentice-images/image60.jpeg"
+        },
+        {
+          "label": "What method of thermal energy transfer is being demonstrated in the diagram?",
+          "image": "/games/prentice-images/image61.jpeg"
+        },
+        {
+          "label": "Identify the correct pad placement to administer interferential currents on the back.",
+          "image": "/games/prentice-images/image65.jpeg"
+        },
+        {
+          "label": "Which of the following statements is correct in regards to differences between phonophores",
+          "image": "/games/prentice-images/image71.jpeg"
+        },
+        {
+          "label": "What is being performed in the following illustration?",
+          "image": "/games/prentice-images/image72.jpeg"
+        },
+        {
+          "label": "In the following illustration, what is a drawback to this particular modality?",
+          "image": "/games/prentice-images/image73.jpeg"
+        },
+        {
+          "label": "Which of the following illustrations represents the type of massage technique that is used",
+          "image": "/games/prentice-images/image74.jpeg"
+        },
+        {
+          "label": "Which major component of a rehabilitation program is shown in the photo?",
+          "image": "/games/prentice-images/image81.jpeg"
+        },
+        {
+          "label": "Open kinetic chainClosed kinetic chainOpen kinetic chainClosed kinetic chainDownloaded by:",
+          "image": "/games/prentice-images/image82.jpeg"
+        },
+        {
+          "label": "It is a metered-dose inhaler used to treat asthma.It is a proton pump inhibitor used to tr",
+          "image": "/games/prentice-images/image83.jpeg"
+        },
+        {
+          "label": "What ergogenic aid is produced by the somatotropic cells of the anterior region of the pit",
+          "image": "/games/prentice-images/image84.jpeg"
+        },
+        {
+          "label": "A patient is suffering from plantar fasciitis. What modality would best assist a patient w",
+          "image": "/games/prentice-images/image85.jpeg"
+        },
+        {
+          "label": "Please identify the area of the foot where a Jones fracture would most likely occur.",
+          "image": "/games/prentice-images/image90.jpeg"
+        },
+        {
+          "label": "What condition is illustrated in this figure?",
+          "image": "/games/prentice-images/image95.jpeg"
+        },
+        {
+          "label": "This type of pad (see below) can be used to treat all of the following problems except for",
+          "image": "/games/prentice-images/image96.jpeg"
+        },
+        {
+          "label": "Where does a callus typically develop on a person who is suffering from metatarsalgia?",
+          "image": "/games/prentice-images/image97.jpeg"
+        },
+        {
+          "label": "The technique demonstrated in the video would be utilized for what problem?",
+          "image": "/games/prentice-images/image100.jpeg"
+        },
+        {
+          "label": "DDownloaded by: marcushuddleston | marcus.huddleston@gmail.comDistribution of this documen",
+          "image": "/games/prentice-images/image102.jpeg"
+        },
+        {
+          "label": "CWalking on balance shoes can be done in order to work on regaining neuromuscular control",
+          "image": "/games/prentice-images/image103.jpeg"
+        },
+        {
+          "label": "What is the name of the joint that is formed with the inferior portions of the tibia and f",
+          "image": "/games/prentice-images/image104.jpeg"
+        },
+        {
+          "label": "A patient is suffering from medial tibial stress syndrome, complaining of pain before and",
+          "image": "/games/prentice-images/image105.jpeg"
+        },
+        {
+          "label": "Which brace would be the most appropriate to wear for an athlete recovering from a grade 3",
+          "image": "/games/prentice-images/image106.jpeg"
+        },
+        {
+          "label": "Please identify the correct location of a baker\u2019s cyst.",
+          "image": "/games/prentice-images/image110.jpeg"
+        },
+        {
+          "label": "When performing a pivot-shift test, a jerk test, and an Apley\u2019s compression test, what are",
+          "image": "/games/prentice-images/image114.jpeg"
+        },
+        {
+          "label": "When bracing a Grade 3 medial collateral ligament sprain, conservative initial treatment w",
+          "image": "/games/prentice-images/image116.jpeg"
+        },
+        {
+          "label": "What condition is present in the figure?",
+          "image": "/games/prentice-images/image117.jpeg"
+        },
+        {
+          "label": "What muscle group should have particularly good flexibility for return to activity when co",
+          "image": "/games/prentice-images/image119.jpeg"
+        },
+        {
+          "label": "It accommodates the stresses placed on the femur during bending of the hip and knee and du",
+          "image": "/games/prentice-images/image120.jpeg"
+        },
+        {
+          "label": "Which of the following muscles is a part of the anatomical region of the inner thigh refer",
+          "image": "/games/prentice-images/image121.jpeg"
+        },
+        {
+          "label": "In the prevention of injuries to the thigh, hip, groin, and pelvic region, which video wou",
+          "image": "/games/prentice-images/image122.jpeg"
+        },
+        {
+          "label": "Please draw a line in the correct location that separates the false and true pelvic areas.",
+          "image": "/games/prentice-images/image123.jpeg"
+        },
+        {
+          "label": "Femoral retroversionFemoral anteversionPathological sacroiliac joint dysfunctionLeg-length",
+          "image": "/games/prentice-images/image128.jpeg"
+        },
+        {
+          "label": "What special test is demonstrated in this diagram?",
+          "image": "/games/prentice-images/image130.jpeg"
+        },
+        {
+          "label": "What is the CORRECT title of the highlighted peripheral nerve?",
+          "image": "/games/prentice-images/image131.jpeg"
+        },
+        {
+          "label": "In which of the following movements is the highlighted structure in the given figure of ma",
+          "image": "/games/prentice-images/image139.jpeg"
+        },
+        {
+          "label": "If a patient complains of pain and swelling over the 5th metacarpal, what type of fracture",
+          "image": "/games/prentice-images/image144.jpeg"
+        },
+        {
+          "label": "The diagram represents a taping technique for the wrist, hand, and fingers that could be u",
+          "image": "/games/prentice-images/image145.jpeg"
+        },
+        {
+          "label": "A tennis player has severe pain near the base of her fourth and fifth metacarpals after ac",
+          "image": "/games/prentice-images/image146.jpeg"
+        },
+        {
+          "label": "What anatomical structure is located in this area?",
+          "image": "/games/prentice-images/image149.jpeg"
+        },
+        {
+          "label": "Please check all of the special tests demonstrated in the figures that can be performed to",
+          "image": "/games/prentice-images/image150.jpeg"
+        },
+        {
+          "label": "In an occupational educational program for the prevention of spine injuries, what would be",
+          "image": "/games/prentice-images/image157.jpeg"
+        },
+        {
+          "label": "In the case of a suspected head injury, an on-the-field neurological exam should be perfor",
+          "image": "/games/prentice-images/image158.png"
+        },
+        {
+          "label": "What is being performed for a head assessment in the following figures?",
+          "image": "/games/prentice-images/image159.png"
+        },
+        {
+          "label": "If a patient is able to read line four on the shown figure, what does this result mean?",
+          "image": "/games/prentice-images/image162.png"
+        },
+        {
+          "label": "Which figure below correctly shows the four sites used for auscultation of heart sounds?",
+          "image": "/games/prentice-images/image163.jpeg"
+        },
+        {
+          "label": "Which is the deepest of the abdominal muscles?",
+          "image": "/games/prentice-images/image166.jpeg"
+        },
+        {
+          "label": "A freshman volleyball player presents with a skin condition demonstrated in the figure.Wha",
+          "image": "/games/prentice-images/image170.jpeg"
+        },
+        {
+          "label": "A patient has yellowish-white scales on the elbows, knees, and around the umbilicus.What s",
+          "image": "/games/prentice-images/image171.jpeg"
+        },
+        {
+          "label": "CLyme disease acquired from a tick bite present with erythema chronicum migrants, an enlar",
+          "image": "/games/prentice-images/image173.jpeg"
+        }
+      ]
     }
   ]
 }

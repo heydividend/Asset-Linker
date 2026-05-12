@@ -189,6 +189,14 @@ export default function QuizRunner() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg leading-relaxed" data-testid="text-question-stem">{q.stem}</CardTitle>
+            {q.imageUrl && (
+              <img
+                src={q.imageUrl}
+                alt="Question figure"
+                className="mt-3 max-h-72 w-auto rounded-md border bg-muted/30 object-contain"
+                data-testid="img-question"
+              />
+            )}
           </CardHeader>
           <CardContent className="space-y-2">
             {q.multiSelect && (
@@ -384,6 +392,13 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
                     {isCorrect ? <Check className="h-5 w-5 text-primary mt-0.5" /> : <X className="h-5 w-5 text-destructive mt-0.5" />}
                     <span>Q{i + 1}. {qq.stem}</span>
                   </CardTitle>
+                  {qq.imageUrl && (
+                    <img
+                      src={qq.imageUrl}
+                      alt="Question figure"
+                      className="mt-2 max-h-56 w-auto rounded-md border bg-muted/30 object-contain"
+                    />
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   {qq.multiSelect && (

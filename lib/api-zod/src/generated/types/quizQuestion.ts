@@ -26,4 +26,6 @@ export interface QuizQuestion {
   rationale?: string | null;
   /** @nullable */
   sourceUrl?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
 }

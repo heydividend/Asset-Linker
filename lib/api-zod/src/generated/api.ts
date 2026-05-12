@@ -595,6 +595,7 @@ export const GetQuizResponse = zod.object({
       correctIndices: zod.array(zod.number()).optional(),
       rationale: zod.string().nullish(),
       sourceUrl: zod.string().nullish(),
+      imageUrl: zod.string().nullish(),
     }),
   ),
   currentIndex: zod.number(),
@@ -653,6 +654,7 @@ export const FinishQuizResponse = zod.object({
       correctIndices: zod.array(zod.number()).optional(),
       rationale: zod.string().nullish(),
       sourceUrl: zod.string().nullish(),
+      imageUrl: zod.string().nullish(),
     }),
   ),
   currentIndex: zod.number(),
@@ -716,6 +718,7 @@ export const GetMockExamResponse = zod.object({
       correctIndices: zod.array(zod.number()).optional(),
       rationale: zod.string().nullish(),
       sourceUrl: zod.string().nullish(),
+      imageUrl: zod.string().nullish(),
     }),
   ),
 });
@@ -765,6 +768,7 @@ export const AnswerMockExamQuestionResponse = zod.object({
       correctIndices: zod.array(zod.number()).optional(),
       rationale: zod.string().nullish(),
       sourceUrl: zod.string().nullish(),
+      imageUrl: zod.string().nullish(),
     }),
   ),
 });

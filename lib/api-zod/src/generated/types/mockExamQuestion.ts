@@ -25,4 +25,6 @@ export interface MockExamQuestion {
   rationale?: string | null;
   /** @nullable */
   sourceUrl?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
 }

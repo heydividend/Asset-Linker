@@ -20,6 +20,7 @@ async function buildQuizQuestionView(qids: number[], answers: Map<number, { sele
         id: qid,
         questionId: qid,
         stem: q.stem,
+        imageUrl: q.imageUrl ?? null,
         choices: q.choices,
         topicId: q.topicId,
         domainId: q.domainId,

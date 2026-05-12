@@ -15,6 +15,7 @@ export const questions = pgTable("questions", {
   difficulty: integer("difficulty").notNull().default(2),
   sourceKind: text("source_kind").notNull().default("ai"),
   sourceUrl: text("source_url"),
+  imageUrl: text("image_url"),
   enabled: boolean("enabled").notNull().default(true),
   pendingReview: boolean("pending_review").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

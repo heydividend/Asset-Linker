@@ -1308,6 +1308,7 @@ components:
           items: { type: integer }
         rationale: { type: ["string", "null"] }
         sourceUrl: { type: ["string", "null"] }
+        imageUrl: { type: ["string", "null"] }
     QuizInput:
       type: object
       required: [mode, count]
@@ -1376,6 +1377,7 @@ components:
           items: { type: integer }
         rationale: { type: ["string", "null"] }
         sourceUrl: { type: ["string", "null"] }
+        imageUrl: { type: ["string", "null"] }
     MockExamSummary:
       type: object
       required: [id, totalQuestions, startedAt, submitted]

@@ -107,6 +107,7 @@ async function serializeExam(exam: typeof mockExams.$inferSelect, includeAnswers
         id: qid,
         questionId: qid,
         stem: q?.stem ?? "",
+        imageUrl: q?.imageUrl ?? null,
         choices: q?.choices ?? [],
         topicId: q?.topicId,
         domainId: q?.domainId,

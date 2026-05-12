@@ -349,6 +349,14 @@ export default function MockExamRunner() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg leading-relaxed" data-testid="text-mock-stem">{q.stem}</CardTitle>
+            {q.imageUrl && (
+              <img
+                src={q.imageUrl}
+                alt="Question figure"
+                className="mt-3 max-h-72 w-auto rounded-md border bg-muted/30 object-contain"
+                data-testid="img-mock-question"
+              />
+            )}
           </CardHeader>
           <CardContent className="space-y-2">
             {isMulti && (
