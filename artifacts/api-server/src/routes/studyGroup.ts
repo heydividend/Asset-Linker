@@ -193,7 +193,9 @@ function startSseStream(res: import("express").Response): StreamHandle {
 }
 
 // ---- Per-session in-flight handler tracking (so a reconnect can supersede) ----
-const sessionAborters = new Map<number, AbortController>();
+// Exported for tests; production code should not mutate this directly outside
+// of takeOverSession()/releaseSession().
+export const sessionAborters = new Map<number, AbortController>();
 
 // Startup sweep: heal any rows left in 'streaming' from a previous process
 // (crash/redeploy mid-round). Flipping them to 'failed' makes the round show
