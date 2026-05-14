@@ -682,24 +682,41 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
     );
   }
 
-  function handleStopRound() {
-    // Client aborts immediately so the UI feels responsive; the server-side
-    // pause patch then aborts the in-flight Anthropic stream too. Partial
-    // messages remain persisted via schedulePartialPersist.
+  async function handleEndRound() {
+    // Client aborts immediately so the UI feels responsive; the server's
+    // /end-round endpoint then aborts any live stream and finalizes every
+    // non-done turn in the latest incomplete round so the user can move on.
     abortRef.current?.abort();
-    updateStatus.mutate(
-      { id: session.id, data: { status: "paused" } },
-      {
-        onSuccess: () => {
-          qc.invalidateQueries({ queryKey: detailKey });
-          qc.invalidateQueries({ queryKey: getListStudyGroupSessionsQueryKey() });
-          toast({
-            title: "Round stopped",
-            description: "Anything generated so far has been saved.",
-          });
-        },
-      },
-    );
+    try {
+      const res = await fetch(`/api/study-group/sessions/${session.id}/end-round`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || res.statusText);
+      }
+      const result = (await res.json()) as { ended: boolean; roundIndex: number | null };
+      qc.invalidateQueries({ queryKey: detailKey });
+      qc.invalidateQueries({ queryKey: getListStudyGroupSessionsQueryKey() });
+      if (result.ended) {
+        toast({
+          title: `Round ${result.roundIndex} ended`,
+          description: "Anything generated so far has been saved. Start a new round when you're ready.",
+        });
+      } else {
+        toast({
+          title: "Nothing to end",
+          description: "There's no in-flight or incomplete round on this session.",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Couldn't end round",
+        description: err?.message ?? "Try again in a moment.",
+        variant: "destructive",
+      });
+    }
   }
 
   async function handleInterject() {
@@ -867,19 +884,23 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
             {timeoutStats.timedOutRounds} of last {timeoutStats.window} timed out
           </Badge>
         )}
-        {streaming && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleStopRound}
-            disabled={updateStatus.isPending}
-            data-testid="button-sg-stop-round"
-            title="Stop the round now and keep what's already been generated"
-          >
-            <Square className="h-3.5 w-3.5 mr-1" />
-            Stop round
-          </Button>
-        )}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleEndRound}
+          disabled={!streaming && !canResume}
+          data-testid="button-sg-end-round"
+          title={
+            streaming
+              ? "Stop the round now and keep what's already been generated"
+              : canResume
+                ? `Mark round ${incompleteRound} as done so you can start a new one`
+                : "No round in progress to end"
+          }
+        >
+          <Square className="h-3.5 w-3.5 mr-1" />
+          End round
+        </Button>
         <Button
           size="sm"
           variant="outline"

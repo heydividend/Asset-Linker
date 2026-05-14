@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import {
   db,
   studyGroupSessions,
@@ -783,6 +783,64 @@ router.get("/study-group/sessions/:id", async (req, res): Promise<void> => {
 // underlying turn `status` are intentionally left alone — the user can still
 // revisit the partial transcript. If a *new* round in the same session later
 // times out, that new row's dismissedAt is NULL so the warning re-appears.
+// End the current/latest incomplete round in place. Aborts any in-flight
+// stream, then marks every non-`done` planned message in that round as
+// `done` with reason='user_ended' so the transcript keeps whatever was
+// generated and `incompleteRound`/`canResume` clear out — letting the user
+// move on to a new round without resuming.
+router.post("/study-group/sessions/:id/end-round", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const [session] = await db
+    .select({ id: studyGroupSessions.id })
+    .from(studyGroupSessions)
+    .where(eq(studyGroupSessions.id, id));
+  if (!session) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  // Abort any live generation first so it stops writing partials.
+  sessionAborters.get(id)?.abort();
+  // Find the lowest round that still has incomplete planned turns.
+  const incomplete = await db
+    .select({
+      roundIndex: studyGroupMessages.roundIndex,
+    })
+    .from(studyGroupMessages)
+    .where(
+      and(
+        eq(studyGroupMessages.sessionId, id),
+        inArray(studyGroupMessages.kind, ["question", "answer", "verdict", "takeaway"]),
+        ne(studyGroupMessages.status, "done"),
+      ),
+    );
+  if (incomplete.length === 0) {
+    res.json({ ended: false, roundIndex: null });
+    return;
+  }
+  const target = Math.min(...incomplete.map((r) => r.roundIndex));
+  const updated = await db
+    .update(studyGroupMessages)
+    .set({
+      status: "done",
+      reason: "user_ended",
+      dismissedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(studyGroupMessages.sessionId, id),
+        eq(studyGroupMessages.roundIndex, target),
+        ne(studyGroupMessages.status, "done"),
+      ),
+    )
+    .returning({ id: studyGroupMessages.id });
+  res.json({ ended: true, roundIndex: target, turnsEnded: updated.length });
+});
+
 router.post("/study-group/sessions/:id/dismiss-timeout", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {
