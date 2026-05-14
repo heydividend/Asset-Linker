@@ -663,6 +663,40 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
         onSuccess: () => {
           qc.invalidateQueries({ queryKey: detailKey });
           qc.invalidateQueries({ queryKey: getListStudyGroupSessionsQueryKey() });
+          // Resuming should actually pick the round back up — otherwise the
+          // user has to click Resume then Start round (two steps for what they
+          // expect to be one). If a round is in-flight, kick it off again.
+          if (next === "active" && incompleteRound != null) {
+            autoResumedRoundRef.current = null;
+            void handleStartRound({ retry: hasFailed || sweeperHealed });
+          }
+        },
+        onError: (err: any) => {
+          toast({
+            title: next === "paused" ? "Couldn't pause" : "Couldn't resume",
+            description: err?.message ?? "Try again in a moment.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  }
+
+  function handleStopRound() {
+    // Client aborts immediately so the UI feels responsive; the server-side
+    // pause patch then aborts the in-flight Anthropic stream too. Partial
+    // messages remain persisted via schedulePartialPersist.
+    abortRef.current?.abort();
+    updateStatus.mutate(
+      { id: session.id, data: { status: "paused" } },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: detailKey });
+          qc.invalidateQueries({ queryKey: getListStudyGroupSessionsQueryKey() });
+          toast({
+            title: "Round stopped",
+            description: "Anything generated so far has been saved.",
+          });
         },
       },
     );
@@ -795,7 +829,8 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
   }, [speech.playlist, playlistItems]);
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col h-full">
+    <div className="flex-1 min-w-0 flex h-full">
+      <div className="flex-1 min-w-0 flex flex-col">
       {/* Header */}
       <div className="border-b px-4 py-3 flex items-center gap-3">
         <Users className="h-5 w-5 text-primary shrink-0" />
@@ -831,6 +866,19 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
             <AlertTriangle className="h-3 w-3" />
             {timeoutStats.timedOutRounds} of last {timeoutStats.window} timed out
           </Badge>
+        )}
+        {streaming && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleStopRound}
+            disabled={updateStatus.isPending}
+            data-testid="button-sg-stop-round"
+            title="Stop the round now and keep what's already been generated"
+          >
+            <Square className="h-3.5 w-3.5 mr-1" />
+            Stop round
+          </Button>
         )}
         <Button
           size="sm"
@@ -1061,11 +1109,11 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
         </Button>
       </div>
 
-      {/* Artifacts strip */}
+      {/* Artifacts strip — only on narrow screens; wider layouts use the right rail */}
       {artifacts.length > 0 && (
-        <div className="border-t px-3 py-2 max-h-48 overflow-y-auto">
+        <div className="border-t px-3 py-2 max-h-48 overflow-y-auto lg:hidden">
           <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
-            From this group ({artifacts.length})
+            Results ({artifacts.length})
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {artifacts.map((a) => (
@@ -1079,6 +1127,33 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
           </div>
         </div>
       )}
+      </div>
+      {/* Right rail — results from this group's rounds (flashcards, questions, etc.) */}
+      <aside
+        className="hidden lg:flex w-72 border-l flex-col min-h-0"
+        data-testid="sg-results-rail"
+      >
+        <div className="px-3 py-2 border-b text-[11px] uppercase tracking-wide text-muted-foreground">
+          Results {artifacts.length > 0 ? `(${artifacts.length})` : ""}
+        </div>
+        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+          {artifacts.length === 0 ? (
+            <p className="text-xs text-muted-foreground px-1 py-2">
+              Flashcards, question candidates, and mastery notes from each
+              round will appear here.
+            </p>
+          ) : (
+            artifacts.map((a) => (
+              <ArtifactCard
+                key={a.id}
+                artifact={a}
+                onPromote={handlePromote}
+                promoting={promotingId === a.id}
+              />
+            ))
+          )}
+        </div>
+      </aside>
     </div>
   );
 }
@@ -1385,7 +1460,7 @@ export default function StudyGroupPage() {
               <div
                 key={s.id}
                 className={cn(
-                  "group flex items-center gap-1 rounded-md px-2 py-1.5 cursor-pointer text-sm",
+                  "group flex flex-wrap items-center gap-1 rounded-md px-2 py-1.5 cursor-pointer text-sm",
                   activeId === s.id ? "bg-primary/10" : "hover:bg-accent",
                   isStuck &&
                     "ring-1 ring-amber-300/70 dark:ring-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20",
@@ -1469,6 +1544,33 @@ export default function StudyGroupPage() {
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
+                {/* Round history — only expand under the active session so the
+                    sidebar stays compact. Clicking a round scrolls the
+                    transcript to that round and briefly highlights it. */}
+                {activeId === s.id && s.roundCount > 0 && (
+                  <div
+                    className="basis-full mt-1.5 ml-1 flex flex-wrap gap-1"
+                    data-testid={`sg-round-history-${s.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {Array.from({ length: s.roundCount }, (_, i) => i + 1).map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setFocusRound({ round: r, nonce: Date.now() })}
+                        className={cn(
+                          "px-1.5 py-0.5 rounded border text-[10px] font-medium",
+                          "bg-background hover:bg-accent text-muted-foreground hover:text-foreground",
+                          focusRound?.round === r && "border-primary text-primary",
+                        )}
+                        data-testid={`sg-round-chip-${s.id}-${r}`}
+                        title={`Jump to round ${r}`}
+                      >
+                        R{r}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}

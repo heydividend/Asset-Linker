@@ -901,6 +901,11 @@ router.patch("/study-group/sessions/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Not found" });
     return;
   }
+  // Pausing must actually stop generation. Abort any in-flight stream for this
+  // session — partial messages remain persisted via schedulePartialPersist.
+  if (status === "paused" || status === "finished") {
+    sessionAborters.get(id)?.abort();
+  }
   res.json(updated);
 });
 
@@ -1263,6 +1268,10 @@ router.post("/study-group/sessions/:id/round", async (req, res): Promise<void> =
   }
   if (session.topicId == null) {
     res.status(400).json({ error: "Session has no topic" });
+    return;
+  }
+  if (session.status === "paused") {
+    res.status(409).json({ error: "Session is paused — resume it first." });
     return;
   }
   const t = await resolveTopic(session.topicId);
