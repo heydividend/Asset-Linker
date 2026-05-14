@@ -11,6 +11,7 @@ export type PlanItemKind =
   | "mock_exam"
   | "body_map"
   | "matching"
+  | "study_group"
   | "rest"
   | "game";
 
@@ -343,6 +344,23 @@ export function buildSchedule(
         estMinutes: g.estMinutes,
         gameId: g.id,
         link: `/games/${g.id}`,
+      });
+    }
+
+    // Mandatory daily AI Study Group session. Skipped only on exam day. If
+    // not completed, the carry-forward logic in /plan/today (in plan.ts)
+    // surfaces it on the following day until the user finishes it.
+    if (!isExamDay) {
+      items.push({
+        kind: "study_group",
+        title: focusDomain?.name
+          ? `AI study group session — ${focusDomain.name}`
+          : "AI study group session",
+        description:
+          "Run at least one round with the AI study group to talk through today's focus.",
+        estMinutes: 25,
+        domainId: focusDomain?.id,
+        link: "/study-group",
       });
     }
 

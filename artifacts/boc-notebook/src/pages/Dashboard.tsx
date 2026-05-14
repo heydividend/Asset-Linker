@@ -111,6 +111,7 @@ const PLAN_KIND_META: Record<
   resource: { label: "Resource", icon: BookOpen, tone: "bg-teal-500/10 text-teal-700 border-teal-500/30 dark:text-teal-300" },
   game: { label: "Game", icon: Gamepad2, tone: "bg-fuchsia-500/10 text-fuchsia-700 border-fuchsia-500/30 dark:text-fuchsia-300" },
   mock_exam: { label: "Mock exam", icon: GraduationCap, tone: "bg-primary/10 text-primary border-primary/30" },
+  study_group: { label: "Study group", icon: Users, tone: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:text-emerald-300" },
   rest: { label: "Rest", icon: Coffee, tone: "bg-muted text-muted-foreground border-border" },
 };
 

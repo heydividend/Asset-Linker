@@ -835,6 +835,7 @@ export const StudyPlanItemKind = {
   resource: "resource",
   game: "game",
   mock_exam: "mock_exam",
+  study_group: "study_group",
   rest: "rest",
 } as const;
 

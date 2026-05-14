@@ -45,6 +45,8 @@ function deriveLink(it: DayItem): string | null {
       return it.notebookId ? `/notebooks/${it.notebookId}` : "/notebooks";
     case "mock_exam":
       return "/mock-exam";
+    case "study_group":
+      return "/study-group";
     case "body_map":
       return "/body-map";
     case "matching":

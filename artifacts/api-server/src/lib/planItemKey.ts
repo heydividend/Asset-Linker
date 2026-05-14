@@ -28,6 +28,9 @@ export function planItemKey(item: PlanItem): string {
       return "audio:any";
     case "mock_exam":
       return "mock_exam:session";
+    case "study_group":
+      if (item.domainId) return `study_group:domain:${item.domainId}`;
+      return "study_group:any";
     case "resource":
       return "resource:any";
     case "rest":

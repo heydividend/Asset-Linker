@@ -15,6 +15,8 @@ import {
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { parseId } from "../lib/parseId";
 import { chatJson } from "../lib/openaiHelpers";
+import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
+import { getOrCreateSessionId } from "../lib/sessionId";
 
 const router: IRouter = Router();
 
@@ -1106,8 +1108,9 @@ async function executeStudyGroupRound(args: {
   isRetry: boolean;
   stream: StreamHandle;
   ac: AbortController;
+  userSessionId?: string;
 }): Promise<void> {
-  const { session, topic: t, isRetry, stream, ac } = args;
+  const { session, topic: t, isRetry, stream, ac, userSessionId } = args;
   const id = session.id;
   try {
     // Decide which round to run: resume an unfinished one, or start a new one.
@@ -1307,6 +1310,27 @@ async function executeStudyGroupRound(args: {
     for (const a of created) {
       stream.push({ type: "artifact", artifact: a });
     }
+
+    // Mark today's mandatory "AI study group session" plan item as complete
+    // so the carry-forward logic in /plan/today stops surfacing it tomorrow.
+    // We mark both the generic key and any domain-specific key so whichever
+    // form the schedule injected today is satisfied.
+    if (userSessionId) {
+      try {
+        const date = todayStr();
+        await markPlanItemComplete(userSessionId, date, "study_group:any");
+        if (t.domainId != null) {
+          await markPlanItemComplete(
+            userSessionId,
+            date,
+            `study_group:domain:${t.domainId}`,
+          );
+        }
+      } catch {
+        // Non-fatal — the user can still re-run the round.
+      }
+    }
+
     stream.end();
   } finally {
     releaseSession(id, ac);
@@ -1345,7 +1369,8 @@ router.post("/study-group/sessions/:id/round", async (req, res): Promise<void> =
     // round always reaches a checkpointed state. The new POST that supersedes
     // us will call takeOverSession() and abort our anthropic streams.
   });
-  await executeStudyGroupRound({ session, topic: t, isRetry, stream, ac });
+  const userSessionId = getOrCreateSessionId(req, res);
+  await executeStudyGroupRound({ session, topic: t, isRetry, stream, ac, userSessionId });
 });
 
 // Bulk version of POST /study-group/sessions/:id/round with `{retry:true}` —
