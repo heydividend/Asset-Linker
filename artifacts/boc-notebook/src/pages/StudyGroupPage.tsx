@@ -745,11 +745,13 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
     );
   }
 
+  const [endingRound, setEndingRound] = useState(false);
   async function handleEndRound() {
     // Client aborts immediately so the UI feels responsive; the server's
     // /end-round endpoint then aborts any live stream and finalizes every
     // non-done turn in the latest incomplete round so the user can move on.
     abortRef.current?.abort();
+    setEndingRound(true);
     try {
       const res = await fetch(`/api/study-group/sessions/${session.id}/end-round`, {
         method: "POST",
@@ -779,6 +781,8 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
         description: err?.message ?? "Try again in a moment.",
         variant: "destructive",
       });
+    } finally {
+      setEndingRound(false);
     }
   }
 
@@ -951,14 +955,14 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
           size="sm"
           variant="outline"
           onClick={handleEndRound}
-          disabled={!streaming && !canResume}
+          disabled={endingRound}
           data-testid="button-sg-end-round"
           title={
             streaming
               ? "Stop the round now and keep what's already been generated"
               : canResume
                 ? `Mark round ${incompleteRound} as done so you can start a new one`
-                : "No round in progress to end"
+                : "End the latest round (no-op if nothing is in progress)"
           }
         >
           <Square className="h-3.5 w-3.5 mr-1" />
