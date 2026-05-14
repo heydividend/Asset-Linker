@@ -52,6 +52,25 @@ export default function TutorPage() {
   // open clean — previous chats live in the sidebar as recents and the user
   // can pick one or start a new chat.
 
+  // Sweep empty "New Conversation" rows on mount. They accumulate whenever
+  // "New chat" is clicked without typing, and quickly drown out real recents.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/openai/conversations/empty", { method: "DELETE" });
+        if (!res.ok || cancelled) return;
+        const j = (await res.json().catch(() => null)) as { deleted?: number } | null;
+        if (j && typeof j.deleted === "number" && j.deleted > 0) {
+          qc.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
+        }
+      } catch {
+        /* best-effort cleanup; ignore */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [qc]);
+
   // Track whether the user is pinned to the bottom. If they scroll up to
   // re-read, stop auto-scrolling and show a "scroll to latest" pill instead.
   useEffect(() => {

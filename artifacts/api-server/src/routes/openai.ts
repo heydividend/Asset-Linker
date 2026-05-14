@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, notExists } from "drizzle-orm";
 import { db, conversations, messages, notes, notebooks } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
@@ -193,6 +193,25 @@ router.get("/openai/conversations/:id", async (req, res): Promise<void> => {
     return;
   }
   res.json(c);
+});
+
+// Cleanup endpoint: delete every conversation that has no messages. Empty
+// "New Conversation" rows pile up in the sidebar whenever the user clicks
+// "New chat" without typing anything (e.g. exploring or accidental clicks).
+// This sweeps them all in one shot so the recents list stays useful.
+router.delete("/openai/conversations/empty", async (_req, res): Promise<void> => {
+  const deleted = await db
+    .delete(conversations)
+    .where(
+      notExists(
+        db
+          .select({ id: messages.id })
+          .from(messages)
+          .where(eq(messages.conversationId, conversations.id)),
+      ),
+    )
+    .returning({ id: conversations.id });
+  res.json({ deleted: deleted.length });
 });
 
 router.delete("/openai/conversations/:id", async (req, res): Promise<void> => {
