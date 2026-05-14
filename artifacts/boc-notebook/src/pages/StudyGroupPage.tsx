@@ -88,6 +88,8 @@ interface SpeakerStyle {
   icon: typeof GraduationCap;
   /** Per-persona TTS voice. Falls back to user voice when undefined. */
   voice?: TtsVoice;
+  /** One-line "who they are and how they think" blurb for the Group panel. */
+  description?: string;
 }
 
 const SPEAKERS: Record<string, SpeakerStyle> = {
@@ -98,6 +100,8 @@ const SPEAKERS: Record<string, SpeakerStyle> = {
     ring: "bg-amber-500 text-white",
     icon: GraduationCap,
     voice: "onyx", // deep, authoritative
+    description:
+      "Graduate professor who runs the round. Poses a real BOC-style question, lets the peers reason it out, then adjudicates with the correct answer, named traps, and a one-line clinical pearl.",
   },
   alex: {
     initials: "A",
@@ -106,6 +110,8 @@ const SPEAKERS: Record<string, SpeakerStyle> = {
     ring: "bg-sky-500 text-white",
     icon: Sparkles,
     voice: "nova", // warm, energetic peer
+    description:
+      "Recently BOC-certified — passed last year. Thinks out loud and leans on test-taking strategy: eliminate distractors, watch absolutes, spot answer-choice families. Confident but humble.",
   },
   jordan: {
     initials: "J",
@@ -114,6 +120,8 @@ const SPEAKERS: Record<string, SpeakerStyle> = {
     ring: "bg-emerald-500 text-white",
     icon: Stethoscope,
     voice: "echo", // calm, clinical
+    description:
+      "BOC-certified athletic trainer with 4 years of clinic and secondary-school experience. Brings real clinical anchors (mechanism, red flags, return-to-play) and will respectfully challenge Alex when strategy diverges from the clinical picture.",
   },
   student: {
     initials: "You",
@@ -145,6 +153,57 @@ const KIND_LABELS: Record<string, string> = {
 
 function speakerStyle(s: string): SpeakerStyle {
   return SPEAKERS[s] ?? SPEAKERS.system;
+}
+
+/** Roster card — shows the three AI participants and how each one thinks.
+ *  Used in the right rail (Group tab) and as the empty-state intro so the
+ *  user knows who's at the table the moment the page loads. */
+function PersonasCard({ compact = false }: { compact?: boolean }) {
+  const roster = ["mentor", "alex", "jordan"] as const;
+  return (
+    <div className={cn("space-y-2", compact && "space-y-1.5")} data-testid="sg-personas-card">
+      {roster.map((key) => {
+        const p = SPEAKERS[key];
+        return (
+          <div
+            key={key}
+            className="flex gap-3 items-start rounded-md border bg-card p-2.5"
+            data-testid={`sg-persona-${key}`}
+          >
+            <div
+              className={cn(
+                "h-9 w-9 rounded-full grid place-items-center text-[12px] font-semibold shrink-0",
+                p.ring,
+              )}
+              title={p.label}
+            >
+              {p.initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[13px] font-semibold leading-tight">{p.label}</span>
+                {p.badge && (
+                  <Badge variant="outline" className="px-1.5 py-0 h-4 text-[10px] font-normal">
+                    {p.badge}
+                  </Badge>
+                )}
+              </div>
+              {p.description && (
+                <p
+                  className={cn(
+                    "text-[11px] text-muted-foreground mt-0.5 leading-snug",
+                    compact && "line-clamp-3",
+                  )}
+                >
+                  {p.description}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function MessageBubble({
@@ -395,6 +454,10 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
   const { toast } = useToast();
   const detailKey = getGetStudyGroupSessionQueryKey(session.id);
   const { data: detail } = useGetStudyGroupSession(session.id);
+  // Pulled into the panel so the right rail can show the learning signal in
+  // the same tabbed surface as Results and Group (no more separate xl-only
+  // outer column to scan past).
+  const { data: signal } = useGetStudyGroupLearningSignal();
   const { data: timeoutStats } = useGetStudyGroupSessionTimeoutStats(session.id, {
     query: {
       queryKey: getGetStudyGroupSessionTimeoutStatsQueryKey(session.id),
@@ -1149,31 +1212,109 @@ function SessionPanel({ session, focusRound }: SessionPanelProps) {
         </div>
       )}
       </div>
-      {/* Right rail — results from this group's rounds (flashcards, questions, etc.) */}
+      {/* Right rail — tabbed: Group roster, round Results, and the
+          cross-session Learning signal in one place. */}
       <aside
-        className="hidden lg:flex w-72 border-l flex-col min-h-0"
-        data-testid="sg-results-rail"
+        className="hidden lg:flex w-80 border-l flex-col min-h-0"
+        data-testid="sg-right-rail"
       >
-        <div className="px-3 py-2 border-b text-[11px] uppercase tracking-wide text-muted-foreground">
-          Results {artifacts.length > 0 ? `(${artifacts.length})` : ""}
-        </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
-          {artifacts.length === 0 ? (
-            <p className="text-xs text-muted-foreground px-1 py-2">
-              Flashcards, question candidates, and mastery notes from each
-              round will appear here.
-            </p>
-          ) : (
-            artifacts.map((a) => (
-              <ArtifactCard
-                key={a.id}
-                artifact={a}
-                onPromote={handlePromote}
-                promoting={promotingId === a.id}
-              />
-            ))
-          )}
-        </div>
+        <Tabs defaultValue="group" className="flex-1 min-h-0 flex flex-col">
+          <TabsList className="m-2 h-8 grid grid-cols-3">
+            <TabsTrigger value="group" className="text-xs" data-testid="sg-rail-tab-group">
+              Group
+            </TabsTrigger>
+            <TabsTrigger value="results" className="text-xs" data-testid="sg-rail-tab-results">
+              Results{artifacts.length > 0 ? ` (${artifacts.length})` : ""}
+            </TabsTrigger>
+            <TabsTrigger value="signal" className="text-xs" data-testid="sg-rail-tab-signal">
+              Signal
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent
+            value="group"
+            className="flex-1 min-h-0 overflow-y-auto p-2 m-0"
+            data-testid="sg-rail-group"
+          >
+            <div className="px-1 pb-2">
+              <h3 className="text-sm font-semibold">Who's at the table</h3>
+              <p className="text-[11px] text-muted-foreground">
+                Three AI participants run each round with you.
+              </p>
+            </div>
+            <PersonasCard />
+          </TabsContent>
+          <TabsContent
+            value="results"
+            className="flex-1 min-h-0 overflow-y-auto p-2 m-0 space-y-2"
+            data-testid="sg-rail-results"
+          >
+            {artifacts.length === 0 ? (
+              <p className="text-xs text-muted-foreground px-1 py-2">
+                Flashcards, question candidates, and mastery notes from each
+                round will appear here.
+              </p>
+            ) : (
+              artifacts.map((a) => (
+                <ArtifactCard
+                  key={a.id}
+                  artifact={a}
+                  onPromote={handlePromote}
+                  promoting={promotingId === a.id}
+                />
+              ))
+            )}
+          </TabsContent>
+          <TabsContent
+            value="signal"
+            className="flex-1 min-h-0 overflow-y-auto p-2 m-0 space-y-3"
+            data-testid="sg-rail-signal"
+          >
+            <div className="px-1">
+              <h3 className="text-sm font-semibold">Learning signal</h3>
+              <p className="text-[11px] text-muted-foreground">
+                What the group has taught your study system so far.
+              </p>
+            </div>
+            <Card>
+              <CardContent className="p-3 space-y-2 text-xs" data-testid="learning-signal-card">
+                <p className="text-[12px]">{signal?.summary ?? "No sessions yet."}</p>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <Stat label="Sessions" value={signal?.sessions} />
+                  <Stat label="Reasoning patterns" value={signal?.reasoningPatterns} />
+                  <Stat
+                    label="Flashcards"
+                    value={`${signal?.flashcardsPromoted ?? 0}/${signal?.flashcardCandidates ?? 0}`}
+                    caption="promoted / candidates"
+                  />
+                  <Stat
+                    label="Questions"
+                    value={`${signal?.questionsPromoted ?? 0}/${signal?.questionCandidates ?? 0}`}
+                    caption="promoted / candidates"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            {signal && signal.recentSignalNotes.length > 0 && (
+              <Card>
+                <CardHeader className="p-3 pb-1">
+                  <CardTitle className="text-xs">Recent mastery notes</CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0 space-y-1.5">
+                  {signal.recentSignalNotes.map((n, i) => (
+                    <div key={i} className="text-[11px]">
+                      {n.topic && (
+                        <Badge variant="outline" className="mr-1 px-1 py-0 h-4 text-[10px]">
+                          {n.topic}
+                        </Badge>
+                      )}
+                      <span className="text-muted-foreground">{n.note}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </aside>
     </div>
   );
@@ -1302,7 +1443,6 @@ export default function StudyGroupPage() {
   const { data: sessions = [], isLoading } = useListStudyGroupSessions(
     showDismissed ? { includeDismissed: true } : undefined,
   );
-  const { data: signal } = useGetStudyGroupLearningSignal();
   const { data: summary } = useGetDashboardSummary();
   const [activeId, setActiveId] = useState<number | null>(null);
   const [newOpen, setNewOpen] = useState(false);
@@ -1447,7 +1587,7 @@ export default function StudyGroupPage() {
           </TabsList>
         </div>
         <TabsContent value="sessions" className="flex-1 min-h-0 m-0">
-      <div className="h-full min-h-0 grid grid-cols-1 md:grid-cols-[14rem_1fr] xl:grid-cols-[14rem_1fr_18rem] grid-rows-[minmax(0,1fr)]">
+      <div className="h-full min-h-0 grid grid-cols-1 md:grid-cols-[14rem_1fr] grid-rows-[minmax(0,1fr)]">
         {/* Sessions list */}
         <aside className="border-r overflow-y-auto p-2 space-y-1 hidden md:block">
           <div className="flex items-center justify-between px-2 pt-1 pb-1">
@@ -1602,69 +1742,27 @@ export default function StudyGroupPage() {
           {activeSession ? (
             <SessionPanel session={activeSession} key={activeSession.id} focusRound={focusRound} />
           ) : (
-            <div className="flex-1 grid place-items-center text-center p-8">
-              <div className="max-w-md space-y-3">
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="max-w-xl mx-auto space-y-4 text-center">
                 <Users className="h-10 w-10 text-muted-foreground mx-auto" />
                 <h2 className="text-lg font-semibold">Open your first study group</h2>
                 <p className="text-sm text-muted-foreground">
-                  Dr. Mentor (graduate professor), Alex (BOC-certified peer), and Jordan (BOC-certified
-                  peer with 4 years in clinic) will work a high-yield BOC question with you. You can interject any time.
+                  Three AI participants will work a high-yield BOC question with you. You can interject any time.
                 </p>
                 <Button onClick={() => setNewOpen(true)} data-testid="button-new-study-group-empty">
                   <Plus className="h-4 w-4 mr-1" /> New session
                 </Button>
               </div>
+              <div className="max-w-xl mx-auto mt-6 text-left">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
+                  Who's at the table
+                </div>
+                <PersonasCard />
+              </div>
             </div>
           )}
         </section>
 
-        {/* Learning signal panel */}
-        <aside className="border-l overflow-y-auto min-h-0 p-3 space-y-3 hidden xl:block">
-          <div>
-            <h3 className="text-sm font-semibold">Learning signal</h3>
-            <p className="text-[11px] text-muted-foreground">
-              What the group has taught your study system so far.
-            </p>
-          </div>
-          <Card>
-            <CardContent className="p-3 space-y-2 text-xs" data-testid="learning-signal-card">
-              <p className="text-[12px]">{signal?.summary ?? "No sessions yet."}</p>
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <Stat label="Sessions" value={signal?.sessions} />
-                <Stat label="Reasoning patterns" value={signal?.reasoningPatterns} />
-                <Stat
-                  label="Flashcards"
-                  value={`${signal?.flashcardsPromoted ?? 0}/${signal?.flashcardCandidates ?? 0}`}
-                  caption="promoted / candidates"
-                />
-                <Stat
-                  label="Questions"
-                  value={`${signal?.questionsPromoted ?? 0}/${signal?.questionCandidates ?? 0}`}
-                  caption="promoted / candidates"
-                />
-              </div>
-            </CardContent>
-          </Card>
-          {signal && signal.recentSignalNotes.length > 0 && (
-            <Card>
-              <CardHeader className="p-3 pb-1">
-                <CardTitle className="text-xs">Recent mastery notes</CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 pt-0 space-y-1.5">
-                {signal.recentSignalNotes.map((n, i) => (
-                  <div key={i} className="text-[11px]">
-                    {n.topic && (
-                      <Badge variant="outline" className="mr-1 px-1 py-0 h-4 text-[10px]">
-                        {n.topic}
-                      </Badge>
-                    )}
-                    <span className="text-muted-foreground">{n.note}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </aside>
       </div>
         </TabsContent>
         <TabsContent value="library" className="flex-1 min-h-0 m-0 overflow-y-auto">
