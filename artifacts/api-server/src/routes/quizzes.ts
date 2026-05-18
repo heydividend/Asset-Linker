@@ -106,53 +106,60 @@ router.get("/quizzes", async (req, res): Promise<void> => {
 router.post("/quizzes", async (req, res): Promise<void> => {
   const { mode = "adaptive", count = 10, notebookId, topicId, topicIds, domainId, sourceKind, pendingReviewOnly } = req.body ?? {};
 
-  const conditions = [eq(questions.enabled, true)];
-  if (Array.isArray(topicIds) && topicIds.length > 0) {
-    conditions.push(inArray(questions.topicId, topicIds));
-  } else if (topicId) {
-    conditions.push(eq(questions.topicId, topicId));
-  }
-  if (domainId) conditions.push(eq(questions.domainId, domainId));
+  const baseConditions = [eq(questions.enabled, true)];
   if (typeof sourceKind === "string" && sourceKind) {
-    conditions.push(eq(questions.sourceKind, sourceKind));
+    baseConditions.push(eq(questions.sourceKind, sourceKind));
   }
   if (pendingReviewOnly === true) {
-    conditions.push(eq(questions.pendingReview, true));
+    baseConditions.push(eq(questions.pendingReview, true));
+  }
+  if (domainId) baseConditions.push(eq(questions.domainId, domainId));
+
+  // Resolve which topic(s) this quiz draws from. Every quiz is topically
+  // coherent: adaptive/weakness pick ONE topic (lowest mastery / least
+  // attempted) so the user never sees e.g. knee questions mixed in when they
+  // expected head injury. Explicit topicId / topicIds still override.
+  let resolvedTopicIds: number[] | null = null;
+  if (Array.isArray(topicIds) && topicIds.length > 0) {
+    resolvedTopicIds = topicIds.filter((n: unknown): n is number => typeof n === "number");
+  } else if (topicId) {
+    resolvedTopicIds = [topicId];
+  } else if (mode === "adaptive" || mode === "weakness") {
+    // Pick the single weakest topic that actually has matching questions
+    // under the current filters (sourceKind, pendingReview, domain).
+    const candidates = await db
+      .select({ topicId: questions.topicId })
+      .from(questions)
+      .where(and(...baseConditions, sql`${questions.topicId} IS NOT NULL`))
+      .groupBy(questions.topicId);
+    const availableTids = candidates.map((c) => c.topicId).filter(Boolean) as number[];
+    if (availableTids.length > 0) {
+      const ranked = await db
+        .select({ topicId: topicMastery.topicId, mastery: topicMastery.mastery })
+        .from(topicMastery)
+        .where(inArray(topicMastery.topicId, availableTids))
+        .orderBy(topicMastery.mastery);
+      const studiedTids = new Set(ranked.map((r) => r.topicId));
+      // Prefer never-studied topics first (truly weakest), then lowest mastery.
+      const unseen = availableTids.filter((t) => !studiedTids.has(t));
+      const pickedTid = unseen.length > 0
+        ? unseen[Math.floor(Math.random() * unseen.length)]
+        : ranked[0]?.topicId ?? availableTids[Math.floor(Math.random() * availableTids.length)];
+      resolvedTopicIds = [pickedTid];
+    }
   }
 
-  let qrows = await db
+  const conditions = [...baseConditions];
+  if (resolvedTopicIds && resolvedTopicIds.length > 0) {
+    conditions.push(inArray(questions.topicId, resolvedTopicIds));
+  }
+
+  const qrows = await db
     .select({ id: questions.id })
     .from(questions)
     .where(and(...conditions))
     .orderBy(sql`random()`)
     .limit(count);
-
-  if (mode === "weakness") {
-    const weak = await db
-      .select({ topicId: topicMastery.topicId })
-      .from(topicMastery)
-      .orderBy(topicMastery.mastery)
-      .limit(5);
-    const tids = weak.map((w) => w.topicId).filter(Boolean) as number[];
-    if (tids.length > 0) {
-      // Preserve all active filters (sourceKind, pendingReview, etc.) when
-      // narrowing to weakness topics so study-group / review-queue toggles
-      // continue to apply in weakness mode.
-      const weaknessConditions = [eq(questions.enabled, true), inArray(questions.topicId, tids)];
-      if (typeof sourceKind === "string" && sourceKind) {
-        weaknessConditions.push(eq(questions.sourceKind, sourceKind));
-      }
-      if (pendingReviewOnly === true) {
-        weaknessConditions.push(eq(questions.pendingReview, true));
-      }
-      qrows = await db
-        .select({ id: questions.id })
-        .from(questions)
-        .where(and(...weaknessConditions))
-        .orderBy(sql`random()`)
-        .limit(count);
-    }
-  }
 
   if (qrows.length === 0) {
     res.status(400).json({ error: "No questions available for this selection." });
