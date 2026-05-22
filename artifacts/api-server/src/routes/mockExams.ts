@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, questions, mockExams, domains, topics, topicMastery } from "@workspace/db";
 import { parseId } from "../lib/parseId";
 
@@ -34,7 +34,7 @@ router.post("/mock-exams", async (req, res): Promise<void> => {
     const got = await db
       .select({ id: questions.id })
       .from(questions)
-      .where(eq(questions.domainId, d.id))
+      .where(and(eq(questions.domainId, d.id), eq(questions.enabled, true)))
       .orderBy(sql`random()`)
       .limit(want);
     picks.push(...got.map((g) => g.id));
