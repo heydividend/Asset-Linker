@@ -62,8 +62,12 @@ async function generateTopicPodcastInBackground(opts: {
     const prompt =
       `Write a focused, friendly ~5-minute spoken podcast script for an Athletic Training student preparing for the BOC exam. ` +
       `Topic: "${topicName}"${domainName ? ` (domain: ${domainName})` : ""}. ` +
-      `Open with a brief intro that names the topic, then walk through the 4-6 highest-yield concepts a student must know, ` +
-      `using clinical pearls and concrete examples. Close with a 3-bullet recap and a friendly sign-off. ` +
+      `Follow this strict outline so the listener never gets lost: ` +
+      `(1) a 2-sentence intro naming the topic, ` +
+      `(2) walk through EXACTLY 4-6 highest-yield concepts, ONE at a time, in a fixed order — finish each concept completely before moving to the next; do not jump between subtopics or circle back, ` +
+      `(3) for each concept give a clear definition, one clinical pearl, and one concrete example, ` +
+      `(4) close with a 3-bullet recap and a friendly sign-off. ` +
+      `If you pose a question to the listener, answer it directly and correctly in the very next sentence — no rhetorical questions left hanging. ` +
       `Write ONLY the spoken script — no stage directions, no markdown, no headings.`;
     const transcript = await chatText(
       prompt,

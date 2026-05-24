@@ -53,15 +53,23 @@ const AUDIO_SELECT = {
 
 const STYLE_PROMPTS: Record<string, string> = {
   lecture:
-    "Write a focused 4-6 minute spoken lecture script for an Athletic Training student preparing for the BOC exam.",
+    "Write a focused 4-6 minute spoken lecture script for an Athletic Training student preparing for the BOC exam. " +
+    "Follow this strict outline so the listener never gets lost: (1) one-sentence intro naming the topic, " +
+    "(2) cover EXACTLY 4-6 high-yield concepts in order, ONE at a time — finish each concept fully before moving to the next, " +
+    "(3) for each concept give a clear definition, a clinical pearl, and a concrete example, " +
+    "(4) close with a 3-bullet recap. Do not jump between subtopics or circle back.",
   podcast:
-    "Write a friendly 5-7 minute podcast-style script for two co-hosts (alternating, label A: and B:) discussing the material for a BOC student.",
-  quickrecap: "Write a tight 2-3 minute spoken recap of the key BOC-relevant concepts.",
+    "Write a friendly 5-7 minute podcast-style script for two co-hosts (alternating, label A: and B:) discussing the material for a BOC student. " +
+    "Follow a strict outline: cover 4-6 high-yield concepts ONE at a time, finishing each fully before moving on. " +
+    "If one host asks a question, the very next line MUST be the other host giving a clear, direct, factually correct answer to that exact question — no tangents.",
+  quickrecap: "Write a tight 2-3 minute spoken recap of the key BOC-relevant concepts, covered one at a time in a fixed order. Do not jump between subtopics.",
   podcast2host:
-    "Write a friendly 5-7 minute two-host podcast script for an Athletic Training BOC student. " +
-    "Open with a brief intro that names the topic and welcomes the listener. " +
-    "Then alternate strictly between two hosts, labeled `HOST A:` and `HOST B:`, who chat in plain conversational language, " +
-    "explain ideas to each other with concrete examples and clinical pearls, ask each other questions, and react to each other's points. " +
+    "Write a focused 5-7 minute two-host podcast script for an Athletic Training BOC student. " +
+    "Open with a 2-sentence intro that names the topic. " +
+    "Then alternate strictly between `HOST A:` and `HOST B:` and follow this rigid outline: cover EXACTLY 4-6 high-yield concepts, ONE at a time, in a fixed order — finish each concept completely before moving to the next. " +
+    "RULE: If a host asks a question, the next line MUST be the other host giving a clear, direct, factually correct answer to THAT specific question (no deflecting, no changing the subject). " +
+    "Avoid rhetorical questions; only ask a question if the next line will answer it plainly. " +
+    "Use plain conversational language, concrete clinical examples, and short sentences. " +
     "Close with a short outro that recaps the 3-5 highest-yield takeaways and a friendly sign-off.",
 };
 
