@@ -694,33 +694,39 @@ export default function Dashboard() {
           <Skeleton className="h-24 w-full" />
         ) : schedule ? (
           <Card className="bg-primary text-primary-foreground border-none" data-tour="dashboard-countdown">
-            <CardContent className="p-4 flex items-center gap-4 flex-wrap">
-              <CalendarDays className="h-6 w-6 opacity-90 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs opacity-90 truncate">{schedule.examName}</p>
-                <p className="text-2xl font-bold leading-tight">
-                  {schedule.daysRemaining}{" "}
-                  <span className="text-sm font-normal opacity-90">days until exam</span>
-                </p>
-                <p className="text-[11px] opacity-80 mt-0.5 truncate">
-                  {formatDate(schedule.startDate)} → {formatDate(schedule.examDate)} · day {schedule.daysCompleted + 1} of{" "}
-                  {schedule.totalDays}
-                </p>
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <CalendarDays className="h-6 w-6 opacity-90 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs opacity-90 truncate">{schedule.examName}</p>
+                  <p className="text-2xl font-bold leading-tight">
+                    {schedule.daysRemaining}{" "}
+                    <span className="text-sm font-normal opacity-90 whitespace-nowrap">days until exam</span>
+                  </p>
+                  <p className="text-[11px] opacity-80 mt-0.5 truncate">
+                    {formatDate(schedule.startDate)} → {formatDate(schedule.examDate)} · day {schedule.daysCompleted + 1} of{" "}
+                    {schedule.totalDays}
+                  </p>
+                </div>
               </div>
-              <div className="w-40 space-y-1.5 shrink-0">
-                <Progress value={scheduleProgress} className="h-1.5 bg-primary-foreground/20" />
-                <p className="text-[11px] opacity-90 text-right">{scheduleProgress}% through</p>
+              <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                <div className="flex-1 sm:w-40 sm:flex-none space-y-1.5">
+                  <Progress value={scheduleProgress} className="h-1.5 bg-primary-foreground/20" />
+                  <p className="text-[11px] opacity-90 text-right">{scheduleProgress}% through</p>
+                </div>
+                <Link href="/schedule">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="shrink-0"
+                    data-testid="button-open-schedule"
+                  >
+                    <span className="hidden sm:inline">Full schedule</span>
+                    <span className="sm:hidden">Schedule</span>
+                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                  </Button>
+                </Link>
               </div>
-              <Link href="/schedule">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="shrink-0"
-                  data-testid="button-open-schedule"
-                >
-                  Full schedule <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
-              </Link>
             </CardContent>
             {upcomingDays.length > 0 && (
               <CardContent className="px-4 pb-4 pt-0">
