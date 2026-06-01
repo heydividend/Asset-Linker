@@ -1,1 +1,2 @@
 - [Flashcard re-rate SRS compounding](flashcard-rerate-srs.md) — "change my rating" re-calls the SM-2 review endpoint (not an overwrite); mild compounding accepted, not a bug.
+- [Deploy as Reserved VM not autoscale](deployment-vm-vs-autoscale.md) — timed-exam app: autoscale cold-start = edge "invalid request"; type can only be changed in Publishing UI, not in code.
