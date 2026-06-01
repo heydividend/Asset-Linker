@@ -3,25 +3,22 @@ name: Flashcard re-rate SRS compounding
 description: Why "change my rating" on a flashcard re-applies SM-2 instead of overwriting, and the accepted tradeoff
 ---
 
-# Flashcard re-rate uses the same review endpoint (intentional)
+# Flashcard re-rate re-applies SM-2 (intentional, not an overwrite)
 
-In FlashcardsReview Review mode, the user can step back to a card they rated
-this session (client-side `history` array, since the server drops reviewed
-cards from the due list) and pick a different rating. Re-rating calls the SAME
-`POST /flashcards/:id/review` — it does NOT overwrite the original review event.
+When the user steps back to change a flashcard's confidence rating, it goes
+through the normal review path again rather than overwriting the original
+review event.
 
-**Why:** True idempotent correction would need a server snapshot of the
-pre-review card state (ease/interval/reps) or an event log to recompute from.
-That's backend complexity outside the "production wrap-up / minimal scope" of
-this project. The review endpoint recomputes SM-2 from the card's *current*
-state each call.
+**Why:** A true correction would need a pre-review snapshot of the card's
+scheduling state (or an event log) to recompute from. That backend work is out
+of scope for this minimal production wrap-up; scheduling stays server-owned and
+recomputes from the card's current state on each review.
 
-**Consequence:** Re-rating compounds slightly — e.g. Easy then Again resets
-reps=0/interval=1 (correct), but ease_factor keeps the prior uplift because the
-endpoint never lowers EF for quality<3. Mild schedule drift, self-correcting,
-acceptable for single-user misclick correction. UI copy frames it as "Pick a
-different rating if you misjudged it" to set that expectation.
+**Consequence / tradeoff:** Re-rating compounds slightly (notably ease factor
+isn't lowered on a low rating), so the schedule can drift a little. Acceptable
+and self-correcting for single-user misclick correction; UI copy sets the
+"fix a misjudged rating" expectation.
 
-**How to apply:** If strict change-rating semantics are ever required, add
-server support to recompute from a pre-review snapshot (or store the last
-review delta and reverse it) rather than calling review again.
+**How to apply:** If strict change-rating semantics are ever needed, add a
+server-side recompute-from-snapshot (or reverse-the-last-delta) path instead of
+re-running the normal review.
