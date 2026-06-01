@@ -1,0 +1,1 @@
+- [Flashcard re-rate SRS compounding](flashcard-rerate-srs.md) — "change my rating" re-calls the SM-2 review endpoint (not an overwrite); mild compounding accepted, not a bug.

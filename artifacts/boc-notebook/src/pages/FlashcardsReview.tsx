@@ -31,6 +31,15 @@ import { Brain, ChevronLeft, ChevronRight, Eye, Layers, RotateCcw, Sparkles, Che
 import { Link, useSearch, useLocation } from "wouter";
 import { rememberFixItQuizId } from "@/lib/fixItPlan";
 
+// Labels/test ids for the SM-2 confidence ratings, reused by the "review a
+// past card" panel so a previously-chosen rating can be highlighted.
+const QUALITY_META: Record<number, { label: string }> = {
+  1: { label: "Again" },
+  3: { label: "Hard" },
+  4: { label: "Good" },
+  5: { label: "Easy" },
+};
+
 const TOUR_SAMPLE_CARD = {
   id: -1,
   front: "Which manual muscle test grade indicates full ROM against gravity with maximal resistance?",
@@ -66,6 +75,13 @@ export default function FlashcardsReview() {
   // mcPicked records which index they chose so we can highlight right/wrong.
   const [mcChoices, setMcChoices] = useState<FlashcardChoices | null>(null);
   const [mcPicked, setMcPicked] = useState<number | null>(null);
+  // Session history of cards rated this sitting, so the user can step back to a
+  // card they just reviewed and change the rating if they misjudged it. The
+  // server drops a reviewed card from the due list, so we keep our own record.
+  // histPos === null means we're on the live (current due) card; otherwise it's
+  // an index into `history` of the past card being revisited.
+  const [history, setHistory] = useState<{ card: { id: number; front: string; back: string }; quality: number }[]>([]);
+  const [histPos, setHistPos] = useState<number | null>(null);
 
   useEffect(() => {
     const onPreview = (e: Event) => {
@@ -293,6 +309,7 @@ export default function FlashcardsReview() {
 
   const submit = (quality: number) => {
     if (!card) return;
+    const reviewed = { card: { id: card.id, front: card.front, back: card.back }, quality };
     review.mutate(
       { id: card.id, data: { quality } },
       {
@@ -304,9 +321,36 @@ export default function FlashcardsReview() {
           setMcChoices(null);
           setMcPicked(null);
           setReviewedCount((c) => c + 1);
+          setHistory((h) => [...h, reviewed]);
           qc.invalidateQueries({ queryKey: getListDueFlashcardsQueryKey() });
           qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
         },
+      },
+    );
+  };
+
+  // Re-rate a card from the session history. The server recomputes the SM-2
+  // schedule from the card's current state, so this corrects a misjudged
+  // rating; we keep the local history entry in sync for the highlight.
+  const reRate = (quality: number) => {
+    if (histPos == null) return;
+    const entry = history[histPos];
+    if (!entry) return;
+    review.mutate(
+      { id: entry.card.id, data: { quality } },
+      {
+        onSuccess: () => {
+          setHistory((h) => h.map((e, i) => (i === histPos ? { ...e, quality } : e)));
+          qc.invalidateQueries({ queryKey: getListDueFlashcardsQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+          toast({ title: "Rating updated" });
+        },
+        onError: (e) =>
+          toast({
+            title: "Couldn't update rating",
+            description: e instanceof Error ? e.message : "Try again in a moment.",
+            variant: "destructive",
+          }),
       },
     );
   };
@@ -425,6 +469,116 @@ export default function FlashcardsReview() {
     );
   }
 
+  // Reviewing a card from earlier this session: show its front + answer, the
+  // rating you gave, and let you change it or step through the session history.
+  if (histPos != null && history[histPos]) {
+    const entry = history[histPos];
+    return (
+      <div className="flex flex-col h-full">
+        <header className="h-12 border-b flex items-center justify-between px-4 gap-3 flex-wrap">
+          <h1 className="text-base font-semibold flex items-center gap-2">
+            <Brain className="h-5 w-5" /> Flashcards
+            <Badge variant="outline" className="ml-2 text-xs" data-testid="badge-reviewing-past">
+              Reviewing past card
+            </Badge>
+          </h1>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setHistPos(null)}
+            data-testid="button-back-to-current"
+          >
+            Back to current <ChevronRight className="h-3 w-3 ml-1" />
+          </Button>
+        </header>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <Card className="w-full max-w-2xl min-h-[420px] flex flex-col">
+            <CardContent className="flex-1 flex flex-col p-8">
+              <div className="flex items-center justify-between mb-4">
+                <Badge variant="secondary" className="uppercase tracking-wide text-xs">
+                  Reviewed card {histPos + 1} of {history.length}
+                </Badge>
+                <AskAiButton
+                  context={`I'm reviewing a flashcard. Front: ${entry.card.front}\nBack: ${entry.card.back}\nExplain it deeply with clinical context.`}
+                  size="sm"
+                  variant="ghost"
+                />
+              </div>
+              <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
+                <p className="leading-relaxed text-base font-medium text-muted-foreground" data-testid="past-flashcard-front">
+                  {entry.card.front}
+                </p>
+                <div className="w-full text-left space-y-1">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Official answer</p>
+                  <MarkdownMessage content={entry.card.back} className="prose-base" />
+                </div>
+              </div>
+              <div className="mt-6 space-y-3">
+                <p className="text-xs text-muted-foreground text-center">
+                  You rated this <span className="font-semibold text-foreground">{QUALITY_META[entry.quality]?.label ?? entry.quality}</span>. Pick a different rating if you misjudged it.
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  <Button
+                    variant={entry.quality === 1 ? "destructive" : "outline"}
+                    onClick={() => reRate(1)}
+                    disabled={review.isPending}
+                    data-testid="button-rerate-again"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-1" /> Again
+                  </Button>
+                  <Button
+                    variant={entry.quality === 3 ? "default" : "outline"}
+                    onClick={() => reRate(3)}
+                    disabled={review.isPending}
+                    data-testid="button-rerate-hard"
+                  >
+                    Hard
+                  </Button>
+                  <Button
+                    variant={entry.quality === 4 ? "default" : "outline"}
+                    onClick={() => reRate(4)}
+                    disabled={review.isPending}
+                    data-testid="button-rerate-good"
+                  >
+                    Good
+                  </Button>
+                  <Button
+                    variant={entry.quality === 5 ? "default" : "outline"}
+                    onClick={() => reRate(5)}
+                    disabled={review.isPending}
+                    data-testid="button-rerate-easy"
+                  >
+                    <Sparkles className="h-4 w-4 mr-1" /> Easy
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setHistPos((p) => (p == null ? null : Math.max(0, p - 1)))}
+                    disabled={histPos === 0}
+                    data-testid="button-hist-prev"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" /> Older
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setHistPos((p) => (p == null || p >= history.length - 1 ? null : p + 1))}
+                    data-testid="button-hist-next"
+                  >
+                    {histPos >= history.length - 1 ? "Back to current" : "Newer"} <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        {generateDialog}
+      </div>
+    );
+  }
+
   if (isLoading && !tourPreview?.active) return <div className="p-6">Loading flashcards…</div>;
 
   if (!card) {
@@ -457,6 +611,17 @@ export default function FlashcardsReview() {
             <Button size="sm" variant="outline" onClick={() => setGenOpen(true)} data-testid="button-generate-flashcards-empty">
               <Wand2 className="h-3 w-3 mr-1" /> Generate
             </Button>
+            {history.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setHistPos(history.length - 1)}
+                data-testid="button-review-previous-empty"
+                title="Go back to a card you already reviewed and change its rating"
+              >
+                <ChevronLeft className="h-3 w-3 mr-1" /> Previous
+              </Button>
+            )}
             {isFocused && (
               <Button size="sm" variant="ghost" onClick={clearFocus} data-testid="button-clear-focus">
                 <X className="h-3 w-3 mr-1" /> Show all due
@@ -600,6 +765,17 @@ export default function FlashcardsReview() {
           >
             <Wand2 className="h-3 w-3 mr-1" /> Generate
           </Button>
+          {history.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setHistPos(history.length - 1)}
+              data-testid="button-review-previous"
+              title="Go back to a card you already reviewed and change its rating"
+            >
+              <ChevronLeft className="h-3 w-3 mr-1" /> Previous
+            </Button>
+          )}
           <Badge variant="outline" data-testid="badge-due-count">{cards.length} due{isFocused ? " here" : ""}</Badge>
         </div>
       </header>
