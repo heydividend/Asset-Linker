@@ -191,7 +191,7 @@ export default function MockExamRunner() {
                       <div key={d.domainId} className="space-y-1">
                         <div className="flex justify-between text-sm">
                           <span className="font-medium">{d.code} — {d.name}</span>
-                          <span className="text-muted-foreground">{d.correct}/{d.total} ({pct}%)</span>
+                          <span className="text-muted-foreground">{Number.isInteger(d.correct) ? d.correct : d.correct.toFixed(1)}/{d.total} ({pct}%)</span>
                         </div>
                         <Progress value={pct} className="h-2" />
                       </div>

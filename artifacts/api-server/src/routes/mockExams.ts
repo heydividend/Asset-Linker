@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, questions, mockExams, domains, topics, topicMastery } from "@workspace/db";
 import { parseId } from "../lib/parseId";
+import { questionCredit } from "../lib/scoring";
 
 const router: IRouter = Router();
 const PASS = 75;
@@ -211,6 +212,9 @@ async function computeResult(examId: number) {
   if (!exam) return null;
   const qs = await db.select().from(questions).where(inArray(questions.id, exam.questionIds));
   const byId = new Map(qs.map((q) => [q.id, q]));
+  // Credit per question is in [0, 1]: single-select is all-or-nothing, while
+  // multi-select earns BOC-style partial credit (never negative). The overall
+  // score and the domain/topic breakdowns all accumulate this fractional credit.
   let correct = 0;
   const perDomainStats = new Map<number, { correct: number; total: number }>();
   const perTopicStats = new Map<number, { correct: number; total: number }>();
@@ -218,27 +222,18 @@ async function computeResult(examId: number) {
     const q = byId.get(qid);
     if (!q) return;
     const sel = exam.answers[i];
-    let isCorrect = false;
-    if (q.multiSelect && Array.isArray(q.correctIndices)) {
-      if (Array.isArray(sel)) {
-        const a = [...sel].sort((x, y) => x - y);
-        const b = [...q.correctIndices].sort((x, y) => x - y);
-        isCorrect = a.length === b.length && a.every((v, j) => v === b[j]);
-      }
-    } else {
-      isCorrect = sel === q.correctIndex;
-    }
-    if (isCorrect) correct += 1;
+    const credit = questionCredit(q, sel as number | number[] | null);
+    correct += credit;
     if (q.domainId) {
       const cur = perDomainStats.get(q.domainId) ?? { correct: 0, total: 0 };
       cur.total += 1;
-      if (isCorrect) cur.correct += 1;
+      cur.correct += credit;
       perDomainStats.set(q.domainId, cur);
     }
     if (q.topicId) {
       const cur = perTopicStats.get(q.topicId) ?? { correct: 0, total: 0 };
       cur.total += 1;
-      if (isCorrect) cur.correct += 1;
+      cur.correct += credit;
       perTopicStats.set(q.topicId, cur);
     }
   });

@@ -36,6 +36,26 @@ function isQuestionCorrect(qq: { multiSelect?: boolean; selectedIndex?: number |
   return qq.selectedIndex != null && qq.selectedIndex === qq.correctIndex;
 }
 
+// BOC-style partial credit in [0, 1], mirroring the server's scoring. Multi-select
+// earns (correct picks - incorrect picks) / total correct, floored at 0; single-select
+// is all-or-nothing.
+function questionCredit(qq: { multiSelect?: boolean; selectedIndex?: number | null; correctIndex?: number | null; selectedIndices?: number[] | null; correctIndices?: number[] | null }): number {
+  if (qq.multiSelect) {
+    const correctIndices = qq.correctIndices ?? [];
+    if (correctIndices.length === 0) return 0;
+    const selected = qq.selectedIndices ?? [];
+    const correctSet = new Set(correctIndices);
+    let correctPicked = 0;
+    let incorrectPicked = 0;
+    for (const s of new Set(selected)) {
+      if (correctSet.has(s)) correctPicked += 1;
+      else incorrectPicked += 1;
+    }
+    return Math.max(0, Math.min(1, (correctPicked - incorrectPicked) / correctIndices.length));
+  }
+  return qq.selectedIndex != null && qq.selectedIndex === qq.correctIndex ? 1 : 0;
+}
+
 export default function QuizRunner() {
   const params = useParams();
   const id = Number(params.id);
@@ -155,7 +175,8 @@ export default function QuizRunner() {
 
   if (finished) {
     const correct = quiz.questions.filter((qq) => isQuestionCorrect(qq)).length;
-    const pct = Math.round((correct / total) * 100);
+    const creditEarned = quiz.questions.reduce((s, qq) => s + questionCredit(qq), 0);
+    const pct = Math.round((creditEarned / total) * 100);
     return <FinishedQuizView quiz={quiz} correct={correct} pct={pct} total={total} />;
   }
 
@@ -164,6 +185,8 @@ export default function QuizRunner() {
   const answered = isAnsweredQuestion(q);
   const currentMultiPicks = q.multiSelect ? (multiPicks[q.questionId] ?? []) : [];
   const isCorrect = answered && isQuestionCorrect(q);
+  const credit = answered ? questionCredit(q) : 0;
+  const isPartial = answered && !isCorrect && credit > 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -274,11 +297,11 @@ export default function QuizRunner() {
         </Card>
 
         {answered && (
-          <Card className={isCorrect ? "border-primary" : "border-destructive"}>
+          <Card className={isCorrect ? "border-primary" : isPartial ? "border-amber-400" : "border-destructive"}>
             <CardContent className="p-4 space-y-2">
               <div className="flex items-center gap-2">
-                {isCorrect ? <Check className="h-5 w-5 text-primary" /> : <X className="h-5 w-5 text-destructive" />}
-                <span className="font-semibold">{isCorrect ? "Correct" : "Not quite"}</span>
+                {isCorrect ? <Check className="h-5 w-5 text-primary" /> : isPartial ? <AlertTriangle className="h-5 w-5 text-amber-500" /> : <X className="h-5 w-5 text-destructive" />}
+                <span className="font-semibold">{isCorrect ? "Correct" : isPartial ? `Partial credit — ${Math.round(credit * 100)}%` : "Not quite"}</span>
               </div>
               {q.rationale && <MarkdownMessage content={q.rationale} />}
               <div className="flex items-center gap-2 flex-wrap">
@@ -400,6 +423,8 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
           </Card>
           {quiz.questions.map((qq, i) => {
             const isCorrect = isQuestionCorrect(qq);
+            const credit = questionCredit(qq);
+            const isPartial = !isCorrect && credit > 0;
             const correctSet: number[] = qq.multiSelect ? (qq.correctIndices ?? []) : [qq.correctIndex as number];
             const pickedSet: number[] = qq.multiSelect ? (qq.selectedIndices ?? []) : (qq.selectedIndex != null ? [qq.selectedIndex] : []);
             const topicInfo = qq.topicId != null ? topicInfoById.get(qq.topicId) : undefined;
@@ -420,8 +445,17 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
               >
                 <CardHeader>
                   <CardTitle className="text-base flex items-start gap-2">
-                    {isCorrect ? <Check className="h-5 w-5 text-primary mt-0.5" /> : <X className="h-5 w-5 text-destructive mt-0.5" />}
+                    {isCorrect ? <Check className="h-5 w-5 text-primary mt-0.5" /> : isPartial ? <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" /> : <X className="h-5 w-5 text-destructive mt-0.5" />}
                     <span className="flex-1">Q{i + 1}. {qq.stem}</span>
+                    {isPartial && (
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 border-amber-300 text-amber-700 dark:text-amber-300 shrink-0"
+                        data-testid={`results-question-partial-${qq.questionId}`}
+                      >
+                        Partial credit · {Math.round(credit * 100)}%
+                      </Badge>
+                    )}
                     {qq.sourceKind === "study_group" && (
                       <Badge
                         variant="outline"

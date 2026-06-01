@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, questions, quizzes, quizAnswers, topicMastery } from "@workspace/db";
 import { parseId } from "../lib/parseId";
+import { questionCredit } from "../lib/scoring";
 import { getOrCreateSessionId } from "../lib/sessionId";
 import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
 
@@ -300,7 +301,17 @@ router.post("/quizzes/:id/finish", async (req, res): Promise<void> => {
     return;
   }
   const ans = await db.select().from(quizAnswers).where(eq(quizAnswers.quizId, id));
-  const score = ans.length === 0 ? 0 : (ans.filter((a) => a.correct).length / ans.length) * 100;
+  // Score with BOC-style partial credit: multi-select answers earn fractional
+  // credit (never negative), single-select stays all-or-nothing.
+  const qids = ans.map((a) => a.questionId);
+  const qrows = qids.length > 0 ? await db.select().from(questions).where(inArray(questions.id, qids)) : [];
+  const qById = new Map(qrows.map((q) => [q.id, q]));
+  const creditEarned = ans.reduce((sum, a) => {
+    const q = qById.get(a.questionId);
+    if (!q) return sum;
+    return sum + questionCredit(q, q.multiSelect ? (a.selectedIndices ?? []) : a.selectedIndex);
+  }, 0);
+  const score = ans.length === 0 ? 0 : (creditEarned / ans.length) * 100;
   const [updated] = await db
     .update(quizzes)
     .set({ finished: true, score, finishedAt: new Date() })
