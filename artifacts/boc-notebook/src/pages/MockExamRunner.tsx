@@ -14,8 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AskAiButton } from "@/components/AskAiButton";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, LogOut, Trophy } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, ExternalLink, LogOut, Trophy, X } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface MockExamResult {
@@ -32,6 +33,30 @@ function formatTime(s: number) {
   const m = Math.floor((sec % 3600) / 60);
   const ss = sec % 60;
   return `${h}:${String(m).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+}
+
+// Mirrors the server-side BOC partial-credit formula (api-server/src/lib/scoring.ts).
+// Single-select: 1 or 0. Multi-select: (correctPicked - incorrectPicked) / totalCorrect, floored at 0.
+function mockQuestionCredit(q: {
+  multiSelect?: boolean;
+  selectedIndex?: number | null;
+  correctIndex?: number | null;
+  selectedIndices?: number[];
+  correctIndices?: number[];
+}): number {
+  if (q.multiSelect) {
+    const correct = q.correctIndices ?? [];
+    if (correct.length === 0) return 0;
+    const correctSet = new Set(correct);
+    let right = 0;
+    let wrong = 0;
+    for (const s of new Set(q.selectedIndices ?? [])) {
+      if (correctSet.has(s)) right++;
+      else wrong++;
+    }
+    return Math.max(0, Math.min(1, (right - wrong) / correct.length));
+  }
+  return q.selectedIndex != null && q.selectedIndex === q.correctIndex ? 1 : 0;
 }
 
 export default function MockExamRunner() {
@@ -213,6 +238,90 @@ export default function MockExamRunner() {
                   </CardContent>
                 </Card>
               )}
+
+              <Card>
+                <CardHeader><CardTitle>Review your answers</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  {exam.questions.map((qq, i) => {
+                    const credit = mockQuestionCredit(qq);
+                    const isCorrect = credit === 1;
+                    const isPartial = credit > 0 && credit < 1;
+                    const correctSet = qq.multiSelect
+                      ? (qq.correctIndices ?? [])
+                      : qq.correctIndex != null
+                        ? [qq.correctIndex]
+                        : [];
+                    const pickedSet = qq.multiSelect
+                      ? (qq.selectedIndices ?? [])
+                      : qq.selectedIndex != null
+                        ? [qq.selectedIndex]
+                        : [];
+                    const answered = pickedSet.length > 0;
+                    return (
+                      <div
+                        key={qq.index ?? i}
+                        className="border rounded-lg p-3 space-y-2"
+                        data-testid={`mock-review-question-${i}`}
+                      >
+                        <div className="flex items-start gap-2">
+                          {isCorrect ? (
+                            <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                          ) : isPartial ? (
+                            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+                          ) : (
+                            <X className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                          )}
+                          <span className="flex-1 text-sm font-medium">Q{i + 1}. {qq.stem}</span>
+                          {isPartial && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-300 text-amber-700 dark:text-amber-300 shrink-0">
+                              Partial · {Math.round(credit * 100)}%
+                            </Badge>
+                          )}
+                        </div>
+                        {qq.imageUrl && (
+                          <img src={qq.imageUrl} alt="Question figure" className="max-h-48 w-auto rounded-md border bg-muted/30 object-contain" />
+                        )}
+                        {qq.multiSelect && <p className="text-xs text-muted-foreground">Select all that apply.</p>}
+                        <div className="space-y-1.5">
+                          {qq.choices.map((c, ci) => {
+                            const isCorrectChoice = correctSet.includes(ci);
+                            const isPicked = pickedSet.includes(ci);
+                            return (
+                              <div
+                                key={ci}
+                                className={`text-sm p-2 rounded border ${
+                                  isCorrectChoice
+                                    ? "border-primary bg-primary/10"
+                                    : isPicked
+                                      ? "border-destructive bg-destructive/10"
+                                      : "border-border"
+                                }`}
+                              >
+                                <span className="font-medium mr-2">{String.fromCharCode(65 + ci)}.</span>
+                                {c}
+                                {isCorrectChoice && <span className="ml-2 text-xs text-primary font-medium">✓ correct answer</span>}
+                                {isPicked && !isCorrectChoice && <span className="ml-2 text-xs text-destructive font-medium">your pick</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {!answered && <p className="text-xs text-muted-foreground italic">You didn't answer this question.</p>}
+                        {qq.rationale && (
+                          <div className="text-xs text-muted-foreground">
+                            <p className="mb-1 font-medium text-foreground">Rationale</p>
+                            <MarkdownMessage content={qq.rationale} />
+                          </div>
+                        )}
+                        {qq.sourceUrl && (
+                          <a href={qq.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                            <ExternalLink className="h-3 w-3" /> Source
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
 
               <div className="flex gap-2 justify-end">
                 <AskAiButton context={`Help me review my mock exam. I scored ${Math.round(result.scorePercent)}%. My weakest domains were: ${result.domainBreakdown.filter(d => d.total > 0).sort((a,b) => (a.correct/a.total) - (b.correct/b.total)).slice(0,2).map(d => d.name).join(", ")}. Build me a focused 3-day study plan.`} label="Ask AI to plan my recovery" />
