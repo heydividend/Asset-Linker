@@ -168,25 +168,24 @@ router.post("/mock-exams/:id/answer", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Time has expired. Submit the exam." });
     return;
   }
-  if (index !== exam.currentIndex) {
-    res.status(409).json({ error: "Cannot revisit a previous question." });
-    return;
-  }
-  if (exam.answers[index] != null) {
-    res.status(409).json({ error: "Question already answered." });
-    return;
-  }
   if (index < 0 || index >= exam.questionIds.length) {
     res.status(400).json({ error: "index out of range" });
     return;
   }
-  const newAnswers = [...exam.answers];
-  newAnswers[index] = hasMulti
+  // Free navigation: the user may revisit any question and overwrite a prior
+  // answer at any time before submitting. Update only the single answer slot
+  // (via jsonb_set) and advance currentIndex with GREATEST in the same
+  // statement so concurrent saves to different questions can't clobber each
+  // other or regress the furthest-reached index.
+  const value = hasMulti
     ? (selectedIndices as unknown[]).filter((n): n is number => typeof n === "number")
     : (selectedIndex as number);
   await db
     .update(mockExams)
-    .set({ answers: newAnswers, currentIndex: index + 1 })
+    .set({
+      answers: sql`jsonb_set(${mockExams.answers}, ${`{${index}}`}, ${JSON.stringify(value)}::jsonb, true)`,
+      currentIndex: sql`GREATEST(${mockExams.currentIndex}, ${index + 1})`,
+    })
     .where(eq(mockExams.id, id));
   res.sendStatus(204);
 });

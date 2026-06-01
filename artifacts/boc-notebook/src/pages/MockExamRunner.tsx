@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { AskAiButton } from "@/components/AskAiButton";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Check, ChevronRight, LogOut, Trophy } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, LogOut, Trophy } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface MockExamResult {
@@ -235,16 +235,20 @@ export default function MockExamRunner() {
   const isMulti = !!q.multiSelect;
   const pickedIdx = isMulti ? undefined : (localPicks[idx] ?? q.selectedIndex);
   const pickedMultiSaved = isMulti ? (localMultiPicks[idx] ?? q.selectedIndices) : undefined;
-  const draftPicks = isMulti ? (draftMulti[idx] ?? []) : [];
+  // Multi-select draft defaults to whatever is already saved so the user can
+  // tweak an existing answer rather than starting from an empty selection.
+  const draftPicks = isMulti ? (draftMulti[idx] ?? pickedMultiSaved ?? []) : [];
   const isAnswered = isMulti ? Array.isArray(pickedMultiSaved) : pickedIdx != null;
   const isPendingHere = pendingAnswerIdx === idx;
-  const canAdvance = isAnswered && !isPendingHere;
+  // Multi answers count as "dirty" when the draft differs from what's saved,
+  // so we know whether the Update button should be active.
+  const multiDirty = isMulti && JSON.stringify([...draftPicks].sort()) !== JSON.stringify([...(pickedMultiSaved ?? [])].sort());
 
   const onPick = (choiceIdx: number) => {
-    if (isAnswered || isPendingHere) return;
+    if (isPendingHere) return;
     if (isMulti) {
       setDraftMulti((d) => {
-        const cur = d[idx] ?? [];
+        const cur = d[idx] ?? pickedMultiSaved ?? [];
         const next = cur.includes(choiceIdx) ? cur.filter((c) => c !== choiceIdx) : [...cur, choiceIdx];
         return { ...d, [idx]: next };
       });
@@ -279,9 +283,9 @@ export default function MockExamRunner() {
   };
 
   const onSubmitMulti = async () => {
-    if (!isMulti || isAnswered || isPendingHere) return;
+    if (!isMulti || isPendingHere) return;
     const targetIdx = idx;
-    const picks = draftMulti[targetIdx] ?? [];
+    const picks = draftMulti[targetIdx] ?? pickedMultiSaved ?? [];
     if (picks.length === 0) return;
     setLocalMultiPicks((p) => ({ ...p, [targetIdx]: picks }));
     setPendingAnswerIdx(targetIdx);
@@ -363,15 +367,13 @@ export default function MockExamRunner() {
               <p className="text-sm font-medium text-muted-foreground mb-2">Select all that apply.</p>
             )}
             {q.choices.map((c, ci) => {
-              const picked = isMulti
-                ? (Array.isArray(pickedMultiSaved) ? pickedMultiSaved.includes(ci) : draftPicks.includes(ci))
-                : pickedIdx === ci;
+              const picked = isMulti ? draftPicks.includes(ci) : pickedIdx === ci;
               return (
                 <button
                   key={ci}
                   onClick={() => onPick(ci)}
-                  disabled={isAnswered}
-                  className={`w-full text-left p-3 rounded-lg border ${picked ? "border-primary bg-primary/10" : "border-border hover-elevate cursor-pointer"} ${isAnswered && !picked ? "opacity-60" : ""}`}
+                  disabled={isPendingHere}
+                  className={`w-full text-left p-3 rounded-lg border ${picked ? "border-primary bg-primary/10" : "border-border hover-elevate cursor-pointer"}`}
                   data-testid={`mock-choice-${ci}`}
                 >
                   {isMulti && (
@@ -384,25 +386,33 @@ export default function MockExamRunner() {
                 </button>
               );
             })}
-            {isMulti && !isAnswered && (
+            {isMulti && (
               <Button
                 onClick={onSubmitMulti}
-                disabled={draftPicks.length === 0 || isPendingHere}
+                disabled={draftPicks.length === 0 || isPendingHere || (isAnswered && !multiDirty)}
                 className="mt-2"
                 data-testid="button-mock-submit-multi"
               >
-                Submit answer
+                {isAnswered ? "Update answer" : "Submit answer"}
               </Button>
             )}
           </CardContent>
         </Card>
-        <div className="flex justify-end">
+        <div className="flex justify-between gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setLocalIdx(idx - 1)}
+            disabled={idx === 0}
+            data-testid="button-mock-prev"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+          </Button>
           {idx + 1 < total ? (
-            <Button onClick={() => setLocalIdx(idx + 1)} disabled={!canAdvance} data-testid="button-mock-next">
+            <Button onClick={() => setLocalIdx(idx + 1)} data-testid="button-mock-next">
               Next <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={onSubmit} disabled={!canAdvance || submitBlocked} data-testid="button-mock-finish">Submit exam</Button>
+            <Button onClick={onSubmit} disabled={submitBlocked} data-testid="button-mock-finish">Submit exam</Button>
           )}
         </div>
       </div>

@@ -21,7 +21,7 @@ import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySparkline";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, Check, ChevronRight, ExternalLink, LogOut, Trophy, Users, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, ExternalLink, LogOut, Trophy, Users, X } from "lucide-react";
 
 function arraysEqualAsSets(a: number[] | null | undefined, b: number[] | null | undefined): boolean {
   if (!a || !b) return false;
@@ -293,9 +293,16 @@ export default function QuizRunner() {
           </Card>
         )}
 
-        <div className="flex justify-between">
-          <span />
-          {answered && (
+        <div className="flex justify-between gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setLocalIdx(idx - 1)}
+            disabled={idx === 0}
+            data-testid="button-prev-question"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+          </Button>
+          {answered ? (
             idx + 1 < total ? (
               <Button onClick={() => setLocalIdx(idx + 1)} data-testid="button-next-question">
                 Next <ChevronRight className="h-4 w-4 ml-1" />
@@ -307,6 +314,8 @@ export default function QuizRunner() {
                 Go to unanswered
               </Button>
             )
+          ) : (
+            <span />
           )}
         </div>
       </div>
