@@ -26,6 +26,11 @@ export interface PlanItem {
   notebookId?: number;
   gameId?: string;
   link?: string;
+  /** ISO date (YYYY-MM-DD) of the plan day this item belongs to. Used to make
+   *  recurring items (notably the weekly simulated exams) carry a key that is
+   *  unique per day, so completing one Saturday's mock doesn't mark every
+   *  other mock complete and carry-forward surfaces a genuinely missed one. */
+  scheduledDate?: string;
   /** ISO date (YYYY-MM-DD) this item was originally scheduled for, when it
    *  has been carried over into a later day because it wasn't completed on
    *  its original day. Undefined for items that belong to today natively. */
@@ -114,27 +119,52 @@ export function buildSchedule(
   startDate: string,
   examDate: string,
   domains: Domain[],
+  masteryByDomainId?: Map<number, number>,
 ): ScheduleDay[] {
   const days = eachDay(startDate, examDate);
   const today = todayStr();
   const totalDays = days.length;
 
-  // Weighted ordering of domains for the rotation by exam weight (heaviest first)
-  const orderedDomains = [...domains].sort((a, b) => b.weight - a.weight);
+  // Weakness-first priority: the lower a domain's current mastery, the more
+  // focus days it earns. We still scale by the domain's BOC exam weight so a
+  // heavy *and* weak domain outranks a light, weak one — but weakness is the
+  // dominant factor. With no mastery data yet (mastery 0 → gap 1) priority
+  // collapses back to the raw blueprint weight, so a brand-new plan still
+  // mirrors the real exam's domain mix until real attempts come in.
+  const priorityById = new Map<number, number>();
+  for (const d of domains) {
+    const m = Math.max(0, Math.min(1, masteryByDomainId?.get(d.id) ?? 0));
+    const gap = 1 - m; // 0 = mastered, 1 = untouched/weak
+    priorityById.set(d.id, d.weight * (0.1 + 0.9 * gap));
+  }
 
-  // Allocate focus days *proportional* to each domain's exam weight (not an
-  // even rotation), so heavier domains (e.g. Assessment & Therapeutic at 25.6%)
-  // get materially more study days than light ones (Health Admin at 8%). Uses
-  // the D'Hondt highest-averages method for a deterministic, well-interleaved
-  // sequence; ties favor heavier domains since orderedDomains is sorted desc.
+  // Order by weakness-priority (highest first); ties fall back to exam weight
+  // then id for fully deterministic output.
+  const orderedDomains = [...domains].sort(
+    (a, b) =>
+      (priorityById.get(b.id) ?? 0) - (priorityById.get(a.id) ?? 0) ||
+      b.weight - a.weight ||
+      a.id - b.id,
+  );
+
+  // Allocate focus days with the D'Hondt highest-averages method over the
+  // weakness-priority scores, for a deterministic, well-interleaved sequence.
+  // Every domain is guaranteed at least one focus day: we *trim* the
+  // lightest/strongest domains rather than dropping them from the compressed
+  // window (minimums are filled first, in priority order).
   const focusByDay: (Domain | undefined)[] = [];
   if (orderedDomains.length > 0) {
+    const minPerDomain = totalDays >= orderedDomains.length ? 1 : 0;
     const counts = new Map<number, number>(orderedDomains.map((d) => [d.id, 0]));
     for (let n = 0; n < totalDays; n++) {
       let best = orderedDomains[0];
       let bestScore = -Infinity;
       for (const d of orderedDomains) {
-        const score = d.weight / ((counts.get(d.id) ?? 0) + 1);
+        const c = counts.get(d.id) ?? 0;
+        const score =
+          c < minPerDomain
+            ? Number.MAX_VALUE - c
+            : (priorityById.get(d.id) ?? 0) / (c + 1);
         if (score > bestScore) {
           bestScore = score;
           best = d;
@@ -145,9 +175,11 @@ export function buildSchedule(
     }
   }
 
-  // Phase boundaries
+  // Phase boundaries. The final 7 days before the exam are the "final review"
+  // window — weak-area-only review plus two extra simulated exams; earlier
+  // phases fill the run-up to it.
   const lastIdx = totalDays - 1;
-  const finalReviewStart = Math.max(0, lastIdx - 2); // last 3 days = final review
+  const finalWeekStart = Math.max(0, lastIdx - 6); // last 7 days incl. exam day
   const integrationStart = Math.max(0, Math.floor(totalDays * 0.7));
   const deepStudyStart = Math.max(0, Math.floor(totalDays * 0.25));
 
@@ -156,9 +188,20 @@ export function buildSchedule(
     const isExamDay = i === lastIdx;
     const dow = new Date(date + "T00:00:00Z").getUTCDay(); // 0 Sun
 
+    const inFinalWeek = !isExamDay && i >= finalWeekStart;
+    const isDayBeforeExam = daysToExam === 1;
+    // A full-length 175-question / 4-hour simulated exam runs on EVERY Saturday
+    // of the plan window (except the exam day itself). The final week then
+    // adds two more simulated exams — on the days 5 and 3 out from the exam —
+    // on top of its weak-area-only review.
+    const isWeeklyMockDay = dow === 6 && !isExamDay && !inFinalWeek;
+    const isFinalWeekMockDay = inFinalWeek && (daysToExam === 5 || daysToExam === 3);
+    const isMockDay = isWeeklyMockDay || isFinalWeekMockDay;
+
     let phase: ScheduleDay["phase"];
     if (isExamDay) phase = "mock_exam";
-    else if (i >= finalReviewStart) phase = "final_review";
+    else if (isMockDay) phase = "mock_exam";
+    else if (inFinalWeek) phase = "final_review";
     else if (i >= integrationStart) phase = "integration";
     else if (i >= deepStudyStart) phase = "deep_study";
     else phase = "foundation";
@@ -189,101 +232,133 @@ export function buildSchedule(
         { kind: "review", title: "Light morning review of formula sheets and red-flag lists", estMinutes: 20 },
         { kind: "rest", title: "Hydrate, eat well, arrive 30 min early", estMinutes: 0 },
       );
-    } else if (phase === "final_review") {
-      title = `Final Review — ${focusDomain?.name ?? "all domains"}`;
+    } else if (isMockDay) {
+      // Full-length simulated exam day (weekly Saturday, or one of the two
+      // extra final-week sims). The mock item carries its scheduledDate so its
+      // completion key is unique per day.
+      title = isFinalWeekMockDay
+        ? "Final-week simulated exam"
+        : "Full-length Simulated Exam";
       items.push(
-        readingItem,
-        { kind: "flashcards", title: "Sweep ALL due flashcards", estMinutes: 30, link: "/flashcards" },
         {
-          kind: "quiz",
-          title: "60-question mixed adaptive quiz",
-          description: "Heavily weighted toward your weakest topics across all 5 domains.",
-          estMinutes: 60,
-          link: "/quiz",
+          kind: "mock_exam",
+          title: "Take a 175-question, 4-hour simulated exam",
+          description:
+            "Strict 4-hour timing, 175 questions, no back-nav — mirror real BOC test conditions.",
+          estMinutes: 240,
+          scheduledDate: date,
+          link: "/mock-exam",
         },
         {
           kind: "review",
-          title: `Re-read ${focusDomain?.name ?? "weak"} study guides (${content.chapters})`,
-          estMinutes: 25,
-          domainId: focusDomain?.id,
-        },
-        {
-          kind: "body_map",
-          title: "Whole-body red-flag walkthrough",
-          description: "Tap each region — recite emergency action and one high-yield fact.",
-          estMinutes: 20,
-          link: "/body-map",
+          title: "Review every missed question with the AI tutor",
+          description: isFinalWeekMockDay
+            ? "Concentrate on your weakest domains and the items you missed."
+            : undefined,
+          estMinutes: 60,
+          link: "/tutor",
         },
       );
-    } else if (phase === "integration") {
-      // Weekly mock-exam day on Saturdays during integration
-      if (dow === 6) {
-        title = "Full-length Mock Exam";
+    } else if (inFinalWeek) {
+      if (isDayBeforeExam) {
+        // The day before the exam is intentionally light — no cramming.
+        title = "Light review — no cramming";
         items.push(
-          {
-            kind: "mock_exam",
-            title: "Take a 175-question, 4-hour mock exam",
-            description: "Strict timing, no back-nav. Mirror real test conditions.",
-            estMinutes: 240,
-            link: "/mock-exam",
-          },
           {
             kind: "review",
-            title: "Review every missed question with the AI tutor",
-            estMinutes: 60,
-            link: "/tutor",
-          },
-        );
-      } else {
-        title = `Integration — ${focusDomain?.name}`;
-        items.push(
-          readingItem,
-          {
-            kind: "quiz",
-            title: `Topic quiz: ${focusDomain?.name}`,
-            description: content.chapters,
+            title: "Skim your formula sheets and red-flag lists",
             estMinutes: 25,
-            domainId: focusDomain?.id,
-            link: "/quiz",
           },
           {
             kind: "flashcards",
-            title: "Spaced-repetition session",
-            estMinutes: 20,
+            title: "Light confidence-only flashcard sweep",
+            estMinutes: 15,
             link: "/flashcards",
           },
           {
-            kind: "audio",
-            title: `Audio overview while commuting`,
-            description: "Generate or listen to an existing audio overview for this domain.",
-            estMinutes: 15,
-          },
-          {
-            kind: "review",
-            title: "Practice case scenarios with the AI tutor",
-            description: "Ask for 3 BOC-style case vignettes in this domain.",
-            estMinutes: 30,
-            domainId: focusDomain?.id,
-            link: "/tutor",
+            kind: "rest",
+            title: "Rest, hydrate, prep your materials, and sleep early",
+            estMinutes: 0,
           },
         );
-        if (region) {
-          items.push({
+      } else {
+        // Weak-area-only review across the rest of the final week.
+        title = `Weak-area review — ${focusDomain?.name ?? "weakest domains"}`;
+        items.push(
+          {
+            kind: "quiz",
+            title: "40-question weak-area quiz",
+            description:
+              "Targeted at your lowest-mastery topics across all 5 domains.",
+            estMinutes: 45,
+            domainId: focusDomain?.id,
+            link: "/quiz",
+          },
+          { kind: "flashcards", title: "Sweep ALL due flashcards", estMinutes: 30, link: "/flashcards" },
+          {
+            kind: "review",
+            title: `Re-read ${focusDomain?.name ?? "weak"} study guides (${content.chapters})`,
+            estMinutes: 25,
+            domainId: focusDomain?.id,
+          },
+          {
             kind: "body_map",
-            title: `Body map drill: ${region.replace(/-/g, " ")}`,
-            description: "Recite injuries, red flags, and on-field management for this region.",
-            estMinutes: 10,
+            title: "Whole-body red-flag walkthrough",
+            description: "Tap each region — recite emergency action and one high-yield fact.",
+            estMinutes: 20,
             link: "/body-map",
-          });
-        }
-        if (gameId) {
-          items.push({
-            kind: "matching",
-            title: `Matching game: ${gameId.replace(/-/g, " ")}`,
-            estMinutes: 8,
-            link: `/games/${gameId}`,
-          });
-        }
+          },
+        );
+      }
+    } else if (phase === "integration") {
+      title = `Integration — ${focusDomain?.name}`;
+      items.push(
+        readingItem,
+        {
+          kind: "quiz",
+          title: `Topic quiz: ${focusDomain?.name}`,
+          description: content.chapters,
+          estMinutes: 25,
+          domainId: focusDomain?.id,
+          link: "/quiz",
+        },
+        {
+          kind: "flashcards",
+          title: "Spaced-repetition session",
+          estMinutes: 20,
+          link: "/flashcards",
+        },
+        {
+          kind: "audio",
+          title: `Audio overview while commuting`,
+          description: "Generate or listen to an existing audio overview for this domain.",
+          estMinutes: 15,
+        },
+        {
+          kind: "review",
+          title: "Practice case scenarios with the AI tutor",
+          description: "Ask for 3 BOC-style case vignettes in this domain.",
+          estMinutes: 30,
+          domainId: focusDomain?.id,
+          link: "/tutor",
+        },
+      );
+      if (region) {
+        items.push({
+          kind: "body_map",
+          title: `Body map drill: ${region.replace(/-/g, " ")}`,
+          description: "Recite injuries, red flags, and on-field management for this region.",
+          estMinutes: 10,
+          link: "/body-map",
+        });
+      }
+      if (gameId) {
+        items.push({
+          kind: "matching",
+          title: `Matching game: ${gameId.replace(/-/g, " ")}`,
+          estMinutes: 8,
+          link: `/games/${gameId}`,
+        });
       }
     } else if (phase === "deep_study") {
       title = `Deep Study — ${focusDomain?.name}`;
@@ -364,8 +439,16 @@ export function buildSchedule(
       }
     }
 
-    // Rest day on Sundays during foundation/deep_study (but not in final review)
-    if (!isExamDay && dow === 0 && phase !== "final_review" && phase !== "integration") {
+    // Rest day on Sundays during foundation/deep_study (but not in the final
+    // week, on simulated-exam days, or during integration).
+    if (
+      !isExamDay &&
+      !isMockDay &&
+      !inFinalWeek &&
+      dow === 0 &&
+      phase !== "final_review" &&
+      phase !== "integration"
+    ) {
       title = "Light Rest Day";
       items.length = 0;
       items.push(

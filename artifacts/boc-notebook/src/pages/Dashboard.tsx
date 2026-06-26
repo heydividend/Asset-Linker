@@ -885,22 +885,49 @@ export default function Dashboard() {
                       {summary?.readinessScore ?? 0}
                     </span>
                     <span className="text-xs opacity-90">/ 100</span>
-                    {(summary?.readinessBonus ?? 0) > 0 && (
-                      <Badge
-                        variant="outline"
-                        className="ml-auto text-[10px] border-primary-foreground/40 text-primary-foreground bg-primary-foreground/10 gap-1"
-                        title="7-day activity bonus from study guides, podcasts, and games"
-                        data-testid="readiness-bonus"
-                      >
-                        <TrendingUp className="h-3 w-3" /> +{summary?.readinessBonus}
-                      </Badge>
-                    )}
+                    <Badge
+                      variant="outline"
+                      className="ml-auto text-[10px] border-primary-foreground/40 text-primary-foreground bg-primary-foreground/10 gap-1"
+                      title={`Goal: reach ${summary?.readinessGoalMin ?? 80}–${summary?.readinessGoalMax ?? 85} to be exam-ready`}
+                      data-testid="readiness-status"
+                    >
+                      {summary?.readinessOnTrack ? (
+                        <>
+                          <TrendingUp className="h-3 w-3" /> On track
+                        </>
+                      ) : (
+                        "Not yet"
+                      )}
+                    </Badge>
                   </div>
-                  {(summary?.readinessBonus ?? 0) > 0 && (
-                    <p className="text-[10px] opacity-80 mt-1 truncate">
-                      Base {summary?.readinessBaseScore} + {summary?.readinessBonus} activity bonus
-                    </p>
-                  )}
+                  {(() => {
+                    const score = summary?.readinessScore ?? 0;
+                    const min = summary?.readinessGoalMin ?? 80;
+                    const max = summary?.readinessGoalMax ?? 85;
+                    const pct = Math.max(0, Math.min(100, score));
+                    const markerLeft = Math.max(0, Math.min(100, min));
+                    return (
+                      <>
+                        <div className="mt-2 relative h-1.5 rounded-full bg-primary-foreground/20">
+                          <div
+                            className="absolute inset-y-0 left-0 rounded-full bg-primary-foreground"
+                            style={{ width: `${pct}%` }}
+                          />
+                          <div
+                            className="absolute inset-y-[-2px] w-px bg-primary-foreground/80"
+                            style={{ left: `${markerLeft}%` }}
+                            aria-hidden
+                          />
+                        </div>
+                        <p className="text-[10px] opacity-80 mt-1 truncate" data-testid="readiness-goal">
+                          Goal {min}–{max} to pass
+                          {summary?.readinessOnTrack
+                            ? " · on track"
+                            : ` · ${Math.max(0, min - score)} to go`}
+                        </p>
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </CardContent>

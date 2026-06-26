@@ -2012,11 +2012,14 @@ components:
 
     DashboardSummary:
       type: object
-      required: [readinessScore, readinessBaseScore, readinessBonus, lastUpdated, totalQuestionsAnswered, totalCorrect, streakDays, dueFlashcards, recentQuizzes, weakTopics, domainMastery, domainFlashcardCounts, studyGuides, games, continueLearning]
+      required: [readinessScore, readinessBaseScore, readinessBonus, readinessGoalMin, readinessGoalMax, readinessOnTrack, lastUpdated, totalQuestionsAnswered, totalCorrect, streakDays, dueFlashcards, recentQuizzes, weakTopics, domainMastery, domainFlashcardCounts, studyGuides, games, continueLearning]
       properties:
         readinessScore: { type: number, description: "0-100 estimate of BOC readiness (includes 7-day activity bonus)" }
         readinessBaseScore: { type: number, description: "Readiness from mastery + last mock exam, before activity bonus." }
         readinessBonus: { type: number, description: "Bonus points (0-10) for guides/podcasts/games in the last 7 days." }
+        readinessGoalMin: { type: number, description: "Lower bound of the target readiness band to be exam-ready." }
+        readinessGoalMax: { type: number, description: "Upper bound of the target readiness band to be exam-ready." }
+        readinessOnTrack: { type: boolean, description: "True once readinessScore reaches the goal's lower bound." }
         lastUpdated: { type: string, format: date-time }
         totalQuestionsAnswered: { type: integer }
         totalCorrect: { type: integer }

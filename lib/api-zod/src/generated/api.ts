@@ -1239,6 +1239,15 @@ export const GetDashboardSummaryResponse = zod.object({
     .describe(
       "Bonus points (0-10) for guides\/podcasts\/games in the last 7 days.",
     ),
+  readinessGoalMin: zod
+    .number()
+    .describe("Lower bound of the target readiness band to be exam-ready."),
+  readinessGoalMax: zod
+    .number()
+    .describe("Upper bound of the target readiness band to be exam-ready."),
+  readinessOnTrack: zod
+    .boolean()
+    .describe("True once readinessScore reaches the goal's lower bound."),
   lastUpdated: zod.coerce.date(),
   totalQuestionsAnswered: zod.number(),
   totalCorrect: zod.number(),

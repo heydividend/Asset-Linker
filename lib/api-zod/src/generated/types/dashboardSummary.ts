@@ -20,6 +20,12 @@ export interface DashboardSummary {
   readinessBaseScore: number;
   /** Bonus points (0-10) for guides/podcasts/games in the last 7 days. */
   readinessBonus: number;
+  /** Lower bound of the target readiness band to be exam-ready. */
+  readinessGoalMin: number;
+  /** Upper bound of the target readiness band to be exam-ready. */
+  readinessGoalMax: number;
+  /** True once readinessScore reaches the goal's lower bound. */
+  readinessOnTrack: boolean;
   lastUpdated: Date;
   totalQuestionsAnswered: number;
   totalCorrect: number;

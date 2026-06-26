@@ -258,10 +258,19 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     .sort((a, b) => b.lastTouchedAt.localeCompare(a.lastTouchedAt))
     .slice(0, 30);
 
+  // Explicit readiness goal: the BOC-pass target band the user is aiming for.
+  // "On track" once the (honest) readiness score reaches the lower bound.
+  const readinessGoalMin = 80;
+  const readinessGoalMax = 85;
+  const readinessOnTrack = readinessScore >= readinessGoalMin;
+
   res.json({
     readinessScore,
     readinessBaseScore,
     readinessBonus,
+    readinessGoalMin,
+    readinessGoalMax,
+    readinessOnTrack,
     lastUpdated: new Date().toISOString(),
     totalQuestionsAnswered: totalAns,
     totalCorrect: totalCorr,

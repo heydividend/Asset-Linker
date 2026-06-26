@@ -30,7 +30,10 @@ export function planItemKey(item: PlanItem): string {
       if (item.notebookId) return `audio:notebook:${item.notebookId}`;
       return "audio:any";
     case "mock_exam":
-      return "mock_exam:session";
+      // Recurring across the plan (every Saturday + extra final-week sims), so
+      // the key is per scheduled day — otherwise completing one mock would mark
+      // them all complete and a genuinely missed mock would never carry forward.
+      return item.scheduledDate ? `mock_exam:${item.scheduledDate}` : "mock_exam:session";
     case "study_group":
       if (item.domainId) return `study_group:domain:${item.domainId}`;
       return "study_group:any";
