@@ -2,9 +2,13 @@ import { after, afterEach, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { and, eq } from "drizzle-orm";
 import { db, domains, planCompletions } from "@workspace/db";
-import { getOrCreateSchedule } from "../lib/planSchedule";
+import {
+  earliestUncompletedPastMockKey,
+  getOrCreateSchedule,
+} from "../lib/planSchedule";
 import { buildSchedule } from "../lib/scheduleBuilder";
 import { getDomainMasteryMap } from "../lib/domainMastery";
+import { planItemKey } from "../lib/planItemKey";
 import { listCompletedKeys, markPlanItemComplete } from "../lib/planCompletions";
 import { linkMockSubmissionToPlan } from "./mockExams";
 
@@ -136,6 +140,97 @@ describe("mock-exam plan auto-completion", () => {
       rows.length,
       1,
       "exactly one completion row should exist despite multiple completions",
+    );
+  });
+});
+
+// Resolve the active plan's simulated-exam days in ascending date order, paired
+// with the completion key /plan/today uses for each. We exercise the real
+// schedule (rather than hand-built dates) so the make-up selection is tested
+// against the days the submit handler actually sees.
+async function mockDaysOfPlan(): Promise<{
+  examDate: string;
+  mocks: { date: string; key: string }[];
+}> {
+  const sched = await getOrCreateSchedule();
+  const dRows = await db.select().from(domains).orderBy(domains.id);
+  const masteryByDomainId = await getDomainMasteryMap();
+  const days = buildSchedule(
+    sched.startDate,
+    sched.examDate,
+    dRows,
+    masteryByDomainId,
+  );
+  const mocks: { date: string; key: string }[] = [];
+  for (const day of days) {
+    const mock = day.items.find((it) => it.kind === "mock_exam");
+    if (mock) mocks.push({ date: day.date, key: planItemKey(mock) });
+  }
+  if (mocks.length < 2) {
+    throw new Error(
+      "plan needs at least two simulated-exam days to test make-up selection",
+    );
+  }
+  // The exam (last) day has no mock_exam item, so every collected mock is
+  // strictly before it — using it as `today` makes all mocks overdue.
+  return { examDate: days[days.length - 1]!.date, mocks };
+}
+
+describe("make-up mock selection (earliestUncompletedPastMockKey)", () => {
+  before(() => {
+    if (!process.env["DATABASE_URL"]) {
+      throw new Error("DATABASE_URL must be set to run these tests");
+    }
+  });
+
+  afterEach(async () => {
+    await cleanup();
+  });
+
+  after(async () => {
+    await cleanup();
+  });
+
+  it("clears the earliest uncompleted past mock when a make-up is submitted on a non-mock day", async () => {
+    const { examDate, mocks } = await mockDaysOfPlan();
+
+    const key = await earliestUncompletedPastMockKey(TEST_SESSION, examDate);
+    assert.equal(
+      key,
+      mocks[0]!.key,
+      "with nothing completed, the oldest overdue simulated exam must be the one a make-up clears",
+    );
+  });
+
+  it("never re-clears a mock already completed — advances to the next oldest", async () => {
+    const { examDate, mocks } = await mockDaysOfPlan();
+
+    // Record the oldest mock as completed on a later (make-up) day. Selection
+    // keys off the through-today completion set, so a mock finished on any day
+    // must be skipped regardless of which day cleared it.
+    await markPlanItemComplete(TEST_SESSION, examDate, mocks[0]!.key);
+
+    const key = await earliestUncompletedPastMockKey(TEST_SESSION, examDate);
+    assert.equal(
+      key,
+      mocks[1]!.key,
+      "the already-cleared mock must be skipped and the next oldest picked, so make-ups stay idempotent",
+    );
+  });
+
+  it("is a no-op (null) when there are no overdue past mocks", async () => {
+    const { mocks } = await mockDaysOfPlan();
+
+    // Use the earliest mock day itself as `today`: that mock is not strictly in
+    // the past and no mock precedes it, so nothing is overdue to clear.
+    const key = await earliestUncompletedPastMockKey(
+      TEST_SESSION,
+      mocks[0]!.date,
+    );
+    assert.equal(
+      key,
+      null,
+      "a make-up taken before any mock is overdue must clear nothing",
     );
   });
 });
