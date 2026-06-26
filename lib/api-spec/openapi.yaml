@@ -2012,7 +2012,7 @@ components:
         kind:
           type: string
           enum:
-            [quiz, flashcards, review, audio, study_guide, resource, game, mock_exam, study_group, rest]
+            [quiz, flashcards, review, reading, audio, study_guide, resource, game, mock_exam, study_group, rest]
         title: { type: string }
         description: { type: ["string", "null"] }
         estMinutes: { type: integer }

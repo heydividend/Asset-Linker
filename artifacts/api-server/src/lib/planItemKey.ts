@@ -23,6 +23,9 @@ export function planItemKey(item: PlanItem): string {
       if (item.notebookId) return `review:notebook:${item.notebookId}`;
       if (item.domainId) return `review:domain:${item.domainId}`;
       return "review:any";
+    case "reading":
+      if (item.domainId) return `reading:domain:${item.domainId}`;
+      return "reading:any";
     case "audio":
       if (item.notebookId) return `audio:notebook:${item.notebookId}`;
       return "audio:any";

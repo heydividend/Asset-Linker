@@ -13,6 +13,7 @@ export const StudyPlanItemKind = {
   quiz: "quiz",
   flashcards: "flashcards",
   review: "review",
+  reading: "reading",
   audio: "audio",
   study_guide: "study_guide",
   resource: "resource",

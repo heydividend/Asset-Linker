@@ -5,6 +5,7 @@ export type PlanItemKind =
   | "quiz"
   | "flashcards"
   | "review"
+  | "reading"
   | "audio"
   | "study_guide"
   | "resource"
@@ -58,6 +59,10 @@ export function eachDay(start: string, end: string): string[] {
 
 import { todayStrPT } from "./today";
 export const todayStr = todayStrPT;
+
+// The primary BOC reference text. Daily reading assignments point here, with
+// the chapters chosen to match the day's focus domain (see DOMAIN_CONTENT).
+const BOOK = "Principles of Athletic Training & Therapy (Prentice, 18th ed.)";
 
 // Domain → chapter focus + body-map regions + matching game ids.
 // Keys are matched case-insensitively on a substring of the domain name.
@@ -140,6 +145,18 @@ export function buildSchedule(
     const region = pick(content.regions, i);
     const gameId = pick(content.gameIds, i);
 
+    // Reading assignment from the BOC text, matched to today's focus domain.
+    const readingItem: PlanItem = {
+      kind: "reading",
+      title: `Read the BOC text — ${content.chapters}`,
+      description: `${BOOK}${
+        focusDomain?.name ? ` — matches today's focus: ${focusDomain.name}.` : "."
+      }`,
+      estMinutes: 30,
+      domainId: focusDomain?.id,
+      link: "/notebooks",
+    };
+
     const items: PlanItem[] = [];
     let title = "";
 
@@ -152,6 +169,7 @@ export function buildSchedule(
     } else if (phase === "final_review") {
       title = `Final Review — ${focusDomain?.name ?? "all domains"}`;
       items.push(
+        readingItem,
         { kind: "flashcards", title: "Sweep ALL due flashcards", estMinutes: 30, link: "/flashcards" },
         {
           kind: "quiz",
@@ -196,6 +214,7 @@ export function buildSchedule(
       } else {
         title = `Integration — ${focusDomain?.name}`;
         items.push(
+          readingItem,
           {
             kind: "quiz",
             title: `Topic quiz: ${focusDomain?.name}`,
@@ -246,6 +265,7 @@ export function buildSchedule(
     } else if (phase === "deep_study") {
       title = `Deep Study — ${focusDomain?.name}`;
       items.push(
+        readingItem,
         {
           kind: "study_guide",
           title: `Study ${focusDomain?.name} — ${content.chapters}`,
@@ -289,6 +309,7 @@ export function buildSchedule(
       // foundation
       title = `Foundation — ${focusDomain?.name}`;
       items.push(
+        readingItem,
         {
           kind: "study_guide",
           title: `Read overview: ${focusDomain?.name} (${content.chapters})`,

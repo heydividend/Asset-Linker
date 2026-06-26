@@ -40,6 +40,7 @@ function deriveLink(it: DayItem): string | null {
     }
     case "study_guide":
     case "review":
+    case "reading":
       return it.notebookId ? `/notebooks/${it.notebookId}` : "/notebooks";
     case "audio":
       return it.notebookId ? `/notebooks/${it.notebookId}` : "/notebooks";

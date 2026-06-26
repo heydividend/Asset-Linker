@@ -46,6 +46,7 @@ import { Label } from "@/components/ui/label";
 import {
   BrainCircuit,
   BookOpen,
+  BookMarked,
   Clock,
   Activity,
   ArrowRight,
@@ -106,6 +107,7 @@ const PLAN_KIND_META: Record<
   quiz: { label: "Quiz", icon: BrainCircuit, tone: "bg-violet-500/10 text-violet-700 border-violet-500/30 dark:text-violet-300" },
   flashcards: { label: "Flashcards", icon: BookOpen, tone: "bg-sky-500/10 text-sky-700 border-sky-500/30 dark:text-sky-300" },
   review: { label: "Review", icon: RotateCw, tone: "bg-slate-500/10 text-slate-700 border-slate-500/30 dark:text-slate-300" },
+  reading: { label: "Reading", icon: BookMarked, tone: "bg-rose-500/10 text-rose-700 border-rose-500/30 dark:text-rose-300" },
   audio: { label: "Podcast", icon: Headphones, tone: "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-300" },
   study_guide: { label: "Study guide", icon: FileText, tone: "bg-indigo-500/10 text-indigo-700 border-indigo-500/30 dark:text-indigo-300" },
   resource: { label: "Resource", icon: BookOpen, tone: "bg-teal-500/10 text-teal-700 border-teal-500/30 dark:text-teal-300" },
