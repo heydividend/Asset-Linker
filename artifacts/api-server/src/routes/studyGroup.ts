@@ -16,6 +16,8 @@ import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { parseId } from "../lib/parseId";
 import { chatJson } from "../lib/openaiHelpers";
 import { classifyTaskId } from "../lib/classifyTask";
+import { pa8BlueprintText } from "../lib/pa8Blueprint";
+import { PA8_REFERENCE } from "../lib/pa8Reference";
 import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
 import { getOrCreateSessionId } from "../lib/sessionId";
 
@@ -137,7 +139,10 @@ async function pickQuestionForTopic(topicId: number): Promise<{
   return { id: null, stem: "", choices: null, correctIndex: null, rationale: null };
 }
 
-const MENTOR_PERSONA = `You are Dr. Mentor, a graduate professor of Athletic Training and a long-time BOC item writer. You lead a small study group. Voice: precise, warm, Socratic. You frame the question, probe reasoning, correct misconceptions, and finish with a verdict that names the correct answer and the single most important "why".`;
+const MENTOR_PERSONA = `You are Dr. Mentor, a graduate professor of Athletic Training and a long-time BOC item writer. You lead a small study group. Voice: precise, warm, Socratic. You frame the question, probe reasoning, correct misconceptions, and finish with a verdict that names the correct answer and the single most important "why".
+
+When you author a question, ground it in the official BOC Practice Analysis 8th Edition blueprint below — write to the exact domain/task scope and the knowledge/skills it implies, and prefer high-importance, high-frequency tasks. Do not test content outside this blueprint.
+${pa8BlueprintText()}`;
 const ALEX_PERSONA = `You are Alex — a recently BOC-certified athletic trainer (passed last year). You think out loud, lean on test-taking strategy (eliminate distractors, watch for absolutes, identify answer-choice families). You are confident but humble.`;
 const JORDAN_PERSONA = `You are Jordan — a BOC-certified athletic trainer with 4 years of clinic + secondary-school experience. Bring real clinical anchors (mechanism, red flags, return-to-play). You will sometimes respectfully challenge Alex when the strategy answer differs from the clinical picture.`;
 
@@ -1008,7 +1013,7 @@ async function runExtractionForRound(
   try {
     extracted = await chatJson<Extracted>(
       `From the following BOC Athletic Training study-group round on "${topicName}", extract structured artifacts.\n\nReturn JSON of the form:\n{\n  "flashcard": {"front": "<concise question>", "back": "<answer with one clinical anchor>"},\n  "reasoning_pattern": "<one sentence naming the test-taking pattern this round reinforced>",\n  "question": {"stem": "<new BOC-style stem>", "choices": ["A","B","C","D"], "correctIndex": <int 0-3>, "rationale": "<short rationale>"},\n  "mastery_signal": {"direction": "up|down|neutral", "note": "<short note>"}\n}\n\nROUND TRANSCRIPT:\n${transcript.slice(0, 5000)}`,
-      "You extract structured study artifacts. Reply with strict JSON only.",
+      `You extract structured study artifacts. Reply with strict JSON only. The "question" you write must be a valid BOC-style item grounded in the official BOC Practice Analysis 8th Edition below — keep its scope inside the relevant domain/task and anchor the stem, choices, and rationale in that task's documented knowledge and skill statements.\n\n=== BLUEPRINT (domains, tasks, exam weight, importance/frequency) ===\n${pa8BlueprintText()}\n\n=== PA8 REFERENCE (domain summaries + per-task knowledge & skill statements) ===\n${PA8_REFERENCE}`,
     );
   } catch {
     extracted = {};

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import {
   useGetBlueprint,
@@ -11,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ClipboardCheck, Play, Target } from "lucide-react";
+import { ClipboardCheck, Play, Target, BookOpen, ChevronDown, ChevronRight, Gauge, Repeat } from "lucide-react";
 
 type BlueprintTask = {
   id: number;
@@ -23,6 +24,8 @@ type BlueprintTask = {
   attempts: number;
   correct: number;
   questionCount: number;
+  importance: number | null;
+  frequency: number | null;
 };
 
 const CONFIDENCE_OPTIONS: { value: 1 | 2 | 3; label: string; activeClass: string }[] = [
@@ -37,6 +40,17 @@ function masteryColor(m: number): string {
   return "bg-red-500";
 }
 
+function impTone(v: number): string {
+  if (v >= 3.3) return "border-red-500/40 text-red-700 dark:text-red-300";
+  if (v >= 2.8) return "border-amber-500/40 text-amber-700 dark:text-amber-300";
+  return "border-muted-foreground/30 text-muted-foreground";
+}
+function freqTone(v: number): string {
+  if (v >= 4.0) return "border-sky-500/40 text-sky-700 dark:text-sky-300";
+  if (v >= 3.0) return "border-slate-400/40 text-slate-600 dark:text-slate-300";
+  return "border-muted-foreground/30 text-muted-foreground";
+}
+
 export default function BlueprintPage() {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
@@ -44,6 +58,14 @@ export default function BlueprintPage() {
   const { data, isLoading } = useGetBlueprint();
   const rate = useRateTaskConfidence();
   const start = useStartQuiz();
+  const [openSummaries, setOpenSummaries] = useState<Set<string>>(new Set());
+  const toggleSummary = (code: string) =>
+    setOpenSummaries((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
 
   const setConfidence = (taskId: number, current: number | null, value: 1 | 2 | 3) => {
     const next = current === value ? null : value;
@@ -107,6 +129,7 @@ export default function BlueprintPage() {
 
         {domains.map((d) => {
           const rated = d.tasks.filter((t) => t.confidence != null).length;
+          const summaryOpen = openSummaries.has(d.code);
           return (
             <Card key={d.id} data-testid={`domain-${d.code}`}>
               <CardHeader className="p-4 pb-3">
@@ -123,6 +146,30 @@ export default function BlueprintPage() {
                 {d.description && (
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{d.description}</p>
                 )}
+                {d.summary && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => toggleSummary(d.code)}
+                      className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                      data-testid={`summary-toggle-${d.code}`}
+                    >
+                      <BookOpen className="h-3.5 w-3.5" />
+                      {summaryOpen ? "Hide" : "Read"} the official domain summary
+                      {summaryOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                    </button>
+                    {summaryOpen && (
+                      <p
+                        className="text-xs text-muted-foreground mt-2 leading-relaxed border-l-2 border-border pl-3"
+                        data-testid={`summary-${d.code}`}
+                      >
+                        {d.summary}
+                        <span className="block mt-2 not-italic text-[10px] uppercase tracking-wide text-muted-foreground/70">
+                          Source: BOC Practice Analysis, 8th Edition — Domain {d.code} summary
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="p-4 pt-0 space-y-3">
                 {d.tasks.map((t) => (
@@ -131,6 +178,31 @@ export default function BlueprintPage() {
                       <Badge variant="outline" className="font-mono text-[10px] shrink-0 mt-0.5">{t.code}</Badge>
                       <p className="text-sm leading-relaxed flex-1">{t.statement}</p>
                     </div>
+
+                    {(t.importance != null || t.frequency != null) && (
+                      <div className="flex items-center gap-1.5 flex-wrap pl-1">
+                        {t.importance != null && (
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] gap-1 ${impTone(t.importance)}`}
+                            title="PA8 mean Importance (1–4): how much harm if performed poorly — higher means it matters more that you master it."
+                          >
+                            <Gauge className="h-3 w-3" />
+                            Importance {t.importance.toFixed(1)}/4
+                          </Badge>
+                        )}
+                        {t.frequency != null && (
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] gap-1 ${freqTone(t.frequency)}`}
+                            title="PA8 mean Frequency (1–5): how often newly certified ATs perform this task in practice."
+                          >
+                            <Repeat className="h-3 w-3" />
+                            Frequency {t.frequency.toFixed(1)}/5
+                          </Badge>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-3 flex-wrap">
                       <div className="flex items-center gap-1.5">

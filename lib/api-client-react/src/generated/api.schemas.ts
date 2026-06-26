@@ -45,6 +45,16 @@ export interface BlueprintTask {
   correct: number;
   /** Enabled questions tagged to this task */
   questionCount: number;
+  /**
+   * PA8 mean Importance (1-4 harm scale); how critical it is to perform well
+   * @nullable
+   */
+  importance: number | null;
+  /**
+   * PA8 mean Frequency (1-5 scale); how often the task is performed in practice
+   * @nullable
+   */
+  frequency: number | null;
 }
 
 export interface BlueprintDomain {
@@ -54,6 +64,11 @@ export interface BlueprintDomain {
   weight: number;
   /** @nullable */
   description: string | null;
+  /**
+   * Official PA8 domain literature summary for reference reading
+   * @nullable
+   */
+  summary: string | null;
   tasks: BlueprintTask[];
 }
 

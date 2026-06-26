@@ -14,5 +14,10 @@ export interface BlueprintDomain {
   weight: number;
   /** @nullable */
   description: string | null;
+  /**
+   * Official PA8 domain literature summary for reference reading
+   * @nullable
+   */
+  summary: string | null;
   tasks: BlueprintTask[];
 }

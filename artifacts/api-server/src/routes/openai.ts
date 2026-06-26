@@ -9,6 +9,7 @@ import { PDFParse } from "pdf-parse";
 import { COACHING_STRATEGIES } from "../lib/coachingStrategies";
 import { BOC_GLOSSARY } from "../lib/bocGlossary";
 import { pa8BlueprintText } from "../lib/pa8Blueprint";
+import { PA8_REFERENCE } from "../lib/pa8Reference";
 
 export async function extractPdfText(buf: Buffer): Promise<string> {
   const parser = new PDFParse({ data: new Uint8Array(buf) });
@@ -104,6 +105,12 @@ Ground every answer in the official BOC Practice Analysis 8th Edition (PA8) blue
 <<<PA8_BLUEPRINT_START>>>
 ${pa8BlueprintText()}
 <<<PA8_BLUEPRINT_END>>>
+
+You also have the full official PA8 reference below: each domain's literature SUMMARY and the per-task KNOWLEDGE OF / SKILL IN statements. This is the authoritative source for what the exam actually tests. When you state a fact, definition, or scope that comes from it, ground your answer in it and cite it inline like (PA8, Domain III · Task 0303) or (PA8, Domain II summary). Prefer quoting a short exact phrase from it over paraphrasing when precision matters. When the student asks "what should I study first?", reason from exam weight + the task's importance/frequency. Never contradict this reference; if something falls outside it, say so plainly.
+
+<<<PA8_REFERENCE_START>>>
+${PA8_REFERENCE}
+<<<PA8_REFERENCE_END>>>
 
 FORMATTING RULES — every reply must be well-structured Markdown:
 - Open with a one-sentence direct answer (no preamble like "Great question").

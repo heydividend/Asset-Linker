@@ -1,1 +1,2 @@
 - [API server dev restart](api-server-dev-restart.md) — boc-notebook's api-server dev script builds-then-starts (no watch); restart the workflow after backend route/schema changes or stale routes 404.
+- [PA8 blueprint grounding](pa8-grounding.md) — PA8 reference/ratings live in TS, merged into /api/blueprint at request time (no DB migration); embed as generated TS string, restart api-server after edits.

@@ -51,6 +51,12 @@ export const GetBlueprintResponse = zod.object({
       name: zod.string(),
       weight: zod.number(),
       description: zod.string().nullable(),
+      summary: zod
+        .string()
+        .nullable()
+        .describe(
+          "Official PA8 domain literature summary for reference reading",
+        ),
       tasks: zod.array(
         zod.object({
           id: zod.number(),
@@ -69,6 +75,18 @@ export const GetBlueprintResponse = zod.object({
           questionCount: zod
             .number()
             .describe("Enabled questions tagged to this task"),
+          importance: zod
+            .number()
+            .nullable()
+            .describe(
+              "PA8 mean Importance (1-4 harm scale); how critical it is to perform well",
+            ),
+          frequency: zod
+            .number()
+            .nullable()
+            .describe(
+              "PA8 mean Frequency (1-5 scale); how often the task is performed in practice",
+            ),
         }),
       ),
     }),

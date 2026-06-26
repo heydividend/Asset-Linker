@@ -1,6 +1,6 @@
 // Official BOC Practice Analysis 8th Edition (PA8) content outline.
 // Source: "Content Outline for Practice Analysis, 8th Edition" (effective
-// Athletic Trainer Exam March 2023). Verbatim domain descriptions and the 23
+// Athletic Trainer Exam March 2023). Verbatim domain descriptions and the 25
 // task statements that make up the exam blueprint. Single source of truth for
 // seeding, AI Tutor grounding, and question→task classification.
 
@@ -46,7 +46,58 @@ export const PA8_TASKS: Pa8Task[] = [
   { code: "0504", domain: "D5", statement: "Use standardized documentation procedures to ensure best practices." },
 ];
 
-// Compact text block for grounding the AI Tutor in the official blueprint.
+// Official share of the exam (and survey weighting) carried by each domain, per
+// the PA8 report. Matches the seeded domain weights; used for grounding and to
+// help prioritize study toward the heaviest-weighted domains.
+export const PA8_DOMAIN_WEIGHTS: Record<string, number> = {
+  D1: 0.2,
+  D2: 0.256,
+  D3: 0.208,
+  D4: 0.256,
+  D5: 0.08,
+};
+
+export interface Pa8TaskRating {
+  // Mean Importance on the PA8 1–4 harm scale (4 = extreme harm if performed
+  // poorly) — how critical it is that a newly certified AT performs the task well.
+  importance: number;
+  // Mean Frequency on the PA8 1–5 scale (5 = repeatedly) — how often newly
+  // certified ATs actually perform the task in practice.
+  frequency: number;
+}
+
+// Per-task Importance and Frequency means from the PA8 descriptive-statistics
+// tables. Powers study prioritization ("what to study first") and weighted drills.
+export const PA8_TASK_RATINGS: Record<string, Pa8TaskRating> = {
+  "0101": { importance: 3.1, frequency: 3.1 },
+  "0102": { importance: 2.9, frequency: 3.4 },
+  "0103": { importance: 2.2, frequency: 3.1 },
+  "0104": { importance: 2.6, frequency: 4.0 },
+  "0105": { importance: 3.4, frequency: 4.3 },
+  "0201": { importance: 3.3, frequency: 4.7 },
+  "0202": { importance: 3.3, frequency: 4.6 },
+  "0203": { importance: 3.3, frequency: 4.8 },
+  "0204": { importance: 3.2, frequency: 4.7 },
+  "0205": { importance: 2.9, frequency: 4.6 },
+  "0301": { importance: 3.7, frequency: 2.8 },
+  "0302": { importance: 3.7, frequency: 3.4 },
+  "0303": { importance: 3.8, frequency: 2.9 },
+  "0304": { importance: 3.5, frequency: 3.4 },
+  "0401": { importance: 2.7, frequency: 4.4 },
+  "0402": { importance: 2.5, frequency: 4.3 },
+  "0403": { importance: 2.9, frequency: 4.6 },
+  "0404": { importance: 3.0, frequency: 4.5 },
+  "0405": { importance: 2.9, frequency: 4.5 },
+  "0406": { importance: 3.2, frequency: 4.5 },
+  "0407": { importance: 3.1, frequency: 4.1 },
+  "0501": { importance: 2.1, frequency: 3.1 },
+  "0502": { importance: 2.4, frequency: 2.6 },
+  "0503": { importance: 3.4, frequency: 4.5 },
+  "0504": { importance: 2.9, frequency: 4.7 },
+};
+
+// Compact text block for grounding the AI Tutor and question generation in the
+// official blueprint, including exam weighting and per-task importance/frequency.
 export function pa8BlueprintText(): string {
   const byDomain = new Map<string, Pa8Task[]>();
   for (const t of PA8_TASKS) {
@@ -54,11 +105,17 @@ export function pa8BlueprintText(): string {
     list.push(t);
     byDomain.set(t.domain, list);
   }
-  const lines: string[] = ["OFFICIAL BOC PRACTICE ANALYSIS 8th EDITION (PA8) BLUEPRINT:"];
+  const lines: string[] = [
+    "OFFICIAL BOC PRACTICE ANALYSIS 8th EDITION (PA8) BLUEPRINT:",
+    "(Importance scale 1–4 = how much harm if done poorly; Frequency scale 1–5 = how often performed.)",
+  ];
   for (const code of ["D1", "D2", "D3", "D4", "D5"]) {
-    lines.push(`\n${code}: ${PA8_DOMAIN_DESCRIPTIONS[code]}`);
+    const pct = Math.round((PA8_DOMAIN_WEIGHTS[code] ?? 0) * 1000) / 10;
+    lines.push(`\n${code} (${pct}% of exam): ${PA8_DOMAIN_DESCRIPTIONS[code]}`);
     for (const t of byDomain.get(code) ?? []) {
-      lines.push(`  ${t.code} — ${t.statement}`);
+      const r = PA8_TASK_RATINGS[t.code];
+      const rating = r ? ` [importance ${r.importance}/4, frequency ${r.frequency}/5]` : "";
+      lines.push(`  ${t.code} — ${t.statement}${rating}`);
     }
   }
   return lines.join("\n");

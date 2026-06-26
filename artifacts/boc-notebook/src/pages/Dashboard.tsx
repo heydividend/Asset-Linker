@@ -12,6 +12,7 @@ import {
   getGetStudyPlanTodayQueryKey,
   getGetDashboardSummaryQueryKey,
   useListTopics,
+  useGetBlueprint,
   type StudyPlanItemKind,
   type ContinueLearningItem,
 } from "@workspace/api-client-react";
@@ -70,6 +71,7 @@ import {
   History,
   Users,
   AlertTriangle,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -149,6 +151,20 @@ const phaseStyles: Record<string, { label: string; className: string }> = {
   exam_day: { label: "Exam Day", className: "bg-destructive/10 text-destructive border-destructive/40" },
 };
 
+// Heaviest single-domain weight in the PA8 blueprint (D2/D4 = 25.6%), used to
+// normalize exam weight onto a 0–1 scale for the study-priority score.
+const MAX_DOMAIN_WEIGHT = 0.256;
+
+interface PriorityTask {
+  taskId: number;
+  domainCode: string;
+  taskCode: string;
+  statement: string;
+  questionCount: number;
+  score: number;
+  reasons: string[];
+}
+
 export default function Dashboard() {
   const { startTour } = useTour();
   useEffect(() => {
@@ -174,6 +190,53 @@ export default function Dashboard() {
   const { data: plan, isLoading: loadingPlan } = useGetStudyPlanToday();
   const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery({ limit: trendWindow });
   const { data: topicsList = [] } = useListTopics();
+  const { data: blueprint } = useGetBlueprint();
+
+  // Rank blueprint tasks by what to study first: blueprint relevance (exam
+  // weight + PA8 importance/frequency) weighted by personal need (low
+  // confidence / low mastery / unattempted).
+  const studyPriorities = useMemo<PriorityTask[]>(() => {
+    const rows: PriorityTask[] = [];
+    for (const d of blueprint?.domains ?? []) {
+      for (const t of d.tasks) {
+        const impNorm = t.importance != null ? t.importance / 4 : 0.6;
+        const freqNorm = t.frequency != null ? t.frequency / 5 : 0.6;
+        const weightNorm = Math.min(1, d.weight / MAX_DOMAIN_WEIGHT);
+        const relevance = 0.5 * weightNorm + 0.3 * impNorm + 0.2 * freqNorm;
+        const confNeed = t.confidence == null ? 0.85 : (3 - t.confidence) / 2;
+        const masteryNeed = t.attempts > 0 ? 1 - t.mastery : 0.7;
+        const need = 0.5 * confNeed + 0.5 * masteryNeed;
+        const score = relevance * (0.35 + 0.65 * need);
+
+        const reasons: string[] = [];
+        if (weightNorm >= 0.95) reasons.push("High exam weight");
+        if (t.importance != null && t.importance >= 3.3) reasons.push("High importance");
+        if (t.frequency != null && t.frequency >= 4.5) reasons.push("Done often");
+        if (t.confidence === 1) reasons.push("You rated shaky");
+        else if (t.confidence == null) reasons.push("Not yet rated");
+        if (t.attempts > 0 && t.mastery < 0.6) reasons.push("Low mastery");
+        else if (t.attempts === 0) reasons.push("Not attempted");
+
+        rows.push({
+          taskId: t.id,
+          domainCode: d.code,
+          taskCode: t.code,
+          statement: t.statement,
+          questionCount: t.questionCount,
+          score,
+          reasons: reasons.slice(0, 3),
+        });
+      }
+    }
+    // Surface drillable tasks first (the card's only action is Drill), then by score.
+    rows.sort((a, b) => {
+      const aDrillable = a.questionCount > 0 ? 1 : 0;
+      const bDrillable = b.questionCount > 0 ? 1 : 0;
+      if (aDrillable !== bDrillable) return bDrillable - aDrillable;
+      return b.score - a.score;
+    });
+    return rows.slice(0, 5);
+  }, [blueprint]);
   const { data: schedule, isLoading: loadingSchedule } = useQuery<Schedule>({
     queryKey: ["plan-schedule"],
     queryFn: () => fetch("/api/plan/schedule").then((r) => r.json()),
@@ -417,6 +480,33 @@ export default function Dashboard() {
           toast({
             title: `Couldn't start quiz on ${domainName}`,
             description: e instanceof Error ? e.message : "Try another domain.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  };
+
+  const onDrillPriorityTask = (taskId: number, taskCode: string, questionCount: number) => {
+    if (questionCount === 0) {
+      toast({
+        title: "No questions yet for this task",
+        description: `${taskCode} doesn't have any practice questions in your bank yet.`,
+      });
+      return;
+    }
+    startQuiz.mutate(
+      { data: { mode: "topic", count: Math.min(10, questionCount), taskId } },
+      {
+        onSuccess: (q) => {
+          qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
+          qc.invalidateQueries({ queryKey: getGetDashboardTopicMasteryQueryKey() });
+          navigate(`/quiz/${q.id}`);
+        },
+        onError: (e) => {
+          toast({
+            title: `Couldn't start a drill on ${taskCode}`,
+            description: e instanceof Error ? e.message : "Try again.",
             variant: "destructive",
           });
         },
@@ -933,6 +1023,60 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {studyPriorities.length > 0 && (
+          <Card data-testid="dashboard-study-first" data-tour="dashboard-study-first">
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" /> What to study first
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Ranked from the official BOC blueprint — exam weight plus each task's importance &amp;
+                frequency, weighed against your confidence and mastery.
+              </p>
+            </CardHeader>
+            <CardContent className="p-4 pt-2 space-y-2">
+              {studyPriorities.map((p, i) => (
+                <div
+                  key={p.taskId}
+                  className="flex items-start gap-3 rounded-md border p-2.5"
+                  data-testid={`study-first-${p.taskCode}`}
+                >
+                  <span className="text-sm font-bold text-muted-foreground w-5 shrink-0 text-center mt-0.5">
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge variant="outline" className="font-mono text-[10px]">{p.taskCode}</Badge>
+                      {p.reasons.map((r) => (
+                        <Badge key={r} variant="secondary" className="text-[10px]">{r}</Badge>
+                      ))}
+                    </div>
+                    <p className="text-sm mt-1 line-clamp-2">{p.statement}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 shrink-0"
+                    disabled={startQuiz.isPending || p.questionCount === 0}
+                    onClick={() => onDrillPriorityTask(p.taskId, p.taskCode, p.questionCount)}
+                    data-testid={`study-first-drill-${p.taskCode}`}
+                  >
+                    <Play className="h-3.5 w-3.5 mr-1.5" /> Drill
+                  </Button>
+                </div>
+              ))}
+              <div className="pt-1">
+                <Link
+                  href="/blueprint"
+                  className="text-xs font-medium text-primary hover:underline inline-flex items-center"
+                >
+                  See the full blueprint <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2 space-y-4 min-w-0">

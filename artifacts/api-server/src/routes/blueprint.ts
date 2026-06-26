@@ -2,6 +2,8 @@ import { Router, type IRouter } from "express";
 import { eq, sql } from "drizzle-orm";
 import { db, domains, tasks, taskMastery, questions } from "@workspace/db";
 import { parseId } from "../lib/parseId";
+import { PA8_DOMAIN_SUMMARIES } from "../lib/pa8Reference";
+import { PA8_TASK_RATINGS } from "../lib/pa8Blueprint";
 
 const router: IRouter = Router();
 
@@ -39,8 +41,10 @@ router.get("/blueprint", async (_req, res): Promise<void> => {
     name: d.name,
     weight: d.weight,
     description: d.description ?? null,
+    summary: PA8_DOMAIN_SUMMARIES[d.code] ?? null,
     tasks: (tasksByDomain.get(d.id) ?? []).map((t) => {
       const m = masteryByTask.get(t.id);
+      const rating = PA8_TASK_RATINGS[t.code];
       return {
         id: t.id,
         code: t.code,
@@ -51,6 +55,8 @@ router.get("/blueprint", async (_req, res): Promise<void> => {
         attempts: m?.attempts ?? 0,
         correct: m?.correct ?? 0,
         questionCount: countByTask.get(t.id) ?? 0,
+        importance: rating?.importance ?? null,
+        frequency: rating?.frequency ?? null,
       };
     }),
   }));

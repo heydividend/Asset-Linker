@@ -1412,7 +1412,7 @@ components:
         description: { type: ["string", "null"] }
     BlueprintTask:
       type: object
-      required: [id, code, statement, confidence, sortOrder, mastery, attempts, correct, questionCount]
+      required: [id, code, statement, confidence, sortOrder, mastery, attempts, correct, questionCount, importance, frequency]
       properties:
         id: { type: integer }
         code: { type: string }
@@ -1423,15 +1423,18 @@ components:
         attempts: { type: integer }
         correct: { type: integer }
         questionCount: { type: integer, description: "Enabled questions tagged to this task" }
+        importance: { type: ["number", "null"], description: "PA8 mean Importance (1-4 harm scale); how critical it is to perform well" }
+        frequency: { type: ["number", "null"], description: "PA8 mean Frequency (1-5 scale); how often the task is performed in practice" }
     BlueprintDomain:
       type: object
-      required: [id, code, name, weight, description, tasks]
+      required: [id, code, name, weight, description, summary, tasks]
       properties:
         id: { type: integer }
         code: { type: string }
         name: { type: string }
         weight: { type: number }
         description: { type: ["string", "null"] }
+        summary: { type: ["string", "null"], description: "Official PA8 domain literature summary for reference reading" }
         tasks:
           type: array
           items: { $ref: "#/components/schemas/BlueprintTask" }
