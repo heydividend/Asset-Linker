@@ -3,6 +3,9 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, questions, mockExams, domains, topics, topicMastery } from "@workspace/db";
 import { parseId } from "../lib/parseId";
 import { questionCredit } from "../lib/scoring";
+import { getOrCreateSessionId } from "../lib/sessionId";
+import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
+import { mockPlanItemKeyForDay } from "../lib/planSchedule";
 
 const router: IRouter = Router();
 const PASS = 75;
@@ -301,6 +304,19 @@ router.post("/mock-exams/:id/submit", async (req, res): Promise<void> => {
       .update(mockExams)
       .set({ submitted: true, autoSubmitted: auto, submittedAt: new Date() })
       .where(eq(mockExams.id, id));
+
+    // Link this submission to the matching day's plan item: when the mock is
+    // submitted on a scheduled simulated-exam day, auto-check that day's
+    // `mock_exam:<date>` plan item. markPlanItemComplete is idempotent, so a
+    // later manual "mark complete" tap won't double-count. Days that aren't
+    // simulated-exam days return null and are left alone, so a genuinely
+    // skipped mock keeps carrying forward.
+    const sessionId = getOrCreateSessionId(req, res);
+    const today = todayStr();
+    const mockKey = await mockPlanItemKeyForDay(today);
+    if (mockKey) {
+      await markPlanItemComplete(sessionId, today, mockKey);
+    }
   }
 
   const computed = await computeResult(id);

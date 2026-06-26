@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, eq, lte, sql } from "drizzle-orm";
+import { desc, lte, sql } from "drizzle-orm";
 import {
   db,
   flashcards,
@@ -18,43 +18,9 @@ import { isMandatoryKind, planItemKey } from "../lib/planItemKey";
 import { getDomainMasteryMap } from "../lib/domainMastery";
 import { getOrCreateSessionId } from "../lib/sessionId";
 import { listCompletedKeys, listCompletedKeysThrough } from "../lib/planCompletions";
+import { getOrCreateSchedule } from "../lib/planSchedule";
 
 const router: IRouter = Router();
-
-const DEFAULT_START = "2026-06-26";
-const DEFAULT_EXAM = "2026-07-25";
-const DEFAULT_NAME = "July/August 2026 BOC Pass Plan";
-
-// The previous auto-generated default window. A row still holding these exact
-// dates is a stale, never-customized plan (its window is now in the past), so
-// we migrate it forward to the active plan. Any other dates are treated as a
-// user customization and left untouched.
-const LEGACY_DEFAULT_WINDOWS = new Set(["2026-05-11|2026-06-06"]);
-
-async function getOrCreateSchedule() {
-  const [row] = await db.select().from(examSchedule).limit(1);
-  if (row) {
-    if (LEGACY_DEFAULT_WINDOWS.has(`${row.startDate}|${row.examDate}`)) {
-      const [migrated] = await db
-        .update(examSchedule)
-        .set({
-          startDate: DEFAULT_START,
-          examDate: DEFAULT_EXAM,
-          examName: DEFAULT_NAME,
-          updatedAt: new Date(),
-        })
-        .where(eq(examSchedule.id, row.id))
-        .returning();
-      return migrated;
-    }
-    return row;
-  }
-  const [created] = await db
-    .insert(examSchedule)
-    .values({ startDate: DEFAULT_START, examDate: DEFAULT_EXAM, examName: DEFAULT_NAME })
-    .returning();
-  return created;
-}
 
 // Adds key + mandatory to every plan item, deduping repeats by key so a day
 // only ever has one canonical representative for a given activity.
