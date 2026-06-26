@@ -30,6 +30,7 @@ import { MasterySparkline, formatRelativeAttempt } from "@/components/MasterySpa
 import { ReadinessTrend } from "@/components/ReadinessTrend";
 import { TrendWindowSelector } from "@/components/TrendWindowSelector";
 import { useTrendWindow } from "@/hooks/use-trend-window";
+import { useReadinessRange } from "@/hooks/use-readiness-range";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useTour } from "@/components/TourProvider";
@@ -188,8 +189,11 @@ export default function Dashboard() {
   }, [startTour]);
 
   const [trendWindow, setTrendWindow] = useTrendWindow("dashboard");
+  const [readinessRange, setReadinessRange] = useReadinessRange();
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
-  const { data: readinessHistory = [] } = useGetDashboardReadinessHistory();
+  const { data: readinessHistory = [] } = useGetDashboardReadinessHistory({
+    days: readinessRange,
+  });
   const { data: plan, isLoading: loadingPlan } = useGetStudyPlanToday();
   const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery({ limit: trendWindow });
   const { data: topicsList = [] } = useListTopics();
@@ -931,7 +935,12 @@ export default function Dashboard() {
                       </>
                     );
                   })()}
-                  <ReadinessTrend points={readinessHistory} testId="readiness-trend" />
+                  <ReadinessTrend
+                    points={readinessHistory}
+                    testId="readiness-trend"
+                    range={readinessRange}
+                    onRangeChange={setReadinessRange}
+                  />
                 </>
               )}
             </CardContent>
