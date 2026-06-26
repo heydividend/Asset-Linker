@@ -21,3 +21,5 @@ export * from "./gameSessions";
 export * from "./planCompletions";
 export * from "./studyGroup";
 export * from "./readinessSnapshots";
+export * from "./pushSubscriptions";
+export * from "./reminderPrefs";

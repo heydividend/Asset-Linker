@@ -10,6 +10,18 @@ export function todayStrPT(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: TZ });
 }
 
+// Current wall-clock time in Pacific as "HH:MM" (24h, zero-padded). Used by
+// the daily reminder scheduler to compare against the user's chosen time,
+// which is also stored in PT (the app's single reference timezone).
+export function nowHHmmPT(): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+}
+
 // Returns the UTC instant that corresponds to 00:00 in Pacific time on the
 // current Pacific day. Useful for "completed today" range queries against
 // timestamp columns that store UTC.

@@ -1,0 +1,75 @@
+import { eq } from "drizzle-orm";
+import { db, reminderPrefs } from "@workspace/db";
+import { logger } from "./logger";
+import { nowHHmmPT, todayStrPT } from "./today";
+import { buildReminderPayload } from "./reminderSummary";
+import { ensureWebPushConfigured, sendPushToSession } from "./webPush";
+
+const TICK_INTERVAL_MS = 60 * 1000;
+
+// One scheduler pass: find every enabled reminder whose chosen time has
+// arrived (PT) and that hasn't been sent yet today, build a fresh plan
+// summary, push it to all of that session's browsers, and stamp lastSentDate
+// so we never double-send within a day. Using ">=" (rather than exact-minute
+// equality) means a reminder still fires — late — if the server happened to
+// be down at the exact minute.
+export async function runReminderTick(): Promise<number> {
+  if (!ensureWebPushConfigured()) return 0;
+  const today = todayStrPT();
+  const nowHHmm = nowHHmmPT();
+
+  const due = await db
+    .select()
+    .from(reminderPrefs)
+    .where(eq(reminderPrefs.enabled, true));
+
+  let sentSessions = 0;
+  for (const pref of due) {
+    if (pref.lastSentDate === today) continue;
+    if (nowHHmm < pref.time) continue;
+    try {
+      const payload = await buildReminderPayload(pref.sessionId);
+      const count = await sendPushToSession(pref.sessionId, payload);
+      // Stamp regardless of count so we don't retry every minute for a session
+      // whose subscriptions have all expired.
+      await db
+        .update(reminderPrefs)
+        .set({ lastSentDate: today, updatedAt: new Date() })
+        .where(eq(reminderPrefs.sessionId, pref.sessionId));
+      if (count > 0) sentSessions += 1;
+    } catch (err) {
+      logger.error(
+        { err, sessionId: pref.sessionId },
+        "Failed to send daily study reminder",
+      );
+    }
+  }
+  return sentSessions;
+}
+
+let tickTimer: NodeJS.Timeout | null = null;
+export function startReminderScheduler(
+  onError: (err: unknown) => void = () => {},
+): () => void {
+  if (tickTimer) return () => stopReminderScheduler();
+  const tick = async () => {
+    try {
+      await runReminderTick();
+    } catch (err) {
+      onError(err);
+    }
+  };
+  tickTimer = setInterval(() => {
+    void tick();
+  }, TICK_INTERVAL_MS);
+  // Don't keep the process alive solely for the reminder timer.
+  tickTimer.unref?.();
+  return () => stopReminderScheduler();
+}
+
+export function stopReminderScheduler(): void {
+  if (tickTimer) {
+    clearInterval(tickTimer);
+    tickTimer = null;
+  }
+}

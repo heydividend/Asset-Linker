@@ -4,6 +4,7 @@ import {
   recoverStuckStudyGroupRounds,
   startStudyGroupStaleSweeper,
 } from "./routes/studyGroup";
+import { startReminderScheduler } from "./lib/reminderScheduler";
 
 const rawPort = process.env["PORT"];
 
@@ -34,6 +35,10 @@ async function start(): Promise<void> {
 
   startStudyGroupStaleSweeper((err) =>
     logger.error({ err }, "Stale study group round sweep failed"),
+  );
+
+  startReminderScheduler((err) =>
+    logger.error({ err }, "Daily reminder tick failed"),
   );
 
   app.listen(port, (err) => {

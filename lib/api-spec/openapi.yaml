@@ -24,6 +24,7 @@ tags:
   - name: catalog
   - name: topics
   - name: studygroup
+  - name: reminders
 paths:
   /healthz:
     get:
@@ -1147,6 +1148,90 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/FixItStreak" }
 
+  # ---- Daily study reminders (Web Push) ----
+  /reminders/vapid-public-key:
+    get:
+      operationId: getVapidPublicKey
+      tags: [reminders]
+      summary: Public VAPID key the browser needs to create a push subscription
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VapidPublicKey" }
+        "503":
+          description: Web Push not configured
+  /reminders/preferences:
+    get:
+      operationId: getReminderPreferences
+      tags: [reminders]
+      summary: Current daily-reminder preference for this session
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReminderPreferences" }
+    put:
+      operationId: updateReminderPreferences
+      tags: [reminders]
+      summary: Enable/disable daily reminders and set the reminder time
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReminderPreferences" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReminderPreferences" }
+  /reminders/subscribe:
+    post:
+      operationId: subscribePush
+      tags: [reminders]
+      summary: Save (or refresh) a browser's Web Push subscription for this session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PushSubscriptionInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+  /reminders/unsubscribe:
+    post:
+      operationId: unsubscribePush
+      tags: [reminders]
+      summary: Remove a browser's Web Push subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PushUnsubscribeInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+  /reminders/test:
+    post:
+      operationId: sendTestReminder
+      tags: [reminders]
+      summary: Send a one-off test reminder to this session's browsers now
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TestReminderResult" }
+
   # ---- Study Group (multi-agent) ----
   /study-group/sessions:
     get:
@@ -2156,6 +2241,48 @@ components:
       required: [itemKey]
       properties:
         itemKey: { type: string }
+
+    VapidPublicKey:
+      type: object
+      required: [publicKey]
+      properties:
+        publicKey: { type: string }
+    ReminderPreferences:
+      type: object
+      required: [enabled, time]
+      properties:
+        enabled: { type: boolean, description: "Whether daily study reminders are on." }
+        time:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          description: "Reminder time as HH:MM (24h), in the app's reference timezone (Pacific)."
+    PushSubscriptionInput:
+      type: object
+      required: [endpoint, keys]
+      properties:
+        endpoint: { type: string }
+        expirationTime: { type: ["number", "null"] }
+        keys:
+          type: object
+          required: [p256dh, auth]
+          properties:
+            p256dh: { type: string }
+            auth: { type: string }
+    PushUnsubscribeInput:
+      type: object
+      required: [endpoint]
+      properties:
+        endpoint: { type: string }
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
+    TestReminderResult:
+      type: object
+      required: [sent]
+      properties:
+        sent: { type: integer, description: "Number of browser subscriptions the test reminder was delivered to." }
 
     GameSessionInput:
       type: object

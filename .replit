@@ -37,3 +37,10 @@ externalPort = 3000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+VAPID_PUBLIC_KEY = "BEWa1hCqoC9x_uTAS-88TMYx3eYfm86g5ZBtS9HUogclNLQjmMqo4QKqBxd1wIFkezGpxJdiGtMX_nBAf99uDKA"
+VAPID_PRIVATE_KEY = "KnFpN9h1GTJObuY2mIKJsSXfUZcqxP7okQXJsU-cUkg"
+VAPID_SUBJECT = "mailto:reminders@boc-notebook.app"

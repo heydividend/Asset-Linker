@@ -64,6 +64,7 @@ import type {
   NotebookDetail,
   NotebookInput,
   NotebookUpdate,
+  OkResponse,
   OpenaiConversation,
   OpenaiConversationInput,
   OpenaiConversationWithMessages,
@@ -71,6 +72,8 @@ import type {
   OpenaiMessageInput,
   PlanCompletionInput,
   PlanCompletions,
+  PushSubscriptionInput,
+  PushUnsubscribeInput,
   QuestionBankEntry,
   Quiz,
   QuizAnswerInput,
@@ -78,6 +81,7 @@ import type {
   QuizInput,
   QuizSummary,
   ReadinessHistoryPoint,
+  ReminderPreferences,
   Resource,
   ResourceInput,
   ScrapeJob,
@@ -103,10 +107,12 @@ import type {
   StudyPlan,
   TaskConfidenceInput,
   TaskConfidenceResult,
+  TestReminderResult,
   Topic,
   TopicHistoryEntry,
   TopicMasteryEntry,
   TopicPodcastInput,
+  VapidPublicKey,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -6596,6 +6602,497 @@ export const useMarkFixItComplete = <
   TContext
 > => {
   return useMutation(getMarkFixItCompleteMutationOptions(options));
+};
+
+/**
+ * @summary Public VAPID key the browser needs to create a push subscription
+ */
+export const getGetVapidPublicKeyUrl = () => {
+  return `/api/reminders/vapid-public-key`;
+};
+
+export const getVapidPublicKey = async (
+  options?: RequestInit,
+): Promise<VapidPublicKey> => {
+  return customFetch<VapidPublicKey>(getGetVapidPublicKeyUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetVapidPublicKeyQueryKey = () => {
+  return [`/api/reminders/vapid-public-key`] as const;
+};
+
+export const getGetVapidPublicKeyQueryOptions = <
+  TData = Awaited<ReturnType<typeof getVapidPublicKey>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getVapidPublicKey>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetVapidPublicKeyQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getVapidPublicKey>>
+  > = ({ signal }) => getVapidPublicKey({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getVapidPublicKey>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetVapidPublicKeyQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getVapidPublicKey>>
+>;
+export type GetVapidPublicKeyQueryError = ErrorType<void>;
+
+/**
+ * @summary Public VAPID key the browser needs to create a push subscription
+ */
+
+export function useGetVapidPublicKey<
+  TData = Awaited<ReturnType<typeof getVapidPublicKey>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getVapidPublicKey>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetVapidPublicKeyQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Current daily-reminder preference for this session
+ */
+export const getGetReminderPreferencesUrl = () => {
+  return `/api/reminders/preferences`;
+};
+
+export const getReminderPreferences = async (
+  options?: RequestInit,
+): Promise<ReminderPreferences> => {
+  return customFetch<ReminderPreferences>(getGetReminderPreferencesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReminderPreferencesQueryKey = () => {
+  return [`/api/reminders/preferences`] as const;
+};
+
+export const getGetReminderPreferencesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReminderPreferences>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getReminderPreferences>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetReminderPreferencesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getReminderPreferences>>
+  > = ({ signal }) => getReminderPreferences({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReminderPreferences>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetReminderPreferencesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReminderPreferences>>
+>;
+export type GetReminderPreferencesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Current daily-reminder preference for this session
+ */
+
+export function useGetReminderPreferences<
+  TData = Awaited<ReturnType<typeof getReminderPreferences>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getReminderPreferences>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReminderPreferencesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Enable/disable daily reminders and set the reminder time
+ */
+export const getUpdateReminderPreferencesUrl = () => {
+  return `/api/reminders/preferences`;
+};
+
+export const updateReminderPreferences = async (
+  reminderPreferences: ReminderPreferences,
+  options?: RequestInit,
+): Promise<ReminderPreferences> => {
+  return customFetch<ReminderPreferences>(getUpdateReminderPreferencesUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reminderPreferences),
+  });
+};
+
+export const getUpdateReminderPreferencesMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateReminderPreferences>>,
+    TError,
+    { data: BodyType<ReminderPreferences> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateReminderPreferences>>,
+  TError,
+  { data: BodyType<ReminderPreferences> },
+  TContext
+> => {
+  const mutationKey = ["updateReminderPreferences"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateReminderPreferences>>,
+    { data: BodyType<ReminderPreferences> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateReminderPreferences(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateReminderPreferencesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateReminderPreferences>>
+>;
+export type UpdateReminderPreferencesMutationBody =
+  BodyType<ReminderPreferences>;
+export type UpdateReminderPreferencesMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Enable/disable daily reminders and set the reminder time
+ */
+export const useUpdateReminderPreferences = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateReminderPreferences>>,
+    TError,
+    { data: BodyType<ReminderPreferences> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateReminderPreferences>>,
+  TError,
+  { data: BodyType<ReminderPreferences> },
+  TContext
+> => {
+  return useMutation(getUpdateReminderPreferencesMutationOptions(options));
+};
+
+/**
+ * @summary Save (or refresh) a browser's Web Push subscription for this session
+ */
+export const getSubscribePushUrl = () => {
+  return `/api/reminders/subscribe`;
+};
+
+export const subscribePush = async (
+  pushSubscriptionInput: PushSubscriptionInput,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(getSubscribePushUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(pushSubscriptionInput),
+  });
+};
+
+export const getSubscribePushMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof subscribePush>>,
+    TError,
+    { data: BodyType<PushSubscriptionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof subscribePush>>,
+  TError,
+  { data: BodyType<PushSubscriptionInput> },
+  TContext
+> => {
+  const mutationKey = ["subscribePush"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof subscribePush>>,
+    { data: BodyType<PushSubscriptionInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return subscribePush(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubscribePushMutationResult = NonNullable<
+  Awaited<ReturnType<typeof subscribePush>>
+>;
+export type SubscribePushMutationBody = BodyType<PushSubscriptionInput>;
+export type SubscribePushMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Save (or refresh) a browser's Web Push subscription for this session
+ */
+export const useSubscribePush = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof subscribePush>>,
+    TError,
+    { data: BodyType<PushSubscriptionInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof subscribePush>>,
+  TError,
+  { data: BodyType<PushSubscriptionInput> },
+  TContext
+> => {
+  return useMutation(getSubscribePushMutationOptions(options));
+};
+
+/**
+ * @summary Remove a browser's Web Push subscription
+ */
+export const getUnsubscribePushUrl = () => {
+  return `/api/reminders/unsubscribe`;
+};
+
+export const unsubscribePush = async (
+  pushUnsubscribeInput: PushUnsubscribeInput,
+  options?: RequestInit,
+): Promise<OkResponse> => {
+  return customFetch<OkResponse>(getUnsubscribePushUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(pushUnsubscribeInput),
+  });
+};
+
+export const getUnsubscribePushMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unsubscribePush>>,
+    TError,
+    { data: BodyType<PushUnsubscribeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof unsubscribePush>>,
+  TError,
+  { data: BodyType<PushUnsubscribeInput> },
+  TContext
+> => {
+  const mutationKey = ["unsubscribePush"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof unsubscribePush>>,
+    { data: BodyType<PushUnsubscribeInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return unsubscribePush(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UnsubscribePushMutationResult = NonNullable<
+  Awaited<ReturnType<typeof unsubscribePush>>
+>;
+export type UnsubscribePushMutationBody = BodyType<PushUnsubscribeInput>;
+export type UnsubscribePushMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove a browser's Web Push subscription
+ */
+export const useUnsubscribePush = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unsubscribePush>>,
+    TError,
+    { data: BodyType<PushUnsubscribeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof unsubscribePush>>,
+  TError,
+  { data: BodyType<PushUnsubscribeInput> },
+  TContext
+> => {
+  return useMutation(getUnsubscribePushMutationOptions(options));
+};
+
+/**
+ * @summary Send a one-off test reminder to this session's browsers now
+ */
+export const getSendTestReminderUrl = () => {
+  return `/api/reminders/test`;
+};
+
+export const sendTestReminder = async (
+  options?: RequestInit,
+): Promise<TestReminderResult> => {
+  return customFetch<TestReminderResult>(getSendTestReminderUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getSendTestReminderMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendTestReminder>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendTestReminder>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["sendTestReminder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendTestReminder>>,
+    void
+  > = () => {
+    return sendTestReminder(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendTestReminderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendTestReminder>>
+>;
+
+export type SendTestReminderMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Send a one-off test reminder to this session's browsers now
+ */
+export const useSendTestReminder = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendTestReminder>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendTestReminder>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getSendTestReminderMutationOptions(options));
 };
 
 export const getListStudyGroupSessionsUrl = (

@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ReminderSettings } from "@/components/ReminderSettings";
 import { AskAiButton } from "@/components/AskAiButton";
 import { FixItPlanCard } from "@/components/FixItPlanCard";
 import { MasterySparkline, formatRelativeAttempt } from "@/components/MasterySparkline";
@@ -75,6 +76,7 @@ import {
   Users,
   AlertTriangle,
   Target,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -670,7 +672,30 @@ export default function Dashboard() {
     <div className="flex flex-col h-full">
       <header className="h-12 border-b flex items-center justify-between px-4 bg-background">
         <h1 className="text-base font-semibold">Dashboard</h1>
-        <ThemeToggle />
+        <div className="flex items-center gap-1">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Daily reminders"
+                data-testid="button-open-reminders"
+              >
+                <Bell className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Daily study reminders</DialogTitle>
+                <DialogDescription>
+                  Get a desktop notification with today's plan at a time you pick.
+                </DialogDescription>
+              </DialogHeader>
+              <ReminderSettings />
+            </DialogContent>
+          </Dialog>
+          <ThemeToggle />
+        </div>
       </header>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

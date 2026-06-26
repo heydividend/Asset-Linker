@@ -86,7 +86,7 @@ router.put("/plan/schedule", async (req, res): Promise<void> => {
   res.json(row);
 });
 
-async function buildTodayItems(sessionId: string) {
+export async function buildTodayItems(sessionId: string) {
   const items: PlanItem[] = [];
   const sched = await getOrCreateSchedule();
   const dRows = await db.select().from(domains).orderBy(domains.id);

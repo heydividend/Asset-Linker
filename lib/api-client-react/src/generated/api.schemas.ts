@@ -989,6 +989,45 @@ export interface PlanCompletionInput {
   itemKey: string;
 }
 
+export interface VapidPublicKey {
+  publicKey: string;
+}
+
+export interface ReminderPreferences {
+  /** Whether daily study reminders are on. */
+  enabled: boolean;
+  /**
+   * Reminder time as HH:MM (24h), in the app's reference timezone (Pacific).
+   * @pattern ^([01][0-9]|2[0-3]):[0-5][0-9]$
+   */
+  time: string;
+}
+
+export type PushSubscriptionInputKeys = {
+  p256dh: string;
+  auth: string;
+};
+
+export interface PushSubscriptionInput {
+  endpoint: string;
+  /** @nullable */
+  expirationTime?: number | null;
+  keys: PushSubscriptionInputKeys;
+}
+
+export interface PushUnsubscribeInput {
+  endpoint: string;
+}
+
+export interface OkResponse {
+  ok: boolean;
+}
+
+export interface TestReminderResult {
+  /** Number of browser subscriptions the test reminder was delivered to. */
+  sent: number;
+}
+
 export interface GameSessionInput {
   gameId: string;
   /** @minimum 0 */

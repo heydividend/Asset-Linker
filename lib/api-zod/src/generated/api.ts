@@ -1666,6 +1666,95 @@ export const MarkFixItCompleteResponse = zod.object({
   today: zod.coerce.date(),
 });
 
+/**
+ * @summary Public VAPID key the browser needs to create a push subscription
+ */
+export const GetVapidPublicKeyResponse = zod.object({
+  publicKey: zod.string(),
+});
+
+/**
+ * @summary Current daily-reminder preference for this session
+ */
+export const getReminderPreferencesResponseTimeRegExp = new RegExp(
+  "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+);
+
+export const GetReminderPreferencesResponse = zod.object({
+  enabled: zod.boolean().describe("Whether daily study reminders are on."),
+  time: zod
+    .string()
+    .regex(getReminderPreferencesResponseTimeRegExp)
+    .describe(
+      "Reminder time as HH:MM (24h), in the app's reference timezone (Pacific).",
+    ),
+});
+
+/**
+ * @summary Enable/disable daily reminders and set the reminder time
+ */
+export const updateReminderPreferencesBodyTimeRegExp = new RegExp(
+  "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+);
+
+export const UpdateReminderPreferencesBody = zod.object({
+  enabled: zod.boolean().describe("Whether daily study reminders are on."),
+  time: zod
+    .string()
+    .regex(updateReminderPreferencesBodyTimeRegExp)
+    .describe(
+      "Reminder time as HH:MM (24h), in the app's reference timezone (Pacific).",
+    ),
+});
+
+export const updateReminderPreferencesResponseTimeRegExp = new RegExp(
+  "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+);
+
+export const UpdateReminderPreferencesResponse = zod.object({
+  enabled: zod.boolean().describe("Whether daily study reminders are on."),
+  time: zod
+    .string()
+    .regex(updateReminderPreferencesResponseTimeRegExp)
+    .describe(
+      "Reminder time as HH:MM (24h), in the app's reference timezone (Pacific).",
+    ),
+});
+
+/**
+ * @summary Save (or refresh) a browser's Web Push subscription for this session
+ */
+export const SubscribePushBody = zod.object({
+  endpoint: zod.string(),
+  expirationTime: zod.number().nullish(),
+  keys: zod.object({
+    p256dh: zod.string(),
+    auth: zod.string(),
+  }),
+});
+
+/**
+ * @summary Remove a browser's Web Push subscription
+ */
+export const UnsubscribePushBody = zod.object({
+  endpoint: zod.string(),
+});
+
+export const UnsubscribePushResponse = zod.object({
+  ok: zod.boolean(),
+});
+
+/**
+ * @summary Send a one-off test reminder to this session's browsers now
+ */
+export const SendTestReminderResponse = zod.object({
+  sent: zod
+    .number()
+    .describe(
+      "Number of browser subscriptions the test reminder was delivered to.",
+    ),
+});
+
 export const ListStudyGroupSessionsQueryParams = zod.object({
   includeDismissed: zod.coerce
     .boolean()
