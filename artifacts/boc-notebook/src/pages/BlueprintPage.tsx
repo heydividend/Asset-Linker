@@ -99,7 +99,7 @@ export default function BlueprintPage() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
         <p className="text-sm text-muted-foreground">
           The official BOC Practice Analysis 8th Edition content outline — the five domains and the
-          23 task statements the exam is built from. Rate how confident you feel on each task, see
+          25 task statements the exam is built from. Rate how confident you feel on each task, see
           your objective mastery from answered questions, and drill any task directly.
         </p>
 
