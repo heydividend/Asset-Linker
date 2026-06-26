@@ -36,6 +36,7 @@ import type {
   GameSession,
   GameSessionInput,
   GameSummaryEntry,
+  GetDashboardReadinessHistoryParams,
   GetDashboardTopicHistoryParams,
   GetDashboardTopicMasteryParams,
   GetStudyGroupLibraryParams,
@@ -76,6 +77,7 @@ import type {
   QuizAnswerResult,
   QuizInput,
   QuizSummary,
+  ReadinessHistoryPoint,
   Resource,
   ResourceInput,
   ScrapeJob,
@@ -5673,6 +5675,115 @@ export function useGetDashboardTopicHistory<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetDashboardTopicHistoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Daily snapshots of the honest readiness score over time, for the trend line.
+ */
+export const getGetDashboardReadinessHistoryUrl = (
+  params?: GetDashboardReadinessHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/dashboard/readiness-history?${stringifiedParams}`
+    : `/api/dashboard/readiness-history`;
+};
+
+export const getDashboardReadinessHistory = async (
+  params?: GetDashboardReadinessHistoryParams,
+  options?: RequestInit,
+): Promise<ReadinessHistoryPoint[]> => {
+  return customFetch<ReadinessHistoryPoint[]>(
+    getGetDashboardReadinessHistoryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDashboardReadinessHistoryQueryKey = (
+  params?: GetDashboardReadinessHistoryParams,
+) => {
+  return [
+    `/api/dashboard/readiness-history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetDashboardReadinessHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDashboardReadinessHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDashboardReadinessHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDashboardReadinessHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDashboardReadinessHistoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDashboardReadinessHistory>>
+  > = ({ signal }) =>
+    getDashboardReadinessHistory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardReadinessHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDashboardReadinessHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDashboardReadinessHistory>>
+>;
+export type GetDashboardReadinessHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Daily snapshots of the honest readiness score over time, for the trend line.
+ */
+
+export function useGetDashboardReadinessHistory<
+  TData = Awaited<ReturnType<typeof getDashboardReadinessHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDashboardReadinessHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDashboardReadinessHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDashboardReadinessHistoryQueryOptions(
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

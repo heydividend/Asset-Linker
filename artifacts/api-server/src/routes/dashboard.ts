@@ -14,12 +14,13 @@ import {
   gameSessions,
   notes,
   notebooks,
+  readinessSnapshots,
 } from "@workspace/db";
 import { getOrCreateSessionId } from "../lib/sessionId";
 
 const router: IRouter = Router();
 
-import { startOfTodayPT } from "../lib/today";
+import { startOfTodayPT, todayStrPT } from "../lib/today";
 
 function startOfTodayUtc(): Date {
   // Name kept for back-compat; semantics are now "start of today in Pacific"
@@ -264,6 +265,34 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
   const readinessGoalMax = 85;
   const readinessOnTrack = readinessScore >= readinessGoalMin;
 
+  // Record today's readiness so the dashboard can show a trend over time.
+  // One row per Pacific calendar day, upserted on every load so the stored
+  // value always reflects the latest (honest) reading for the day. This keeps
+  // the trend in lockstep with the displayed score with no background job.
+  try {
+    await db
+      .insert(readinessSnapshots)
+      .values({
+        snapshotDate: todayStrPT(),
+        score: readinessScore,
+        baseScore: readinessBaseScore,
+        goalMin: readinessGoalMin,
+        goalMax: readinessGoalMax,
+      })
+      .onConflictDoUpdate({
+        target: readinessSnapshots.snapshotDate,
+        set: {
+          score: readinessScore,
+          baseScore: readinessBaseScore,
+          goalMin: readinessGoalMin,
+          goalMax: readinessGoalMax,
+          capturedAt: new Date(),
+        },
+      });
+  } catch {
+    // Snapshotting is best-effort; never block the dashboard on it.
+  }
+
   res.json({
     readinessScore,
     readinessBaseScore,
@@ -412,6 +441,26 @@ router.get("/dashboard/topic-history", async (req, res): Promise<void> => {
       attempts,
     })),
   );
+});
+
+router.get("/dashboard/readiness-history", async (req, res): Promise<void> => {
+  const rawDays = typeof req.query.days === "string" ? parseInt(req.query.days, 10) : NaN;
+  const days = Number.isFinite(rawDays) ? Math.max(7, Math.min(365, rawDays)) : 90;
+
+  const rows = await db
+    .select({
+      date: readinessSnapshots.snapshotDate,
+      score: readinessSnapshots.score,
+      baseScore: readinessSnapshots.baseScore,
+      goalMin: readinessSnapshots.goalMin,
+      goalMax: readinessSnapshots.goalMax,
+    })
+    .from(readinessSnapshots)
+    .orderBy(desc(readinessSnapshots.snapshotDate))
+    .limit(days);
+
+  // Oldest-first for charting.
+  res.json(rows.reverse());
 });
 
 export default router;

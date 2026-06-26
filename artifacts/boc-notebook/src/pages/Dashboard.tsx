@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   useGetDashboardSummary,
+  useGetDashboardReadinessHistory,
   useGetStudyPlanToday,
   useGetDashboardTopicMastery,
   useStartQuiz,
@@ -26,6 +27,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AskAiButton } from "@/components/AskAiButton";
 import { FixItPlanCard } from "@/components/FixItPlanCard";
 import { MasterySparkline, formatRelativeAttempt } from "@/components/MasterySparkline";
+import { ReadinessTrend } from "@/components/ReadinessTrend";
 import { TrendWindowSelector } from "@/components/TrendWindowSelector";
 import { useTrendWindow } from "@/hooks/use-trend-window";
 import { Link, useLocation } from "wouter";
@@ -187,6 +189,7 @@ export default function Dashboard() {
 
   const [trendWindow, setTrendWindow] = useTrendWindow("dashboard");
   const { data: summary, isLoading: loadingSummary } = useGetDashboardSummary();
+  const { data: readinessHistory = [] } = useGetDashboardReadinessHistory();
   const { data: plan, isLoading: loadingPlan } = useGetStudyPlanToday();
   const { data: topicMasteryRows = [] } = useGetDashboardTopicMastery({ limit: trendWindow });
   const { data: topicsList = [] } = useListTopics();
@@ -928,6 +931,7 @@ export default function Dashboard() {
                       </>
                     );
                   })()}
+                  <ReadinessTrend points={readinessHistory} testId="readiness-trend" />
                 </>
               )}
             </CardContent>

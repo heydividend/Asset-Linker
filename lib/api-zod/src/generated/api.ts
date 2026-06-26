@@ -1400,6 +1400,43 @@ export const GetDashboardTopicHistoryResponse = zod.array(
   GetDashboardTopicHistoryResponseItem,
 );
 
+/**
+ * @summary Daily snapshots of the honest readiness score over time, for the trend line.
+ */
+export const getDashboardReadinessHistoryQueryDaysDefault = 90;
+export const getDashboardReadinessHistoryQueryDaysMin = 7;
+export const getDashboardReadinessHistoryQueryDaysMax = 365;
+
+export const GetDashboardReadinessHistoryQueryParams = zod.object({
+  days: zod.coerce
+    .number()
+    .min(getDashboardReadinessHistoryQueryDaysMin)
+    .max(getDashboardReadinessHistoryQueryDaysMax)
+    .default(getDashboardReadinessHistoryQueryDaysDefault)
+    .describe(
+      "Max number of most-recent daily snapshots to return (7–365, default 90).",
+    ),
+});
+
+export const GetDashboardReadinessHistoryResponseItem = zod.object({
+  date: zod
+    .string()
+    .describe("Pacific calendar day (YYYY-MM-DD) of the snapshot."),
+  score: zod.number().describe("Honest readiness score for the day (0-100)."),
+  baseScore: zod
+    .number()
+    .describe("Readiness from mastery + last mock exam for the day."),
+  goalMin: zod
+    .number()
+    .describe("Lower bound of the target readiness band that day."),
+  goalMax: zod
+    .number()
+    .describe("Upper bound of the target readiness band that day."),
+});
+export const GetDashboardReadinessHistoryResponse = zod.array(
+  GetDashboardReadinessHistoryResponseItem,
+);
+
 export const GetStudyPlanTodayResponse = zod.object({
   date: zod.coerce.date(),
   items: zod.array(

@@ -908,6 +908,19 @@ export interface DashboardSummary {
   continueLearning: ContinueLearningItem[];
 }
 
+export interface ReadinessHistoryPoint {
+  /** Pacific calendar day (YYYY-MM-DD) of the snapshot. */
+  date: string;
+  /** Honest readiness score for the day (0-100). */
+  score: number;
+  /** Readiness from mastery + last mock exam for the day. */
+  baseScore: number;
+  /** Lower bound of the target readiness band that day. */
+  goalMin: number;
+  /** Upper bound of the target readiness band that day. */
+  goalMax: number;
+}
+
 export type StudyPlanItemKind =
   (typeof StudyPlanItemKind)[keyof typeof StudyPlanItemKind];
 
@@ -1491,6 +1504,15 @@ export type GetDashboardTopicHistoryParams = {
    * Comma-separated topic IDs to filter (omit for all).
    */
   topicIds?: string;
+};
+
+export type GetDashboardReadinessHistoryParams = {
+  /**
+   * Max number of most-recent daily snapshots to return (7–365, default 90).
+   * @minimum 7
+   * @maximum 365
+   */
+  days?: number;
 };
 
 export type ListGameSessionsParams = {

@@ -997,6 +997,25 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/TopicHistoryEntry" }
+  /dashboard/readiness-history:
+    get:
+      operationId: getDashboardReadinessHistory
+      tags: [dashboard]
+      summary: Daily snapshots of the honest readiness score over time, for the trend line.
+      parameters:
+        - name: days
+          in: query
+          required: false
+          description: "Max number of most-recent daily snapshots to return (7–365, default 90)."
+          schema: { type: integer, minimum: 7, maximum: 365, default: 90 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ReadinessHistoryPoint" }
   /plan/today:
     get:
       operationId: getStudyPlanToday
@@ -2077,6 +2096,15 @@ components:
         domainId: { type: integer }
         total: { type: integer }
         due: { type: integer }
+    ReadinessHistoryPoint:
+      type: object
+      required: [date, score, baseScore, goalMin, goalMax]
+      properties:
+        date: { type: string, description: "Pacific calendar day (YYYY-MM-DD) of the snapshot." }
+        score: { type: integer, description: "Honest readiness score for the day (0-100)." }
+        baseScore: { type: integer, description: "Readiness from mastery + last mock exam for the day." }
+        goalMin: { type: integer, description: "Lower bound of the target readiness band that day." }
+        goalMax: { type: integer, description: "Upper bound of the target readiness band that day." }
 
     StudyPlan:
       type: object
