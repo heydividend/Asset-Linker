@@ -13,6 +13,7 @@ import {
   buildSchedule,
   todayStr,
   type PlanItem,
+  type ScheduleDay,
 } from "../lib/scheduleBuilder";
 import { isMandatoryKind, planItemKey } from "../lib/planItemKey";
 import { getDomainMasteryMap } from "../lib/domainMastery";
@@ -86,20 +87,18 @@ router.put("/plan/schedule", async (req, res): Promise<void> => {
   res.json(row);
 });
 
-export async function buildTodayItems(sessionId: string) {
-  const items: PlanItem[] = [];
-  const sched = await getOrCreateSchedule();
-  const dRows = await db.select().from(domains).orderBy(domains.id);
-  const masteryByDomainId = await getDomainMasteryMap();
-  const days = buildSchedule(sched.startDate, sched.examDate, dRows, masteryByDomainId);
-  const today = todayStr();
-  const todayDay = days.find((d) => d.date === today);
-
-  // ----- Roll-over: any item scheduled on a prior day that the user has
-  // never ticked off (on its original date OR any later day) gets surfaced
-  // today, tagged with its original date. We dedupe by item key so the same
-  // activity scheduled on multiple past days only shows up once, and skip
-  // pure rest items — those expire with the day.
+// ----- Roll-over: any item scheduled on a prior day that the user has never
+// ticked off (on its original date OR any later day) gets surfaced today,
+// tagged with its original date. We dedupe by item key so the same activity
+// scheduled on multiple past days only shows up once (earliest occurrence
+// wins), and skip pure rest items — those expire with the day. Extracted from
+// buildTodayItems so the carry-forward contract can be exercised with a
+// controlled `today` in tests.
+export async function computeCarriedForwardItems(
+  sessionId: string,
+  days: ScheduleDay[],
+  today: string,
+): Promise<PlanItem[]> {
   const everCompleted = new Set(await listCompletedKeysThrough(sessionId, today));
   const carriedByKey = new Map<string, PlanItem>();
   const pastDays = days.filter((d) => d.date < today);
@@ -112,6 +111,19 @@ export async function buildTodayItems(sessionId: string) {
       carriedByKey.set(key, { ...it, carriedFrom: day.date });
     }
   }
+  return Array.from(carriedByKey.values());
+}
+
+export async function buildTodayItems(sessionId: string) {
+  const items: PlanItem[] = [];
+  const sched = await getOrCreateSchedule();
+  const dRows = await db.select().from(domains).orderBy(domains.id);
+  const masteryByDomainId = await getDomainMasteryMap();
+  const days = buildSchedule(sched.startDate, sched.examDate, dRows, masteryByDomainId);
+  const today = todayStr();
+  const todayDay = days.find((d) => d.date === today);
+
+  const carried = await computeCarriedForwardItems(sessionId, days, today);
 
   // Today's native items first; carried items are appended after, but
   // decorateItems will dedupe so a carry-over for the same activity already
@@ -119,7 +131,7 @@ export async function buildTodayItems(sessionId: string) {
   if (todayDay) {
     items.push(...todayDay.items);
   }
-  for (const it of carriedByKey.values()) items.push(it);
+  for (const it of carried) items.push(it);
 
   const [{ due }] = await db
     .select({ due: sql<number>`cast(count(*) as int)` })
