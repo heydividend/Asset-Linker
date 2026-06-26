@@ -13,6 +13,7 @@ export type PlanItemKind =
   | "body_map"
   | "matching"
   | "study_group"
+  | "review_sheet"
   | "rest"
   | "game";
 
@@ -35,6 +36,10 @@ export interface PlanItem {
    *  has been carried over into a later day because it wasn't completed on
    *  its original day. Undefined for items that belong to today natively. */
   carriedFrom?: string;
+  /** True for the recurring 50-question daily quiz item. Its completion key is
+   *  generic (`quiz:daily`) so it shows as a todo every day but never piles up
+   *  via carry-forward. */
+  daily?: boolean;
 }
 
 export interface ScheduleDay {
@@ -441,14 +446,14 @@ export function buildSchedule(
 
     // Rest day on Sundays during foundation/deep_study (but not in the final
     // week, on simulated-exam days, or during integration).
-    if (
+    const isRestDay =
       !isExamDay &&
       !isMockDay &&
       !inFinalWeek &&
       dow === 0 &&
       phase !== "final_review" &&
-      phase !== "integration"
-    ) {
+      phase !== "integration";
+    if (isRestDay) {
       title = "Light Rest Day";
       items.length = 0;
       items.push(
@@ -456,6 +461,37 @@ export function buildSchedule(
         { kind: "matching", title: "One matching game of your choice", estMinutes: 8, link: "/games" },
         { kind: "rest", title: "Recover. Hydrate. Walk. Sleep early.", estMinutes: 0 },
       );
+    }
+
+    // The 50-question original BOC-style daily quiz: a recurring item on every
+    // active study day (not exam day, simulated-exam days, the rest day, or the
+    // intentionally-light day before the exam). It's freshly generated each day,
+    // mixed across all 5 domains and weighted toward weak areas, feeding
+    // per-domain mastery and detailed explanations.
+    const isActiveStudyDay =
+      !isExamDay && !isMockDay && !isRestDay && !isDayBeforeExam;
+    if (isActiveStudyDay) {
+      items.push({
+        kind: "quiz",
+        title: "Daily 50-question BOC-style quiz",
+        description:
+          "Fresh AI-generated set mixed across all 5 domains and weighted toward your weak areas — counts toward per-domain mastery.",
+        estMinutes: 50,
+        daily: true,
+        link: "/daily-quiz",
+      });
+
+      // Concise high-yield review sheet for today's focus domain.
+      if (focusDomain) {
+        items.push({
+          kind: "review_sheet",
+          title: `High-yield review sheet — ${focusDomain.name}`,
+          description: "Skim the concise, exam-focused review sheet for today's domain.",
+          estMinutes: 15,
+          domainId: focusDomain.id,
+          link: `/review-sheets/${focusDomain.code}`,
+        });
+      }
     }
 
     // Inject a daily matching-game item on every active study day. Games are

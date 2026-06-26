@@ -10,6 +10,9 @@ export function planItemKey(item: PlanItem): string {
     case "game":
       return item.gameId ? `game:${item.gameId}` : "game:any";
     case "quiz":
+      // The recurring 50-question daily quiz uses a generic key so it shows as
+      // a todo every day and never piles up via carry-forward.
+      if (item.daily) return "quiz:daily";
       if (item.topicId) return `quiz:topic:${item.topicId}`;
       if (item.domainId) return `quiz:domain:${item.domainId}`;
       return "quiz:any";
@@ -37,6 +40,9 @@ export function planItemKey(item: PlanItem): string {
     case "study_group":
       if (item.domainId) return `study_group:domain:${item.domainId}`;
       return "study_group:any";
+    case "review_sheet":
+      if (item.domainId) return `review_sheet:domain:${item.domainId}`;
+      return "review_sheet:any";
     case "resource":
       return "resource:any";
     case "rest":

@@ -9,6 +9,7 @@ export * from "./studyGuides";
 export * from "./audioOverviews";
 export * from "./questions";
 export * from "./quizzes";
+export * from "./dailyQuizSets";
 export * from "./mockExams";
 export * from "./topicMastery";
 export * from "./resources";

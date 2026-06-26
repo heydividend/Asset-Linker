@@ -5,6 +5,7 @@ import { parseId } from "../lib/parseId";
 import { questionCredit } from "../lib/scoring";
 import { getOrCreateSessionId } from "../lib/sessionId";
 import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
+import { getOrCreateDailyQuestionIds } from "../lib/dailyQuiz";
 
 const router: IRouter = Router();
 
@@ -198,6 +199,64 @@ router.post("/quizzes", async (req, res): Promise<void> => {
   });
 });
 
+// The 50-question original BOC-style daily quiz. The day's questions are
+// generated fresh (AI, PA8-aligned, weak-area weighted) and cached so the set
+// is stable within the day and regenerates the next day. Resumes today's
+// unfinished daily attempt if one exists, otherwise starts a new one.
+router.post("/quizzes/daily", async (_req, res): Promise<void> => {
+  let questionIds: number[];
+  try {
+    questionIds = await getOrCreateDailyQuestionIds();
+  } catch (err) {
+    res.status(502).json({ error: "Could not generate today's quiz. Try again in a moment." });
+    return;
+  }
+  if (questionIds.length === 0) {
+    res.status(400).json({ error: "No questions available to build today's quiz." });
+    return;
+  }
+
+  // Resume the most recent unfinished daily attempt that matches today's set.
+  const [recent] = await db
+    .select()
+    .from(quizzes)
+    .where(eq(quizzes.mode, "daily"))
+    .orderBy(desc(quizzes.startedAt))
+    .limit(1);
+  const sameSet =
+    recent &&
+    !recent.finished &&
+    recent.questionIds.length === questionIds.length &&
+    recent.questionIds.every((v, i) => v === questionIds[i]);
+
+  if (sameSet) {
+    const ans = await db.select().from(quizAnswers).where(eq(quizAnswers.quizId, recent.id));
+    const ansMap = new Map(
+      ans.map((a) => [a.questionId, { selectedIndex: a.selectedIndex, selectedIndices: a.selectedIndices, correct: a.correct }]),
+    );
+    res.status(200).json({
+      id: recent.id,
+      mode: recent.mode,
+      questions: await buildQuizQuestionView(recent.questionIds, ansMap),
+      currentIndex: recent.currentIndex,
+      finished: recent.finished,
+    });
+    return;
+  }
+
+  const [quiz] = await db
+    .insert(quizzes)
+    .values({ mode: "daily", questionIds })
+    .returning();
+  res.status(201).json({
+    id: quiz.id,
+    mode: quiz.mode,
+    questions: await buildQuizQuestionView(quiz.questionIds, new Map()),
+    currentIndex: 0,
+    finished: false,
+  });
+});
+
 router.get("/quizzes/:id", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {
@@ -358,6 +417,9 @@ router.post("/quizzes/:id/finish", async (req, res): Promise<void> => {
     }
     if (updated.domainId) {
       await markPlanItemComplete(sessionId, date, `quiz:domain:${updated.domainId}`);
+    }
+    if (updated.mode === "daily") {
+      await markPlanItemComplete(sessionId, date, "quiz:daily");
     }
     await markPlanItemComplete(sessionId, date, "quiz:any");
   }

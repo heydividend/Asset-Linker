@@ -24,6 +24,9 @@ import StudyGuidesPage from "@/pages/StudyGuidesPage";
 import StudyGuideDetail from "@/pages/StudyGuideDetail";
 import StudyGroupPage from "@/pages/StudyGroupPage";
 import AILearningPage from "@/pages/AILearningPage";
+import DailyQuizPage from "@/pages/DailyQuizPage";
+import ReviewSheetsPage from "@/pages/ReviewSheetsPage";
+import ReviewSheetDetail from "@/pages/ReviewSheetDetail";
 import { StudyGroupTimeoutNotifier } from "@/hooks/use-study-group-timeout-notifier";
 
 const queryClient = new QueryClient();
@@ -40,7 +43,10 @@ function Router() {
         <Route path="/flashcards" component={FlashcardsReview} />
         <Route path="/blueprint" component={BlueprintPage} />
         <Route path="/quiz" component={QuizHub} />
+        <Route path="/daily-quiz" component={DailyQuizPage} />
         <Route path="/quiz/:id" component={QuizRunner} />
+        <Route path="/review-sheets" component={ReviewSheetsPage} />
+        <Route path="/review-sheets/:code" component={ReviewSheetDetail} />
         <Route path="/mock-exam" component={MockExamLanding} />
         <Route path="/mock-exam/:id" component={MockExamRunner} />
         <Route path="/tutor" component={TutorPage} />

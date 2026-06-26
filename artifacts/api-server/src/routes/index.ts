@@ -20,6 +20,7 @@ import ttsRouter from "./tts";
 import studyGroupRouter from "./studyGroup";
 import aiLearningRouter from "./aiLearning";
 import remindersRouter from "./reminders";
+import reviewSheetsRouter from "./reviewSheets";
 
 const router: IRouter = Router();
 
@@ -44,5 +45,6 @@ router.use(ttsRouter);
 router.use(studyGroupRouter);
 router.use(aiLearningRouter);
 router.use(remindersRouter);
+router.use(reviewSheetsRouter);
 
 export default router;

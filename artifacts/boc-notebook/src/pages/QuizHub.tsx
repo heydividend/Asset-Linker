@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { ClipboardList, Play, Sparkles, Timer, Trash2, Users } from "lucide-react";
+import { CalendarCheck, ClipboardList, Play, Sparkles, Timer, Trash2, Users } from "lucide-react";
 
 const MODES = [
   { value: "adaptive", label: "Adaptive (focus on your weak areas)" },
@@ -130,6 +130,24 @@ export default function QuizHub() {
         </h1>
       </header>
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-4xl mx-auto w-full">
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="p-4 flex items-center gap-4 flex-wrap">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 shrink-0">
+              <CalendarCheck className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <h2 className="font-semibold text-sm">Today's 50-question daily quiz</h2>
+              <p className="text-xs text-muted-foreground">
+                A fresh, original BOC-style set mixed across all 5 domains and weighted toward your
+                weak areas — generated new each day and tracked toward per-domain mastery.
+              </p>
+            </div>
+            <Button onClick={() => navigate("/daily-quiz")} data-testid="button-start-daily-quiz">
+              <Play className="h-4 w-4 mr-2" /> Start daily quiz
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-base flex items-center gap-2">
