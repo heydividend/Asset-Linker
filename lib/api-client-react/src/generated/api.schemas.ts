@@ -458,6 +458,7 @@ export const QuizInputMode = {
   domain: "domain",
   weakness: "weakness",
   region: "region",
+  multi_select: "multi_select",
 } as const;
 
 /**

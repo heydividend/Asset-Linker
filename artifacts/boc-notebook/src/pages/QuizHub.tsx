@@ -16,11 +16,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { ClipboardList, Play, Sparkles, Trash2, Users } from "lucide-react";
+import { ClipboardList, Play, Sparkles, Timer, Trash2, Users } from "lucide-react";
 
 const MODES = [
   { value: "adaptive", label: "Adaptive (focus on your weak areas)" },
   { value: "weakness", label: "Weakness drill" },
+  { value: "multi_select", label: "Scenario / Multi-select drill" },
   { value: "domain", label: "By domain" },
   { value: "topic", label: "By topic" },
 ];
@@ -51,13 +52,14 @@ export default function QuizHub() {
     );
   };
 
-  const [mode, setMode] = useState<"adaptive" | "weakness" | "domain" | "topic">("adaptive");
+  const [mode, setMode] = useState<"adaptive" | "weakness" | "multi_select" | "domain" | "topic">("adaptive");
   const [count, setCount] = useState("10");
   const [domainId, setDomainId] = useState<string>("");
   const [topicId, setTopicId] = useState<string>("");
   const [notebookId, setNotebookId] = useState<string>("");
   const [studyGroupOnly, setStudyGroupOnly] = useState(false);
   const [pendingReviewOnly, setPendingReviewOnly] = useState(false);
+  const [timed, setTimed] = useState(false);
 
   const search = useSearch();
   useEffect(() => {
@@ -107,7 +109,7 @@ export default function QuizHub() {
       {
         onSuccess: (q) => {
           qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
-          navigate(`/quiz/${q.id}`);
+          navigate(timed ? `/quiz/${q.id}?timed=1` : `/quiz/${q.id}`);
         },
         onError: (e) => {
           toast({
@@ -215,6 +217,17 @@ export default function QuizHub() {
                   />
                 </div>
               )}
+            </div>
+            <div className="rounded-md border p-3 bg-muted/30">
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-sm font-medium flex items-center gap-1.5" htmlFor="quiz-timed">
+                  <Timer className="h-3.5 w-3.5" /> Timed (BOC pace ~82s/question)
+                </label>
+                <Switch id="quiz-timed" checked={timed} onCheckedChange={setTimed} data-testid="toggle-quiz-timed" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Adds a countdown at real exam speed with an on/behind-pace meter so you can rehearse timing.
+              </p>
             </div>
             <Button onClick={onStart} disabled={startDisabled} data-testid="button-start-quiz">
               <Play className="h-4 w-4 mr-2" /> Start quiz

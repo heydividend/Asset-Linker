@@ -3,3 +3,4 @@
 - [Deploy as Reserved VM not autoscale](deployment-vm-vs-autoscale.md) — timed-exam app: autoscale cold-start = edge "invalid request"; type can only be changed in Publishing UI, not in code.
 - [BOC domain weights](boc-domain-weights.md) — five domain weights must equal official Practice Analysis 8th Ed %; drive mocks, schedule allocation, readiness.
 - [Readiness score honesty](readiness-score-honesty.md) — readiness = blueprint-weighted mastery + mock only; never padded by study-activity volume.
+- [BOC exam format facts](boc-exam-format-facts.md) — real exam ≈82s/q; multi_select quiz mode drills ~214 cross-domain items; timed mode is frontend-only via localStorage; matching low-ROI.

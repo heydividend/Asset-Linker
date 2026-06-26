@@ -438,6 +438,14 @@ export default function MockExamRunner() {
     submit.mutate({ id: exam.id }, { onSuccess: () => qc.invalidateQueries({ queryKey: getGetMockExamQueryKey(id) }) });
   };
 
+  // Live pacing meter: at the exam's per-question budget, which question you
+  // "should" be on by now vs. where you are, so the 4-hour clock stops being a
+  // surprise. Green = on/ahead of pace, amber = falling behind.
+  const perQSec = total > 0 ? exam.timeLimitSec / total : 0;
+  const paceElapsedSec = exam.timeLimitSec - remaining;
+  const expectedQ = perQSec > 0 ? Math.min(total, Math.floor(paceElapsedSec / perQSec) + 1) : 1;
+  const onPace = idx + 1 >= expectedQ;
+
   return (
     <div className="fixed inset-0 z-[60] bg-background flex flex-col">
       <header className="h-14 border-b flex items-center justify-between px-6">
@@ -447,6 +455,12 @@ export default function MockExamRunner() {
           <Badge variant="outline">Q {idx + 1} of {total}</Badge>
         </div>
         <div className="flex items-center gap-3">
+          <span
+            className={`text-xs px-2 py-0.5 rounded font-medium ${onPace ? "bg-green-500/15 text-green-600 dark:text-green-400" : "bg-amber-500/15 text-amber-600 dark:text-amber-400"}`}
+            data-testid="text-pace"
+          >
+            {onPace ? "On pace" : `Behind · aim Q${expectedQ}`}
+          </span>
           <div className={`text-2xl font-mono tabular-nums ${remaining < 600 ? "text-destructive" : ""}`} data-testid="text-timer">
             {formatTime(remaining)}
           </div>

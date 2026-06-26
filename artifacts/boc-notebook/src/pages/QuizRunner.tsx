@@ -93,6 +93,30 @@ export default function QuizRunner() {
   const [multiPicks, setMultiPicks] = useState<Record<number, number[]>>({});
   const [submittingMulti, setSubmittingMulti] = useState(false);
 
+  const runSearch = useSearch();
+  const timedParam = new URLSearchParams(runSearch).get("timed") === "1";
+  const timedKey = `boc:timed-start:${id}`;
+  // Persist the timed-mode start so the countdown survives exit/resume — the
+  // attempt's Resume link doesn't carry ?timed=1, so we recover it from storage.
+  const [startTs] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const existing = window.localStorage.getItem(timedKey);
+    if (existing) return Number(existing);
+    if (timedParam) {
+      const ts = Date.now();
+      window.localStorage.setItem(timedKey, String(ts));
+      return ts;
+    }
+    return null;
+  });
+  const timed = timedParam || startTs !== null;
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    if (!timed) return;
+    const t = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [timed]);
+
   const onExit = () => {
     if (!confirm("Exit this quiz? Your answers so far are saved — you can resume later from the Practice page.")) return;
     navigate("/quiz");
@@ -160,6 +184,7 @@ export default function QuizRunner() {
       { id: quiz.id },
       {
         onSuccess: () => {
+          if (typeof window !== "undefined") window.localStorage.removeItem(timedKey);
           if (wasFixItToday) {
             markCompletedToday();
             forgetFixItQuizId(quiz.id);
@@ -188,11 +213,34 @@ export default function QuizRunner() {
   const credit = answered ? questionCredit(q) : 0;
   const isPartial = answered && !isCorrect && credit > 0;
 
+  // Optional timed mode: a soft countdown at true BOC pace (~82s/question) with
+  // an on/behind-pace meter so the student can rehearse exam timing. It never
+  // auto-submits — quizzes are practice — it just turns red and flags pace.
+  const PER_Q_SEC = 82;
+  const fmtClock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const elapsedSec = startTs ? Math.floor((nowTs - startTs) / 1000) : 0;
+  const remainingSec = Math.max(0, total * PER_Q_SEC - elapsedSec);
+  const expectedQ = Math.min(total, Math.floor(elapsedSec / PER_Q_SEC) + 1);
+  const onPace = idx + 1 >= expectedQ;
+
   return (
     <div className="flex flex-col h-full">
       <header className="h-14 border-b flex items-center px-6 gap-4">
         <h1 className="text-lg font-semibold">Question {idx + 1} of {total}</h1>
         <Progress value={((idx + 1) / total) * 100} className="flex-1 h-2 max-w-xs" />
+        {timed && (
+          <div className="flex items-center gap-2" data-testid="quiz-pacing">
+            <span className={`font-mono tabular-nums text-sm ${remainingSec < 60 ? "text-destructive" : ""}`} data-testid="text-quiz-timer">
+              {fmtClock(remainingSec)}
+            </span>
+            <span
+              className={`text-xs px-1.5 py-0.5 rounded font-medium ${onPace ? "bg-green-500/15 text-green-600 dark:text-green-400" : "bg-amber-500/15 text-amber-600 dark:text-amber-400"}`}
+              data-testid="text-quiz-pace"
+            >
+              {onPace ? "On pace" : `Behind · aim Q${expectedQ}`}
+            </span>
+          </div>
+        )}
         <Button variant="ghost" size="sm" onClick={onExit} data-testid="button-exit-quiz" title="Save progress and exit — you can resume later">
           <LogOut className="h-4 w-4 mr-1" /> Exit
         </Button>

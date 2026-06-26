@@ -115,6 +115,10 @@ router.post("/quizzes", async (req, res): Promise<void> => {
     baseConditions.push(eq(questions.pendingReview, true));
   }
   if (domainId) baseConditions.push(eq(questions.domainId, domainId));
+  // "multi_select" mode drills only scenario/multi-answer questions — the exam
+  // item type the student struggles with — pulled from across the whole pool
+  // (not restricted to a single topic like adaptive/weakness modes).
+  if (mode === "multi_select") baseConditions.push(eq(questions.multiSelect, true));
 
   // Resolve which topic(s) this quiz draws from. Every quiz is topically
   // coherent: adaptive/weakness pick ONE topic (lowest mastery / least

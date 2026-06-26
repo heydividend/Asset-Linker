@@ -675,7 +675,14 @@ export const ListQuizAttemptsResponse = zod.array(ListQuizAttemptsResponseItem);
 export const startQuizBodyCountMax = 50;
 
 export const StartQuizBody = zod.object({
-  mode: zod.enum(["adaptive", "topic", "domain", "weakness", "region"]),
+  mode: zod.enum([
+    "adaptive",
+    "topic",
+    "domain",
+    "weakness",
+    "region",
+    "multi_select",
+  ]),
   count: zod.number().min(1).max(startQuizBodyCountMax),
   notebookId: zod.number().optional(),
   topicId: zod.number().optional(),
