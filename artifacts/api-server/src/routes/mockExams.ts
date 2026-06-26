@@ -5,7 +5,7 @@ import { parseId } from "../lib/parseId";
 import { questionCredit } from "../lib/scoring";
 import { getOrCreateSessionId } from "../lib/sessionId";
 import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
-import { mockPlanItemKeyForDay } from "../lib/planSchedule";
+import { mockPlanItemKeyForDay, earliestUncompletedPastMockKey } from "../lib/planSchedule";
 
 const router: IRouter = Router();
 const PASS = 75;
@@ -316,6 +316,17 @@ router.post("/mock-exams/:id/submit", async (req, res): Promise<void> => {
     const mockKey = await mockPlanItemKeyForDay(today);
     if (mockKey) {
       await markPlanItemComplete(sessionId, today, mockKey);
+    } else {
+      // Make-up mock: today isn't itself a scheduled simulated-exam day, so
+      // count this submission toward the earliest still-uncompleted past mock,
+      // clearing its carried-forward `mock_exam:<date>` item. The lookup uses
+      // the through-today completion set and markPlanItemComplete is
+      // idempotent, so this never double-counts a mock already cleared by a
+      // manual "mark complete" tap or an earlier make-up.
+      const makeupKey = await earliestUncompletedPastMockKey(sessionId, today);
+      if (makeupKey) {
+        await markPlanItemComplete(sessionId, today, makeupKey);
+      }
     }
   }
 

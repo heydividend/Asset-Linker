@@ -3,6 +3,7 @@ import { db, domains, examSchedule } from "@workspace/db";
 import { buildSchedule } from "./scheduleBuilder";
 import { getDomainMasteryMap } from "./domainMastery";
 import { planItemKey } from "./planItemKey";
+import { listCompletedKeysThrough } from "./planCompletions";
 
 const DEFAULT_START = "2026-06-26";
 const DEFAULT_EXAM = "2026-07-25";
@@ -51,4 +52,31 @@ export async function mockPlanItemKeyForDay(date: string): Promise<string | null
   const day = days.find((d) => d.date === date);
   const mock = day?.items.find((it) => it.kind === "mock_exam");
   return mock ? planItemKey(mock) : null;
+}
+
+// Returns the completion key of the earliest simulated-exam plan item scheduled
+// on a day strictly before `today` that this session has never completed (on its
+// original day or any later day), or null when there is no outstanding past mock.
+// Used so a make-up mock taken on a non-scheduled day can clear the oldest
+// overdue simulated exam. Uses listCompletedKeysThrough so it never re-picks a
+// mock already cleared (by auto-check or a manual "mark complete" tap).
+export async function earliestUncompletedPastMockKey(
+  sessionId: string,
+  today: string,
+): Promise<string | null> {
+  const sched = await getOrCreateSchedule();
+  const dRows = await db.select().from(domains).orderBy(domains.id);
+  const masteryByDomainId = await getDomainMasteryMap();
+  const days = buildSchedule(sched.startDate, sched.examDate, dRows, masteryByDomainId);
+  const everCompleted = new Set(await listCompletedKeysThrough(sessionId, today));
+  // buildSchedule yields days in ascending date order, so the first match is
+  // the earliest outstanding mock.
+  for (const day of days) {
+    if (day.date >= today) break;
+    const mock = day.items.find((it) => it.kind === "mock_exam");
+    if (!mock) continue;
+    const key = planItemKey(mock);
+    if (!everCompleted.has(key)) return key;
+  }
+  return null;
 }
