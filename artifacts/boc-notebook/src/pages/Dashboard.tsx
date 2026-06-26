@@ -971,6 +971,67 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          {(() => {
+            const dq = summary?.dailyQuiz;
+            const href =
+              dq?.inProgressQuizId != null ? `/quiz/${dq.inProgressQuizId}` : "/daily-quiz";
+            const streak = dq?.streak ?? 0;
+            return (
+              <Link href={href} data-testid="card-daily-quiz">
+                <Card className="h-full transition-colors hover:border-primary/40 cursor-pointer">
+                  <CardContent className="p-4 min-w-0">
+                    <div className="flex items-center justify-between gap-2 text-muted-foreground min-w-0">
+                      <p className="text-xs font-medium truncate">Daily Quiz</p>
+                      <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                    </div>
+                    {loadingSummary ? (
+                      <Skeleton className="h-8 w-24 mt-1.5" />
+                    ) : dq?.doneToday ? (
+                      <>
+                        <div className="mt-1.5 flex items-baseline gap-1.5">
+                          <span className="text-2xl font-bold" data-testid="daily-quiz-score">
+                            {Math.round(dq.score ?? 0)}%
+                          </span>
+                          <span className="text-xs text-muted-foreground">today</span>
+                          <Badge
+                            variant="outline"
+                            className="ml-auto text-[10px] gap-1 border-emerald-500/40 text-emerald-700 bg-emerald-500/10 dark:text-emerald-300"
+                          >
+                            <CheckCircle2 className="h-3 w-3" /> Done
+                          </Badge>
+                        </div>
+                        {dq.totalQuestions != null && dq.correctCount != null && (
+                          <p className="text-[10px] text-muted-foreground mt-1 truncate">
+                            {dq.correctCount}/{dq.totalQuestions} correct
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="mt-1.5 flex items-center justify-between gap-2">
+                        <span className="text-base font-semibold">
+                          {dq?.inProgressQuizId != null ? "In progress" : "Not done yet"}
+                        </span>
+                        <span className="text-xs font-medium text-primary flex items-center shrink-0">
+                          {dq?.inProgressQuizId != null ? "Resume" : "Start"}
+                          <ArrowRight className="ml-1 h-3 w-3" />
+                        </span>
+                      </div>
+                    )}
+                    <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Flame
+                        className={`h-3.5 w-3.5 shrink-0 ${streak > 0 ? "text-orange-500" : ""}`}
+                      />
+                      <span data-testid="daily-quiz-streak">
+                        <span className="font-semibold text-foreground">{streak}</span> day
+                        {streak === 1 ? "" : "s"} streak
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })()}
+
           <Card data-tour="dashboard-streak">
             <CardContent className="p-4 min-w-0">
               <div className="flex items-center justify-between gap-2 text-muted-foreground min-w-0">

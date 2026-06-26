@@ -36,6 +36,7 @@ export * from "./blueprintDomain";
 export * from "./blueprintTask";
 export * from "./continueLearningItem";
 export * from "./continueLearningItemKind";
+export * from "./dailyQuizSummary";
 export * from "./dashboardSummary";
 export * from "./domain";
 export * from "./domainFlashcardCount";

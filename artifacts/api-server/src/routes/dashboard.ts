@@ -259,6 +259,54 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     .sort((a, b) => b.lastTouchedAt.localeCompare(a.lastTouchedAt))
     .slice(0, 30);
 
+  // Daily-quiz status + streak. The daily set is keyed by Pacific calendar
+  // day, so completion is judged by the finished attempt's finishedAt converted
+  // to PT. We never call getOrCreateDailyQuestionIds here (that would trigger an
+  // expensive AI generation just to render the dashboard).
+  const todayPT = todayStrPT();
+  const dailyFinishedRes = (await db.execute(sql`
+    SELECT id, score, question_ids,
+           to_char((finished_at AT TIME ZONE 'America/Los_Angeles')::date, 'YYYY-MM-DD') AS pt_date
+    FROM quizzes
+    WHERE mode = 'daily' AND finished = true AND finished_at IS NOT NULL
+    ORDER BY finished_at DESC
+  `)) as unknown as {
+    rows: Array<{ id: number; score: number | null; question_ids: number[]; pt_date: string }>;
+  };
+  const doneDates = new Set(dailyFinishedRes.rows.map((r) => r.pt_date));
+  const prevDate = (ymd: string): string => {
+    const d = new Date(`${ymd}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+  };
+  // Streak: consecutive days with a completed daily quiz, ending today or
+  // yesterday. If today isn't done yet but yesterday was, the streak is still
+  // alive (counted from yesterday back).
+  let dailyStreak = 0;
+  let cursor = doneDates.has(todayPT) ? todayPT : prevDate(todayPT);
+  while (doneDates.has(cursor)) {
+    dailyStreak += 1;
+    cursor = prevDate(cursor);
+  }
+  const todayDailyRow = dailyFinishedRes.rows.find((r) => r.pt_date === todayPT);
+  const dailyTotalQuestions = todayDailyRow
+    ? (todayDailyRow.question_ids?.length ?? 0)
+    : null;
+  const dailyScore = todayDailyRow ? todayDailyRow.score : null;
+  const dailyCorrectCount = todayDailyRow
+    ? dailyScore != null
+      ? Math.round((dailyScore / 100) * (dailyTotalQuestions ?? 0))
+      : 0
+    : null;
+  const inProgressRes = (await db.execute(sql`
+    SELECT id FROM quizzes
+    WHERE mode = 'daily' AND finished = false
+      AND to_char((started_at AT TIME ZONE 'America/Los_Angeles')::date, 'YYYY-MM-DD') = ${todayPT}
+    ORDER BY started_at DESC
+    LIMIT 1
+  `)) as unknown as { rows: Array<{ id: number }> };
+  const inProgressQuizId = inProgressRes.rows[0]?.id ?? null;
+
   // Explicit readiness goal: the BOC-pass target band the user is aiming for.
   // "On track" once the (honest) readiness score reaches the lower bound.
   const readinessGoalMin = 80;
@@ -334,6 +382,15 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
       recent7d: Number(games7d) || 0,
     },
     continueLearning,
+    dailyQuiz: {
+      date: todayPT,
+      doneToday: !!todayDailyRow,
+      score: dailyScore,
+      totalQuestions: dailyTotalQuestions,
+      correctCount: dailyCorrectCount,
+      inProgressQuizId,
+      streak: dailyStreak,
+    },
   });
 });
 

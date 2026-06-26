@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ContinueLearningItem } from "./continueLearningItem";
+import type { DailyQuizSummary } from "./dailyQuizSummary";
 import type { DomainFlashcardCount } from "./domainFlashcardCount";
 import type { DomainScore } from "./domainScore";
 import type { GamesActivitySummary } from "./gamesActivitySummary";
@@ -42,4 +43,5 @@ export interface DashboardSummary {
   games: GamesActivitySummary;
   /** Most recently touched learning items across notes, study guides, podcasts, and games. */
   continueLearning: ContinueLearningItem[];
+  dailyQuiz: DailyQuizSummary;
 }

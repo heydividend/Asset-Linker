@@ -2116,7 +2116,7 @@ components:
 
     DashboardSummary:
       type: object
-      required: [readinessScore, readinessBaseScore, readinessBonus, readinessGoalMin, readinessGoalMax, readinessOnTrack, lastUpdated, totalQuestionsAnswered, totalCorrect, streakDays, dueFlashcards, recentQuizzes, weakTopics, domainMastery, domainFlashcardCounts, studyGuides, games, continueLearning]
+      required: [readinessScore, readinessBaseScore, readinessBonus, readinessGoalMin, readinessGoalMax, readinessOnTrack, lastUpdated, totalQuestionsAnswered, totalCorrect, streakDays, dueFlashcards, recentQuizzes, weakTopics, domainMastery, domainFlashcardCounts, studyGuides, games, continueLearning, dailyQuiz]
       properties:
         readinessScore: { type: number, description: "0-100 estimate of BOC readiness (includes 7-day activity bonus)" }
         readinessBaseScore: { type: number, description: "Readiness from mastery + last mock exam, before activity bonus." }
@@ -2149,6 +2149,18 @@ components:
           type: array
           description: "Most recently touched learning items across notes, study guides, podcasts, and games."
           items: { $ref: "#/components/schemas/ContinueLearningItem" }
+        dailyQuiz: { $ref: "#/components/schemas/DailyQuizSummary" }
+    DailyQuizSummary:
+      type: object
+      required: [date, doneToday, streak]
+      properties:
+        date: { type: string, description: "Pacific calendar day (YYYY-MM-DD) for today's daily quiz." }
+        doneToday: { type: boolean, description: "True once today's daily quiz has been completed." }
+        score: { type: ["number", "null"], description: "Percent score (0-100) of today's completed daily quiz, if finished." }
+        totalQuestions: { type: ["integer", "null"], description: "Number of questions in today's completed daily quiz." }
+        correctCount: { type: ["integer", "null"], description: "Correct answers in today's completed daily quiz." }
+        inProgressQuizId: { type: ["integer", "null"], description: "Id of an unfinished daily attempt started today, if any." }
+        streak: { type: integer, description: "Consecutive days (ending today or yesterday) with a completed daily quiz." }
     StudyGuidesSummary:
       type: object
       required: [total, withPodcast, recent7d]

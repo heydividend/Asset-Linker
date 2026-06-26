@@ -1324,6 +1324,37 @@ export const GetDashboardSummaryResponse = zod.object({
     .describe(
       "Most recently touched learning items across notes, study guides, podcasts, and games.",
     ),
+  dailyQuiz: zod.object({
+    date: zod
+      .string()
+      .describe("Pacific calendar day (YYYY-MM-DD) for today's daily quiz."),
+    doneToday: zod
+      .boolean()
+      .describe("True once today's daily quiz has been completed."),
+    score: zod
+      .number()
+      .nullish()
+      .describe(
+        "Percent score (0-100) of today's completed daily quiz, if finished.",
+      ),
+    totalQuestions: zod
+      .number()
+      .nullish()
+      .describe("Number of questions in today's completed daily quiz."),
+    correctCount: zod
+      .number()
+      .nullish()
+      .describe("Correct answers in today's completed daily quiz."),
+    inProgressQuizId: zod
+      .number()
+      .nullish()
+      .describe("Id of an unfinished daily attempt started today, if any."),
+    streak: zod
+      .number()
+      .describe(
+        "Consecutive days (ending today or yesterday) with a completed daily quiz.",
+      ),
+  }),
 });
 
 export const getDashboardTopicMasteryQueryLimitDefault = 5;

@@ -877,6 +877,35 @@ export interface ContinueLearningItem {
   lastTouchedAt: string;
 }
 
+export interface DailyQuizSummary {
+  /** Pacific calendar day (YYYY-MM-DD) for today's daily quiz. */
+  date: string;
+  /** True once today's daily quiz has been completed. */
+  doneToday: boolean;
+  /**
+   * Percent score (0-100) of today's completed daily quiz, if finished.
+   * @nullable
+   */
+  score?: number | null;
+  /**
+   * Number of questions in today's completed daily quiz.
+   * @nullable
+   */
+  totalQuestions?: number | null;
+  /**
+   * Correct answers in today's completed daily quiz.
+   * @nullable
+   */
+  correctCount?: number | null;
+  /**
+   * Id of an unfinished daily attempt started today, if any.
+   * @nullable
+   */
+  inProgressQuizId?: number | null;
+  /** Consecutive days (ending today or yesterday) with a completed daily quiz. */
+  streak: number;
+}
+
 export interface DashboardSummary {
   /** 0-100 estimate of BOC readiness (includes 7-day activity bonus) */
   readinessScore: number;
@@ -906,6 +935,7 @@ export interface DashboardSummary {
   games: GamesActivitySummary;
   /** Most recently touched learning items across notes, study guides, podcasts, and games. */
   continueLearning: ContinueLearningItem[];
+  dailyQuiz: DailyQuizSummary;
 }
 
 export interface ReadinessHistoryPoint {
