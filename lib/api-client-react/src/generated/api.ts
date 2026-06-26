@@ -22,6 +22,7 @@ import type {
   AudioOverview,
   AudioOverviewInput,
   Blueprint,
+  DailyQuizHistoryEntry,
   DashboardSummary,
   Domain,
   FixItStreak,
@@ -36,6 +37,7 @@ import type {
   GameSession,
   GameSessionInput,
   GameSummaryEntry,
+  GetDailyQuizHistoryParams,
   GetDashboardReadinessHistoryParams,
   GetDashboardTopicHistoryParams,
   GetDashboardTopicMasteryParams,
@@ -3447,6 +3449,109 @@ export const useStartQuiz = <
 > => {
   return useMutation(getStartQuizMutationOptions(options));
 };
+
+/**
+ * @summary Past daily quiz attempts by date with score
+ */
+export const getGetDailyQuizHistoryUrl = (
+  params?: GetDailyQuizHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/quizzes/daily/history?${stringifiedParams}`
+    : `/api/quizzes/daily/history`;
+};
+
+export const getDailyQuizHistory = async (
+  params?: GetDailyQuizHistoryParams,
+  options?: RequestInit,
+): Promise<DailyQuizHistoryEntry[]> => {
+  return customFetch<DailyQuizHistoryEntry[]>(
+    getGetDailyQuizHistoryUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetDailyQuizHistoryQueryKey = (
+  params?: GetDailyQuizHistoryParams,
+) => {
+  return [`/api/quizzes/daily/history`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetDailyQuizHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDailyQuizHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDailyQuizHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDailyQuizHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDailyQuizHistoryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDailyQuizHistory>>
+  > = ({ signal }) =>
+    getDailyQuizHistory(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDailyQuizHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDailyQuizHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDailyQuizHistory>>
+>;
+export type GetDailyQuizHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Past daily quiz attempts by date with score
+ */
+
+export function useGetDailyQuizHistory<
+  TData = Awaited<ReturnType<typeof getDailyQuizHistory>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDailyQuizHistoryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDailyQuizHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDailyQuizHistoryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 export const getGetQuizUrl = (id: number) => {
   return `/api/quizzes/${id}`;

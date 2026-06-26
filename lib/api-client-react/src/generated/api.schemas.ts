@@ -462,6 +462,18 @@ export interface QuizSummary {
   finishedAt: string | null;
 }
 
+export interface DailyQuizHistoryEntry {
+  id: number;
+  /** Pacific calendar day the attempt was taken (YYYY-MM-DD) */
+  date: string;
+  totalQuestions: number;
+  correctCount: number;
+  /** @nullable */
+  score: number | null;
+  /** @nullable */
+  finishedAt: string | null;
+}
+
 export type QuizMode = (typeof QuizMode)[keyof typeof QuizMode];
 
 export const QuizMode = {
@@ -1554,6 +1566,10 @@ export const ListAllStudyGuidesFormat = {
 } as const;
 
 export type ListQuizAttemptsParams = {
+  limit?: number;
+};
+
+export type GetDailyQuizHistoryParams = {
   limit?: number;
 };
 

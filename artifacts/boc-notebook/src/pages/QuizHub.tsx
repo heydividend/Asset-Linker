@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { CalendarCheck, ClipboardList, Play, Sparkles, Timer, Trash2, Users } from "lucide-react";
+import { CalendarCheck, ClipboardList, History, Play, Sparkles, Timer, Trash2, Users } from "lucide-react";
 
 const MODES = [
   { value: "adaptive", label: "Adaptive (focus on your weak areas)" },
@@ -142,9 +142,19 @@ export default function QuizHub() {
                 weak areas — generated new each day and tracked toward per-domain mastery.
               </p>
             </div>
-            <Button onClick={() => navigate("/daily-quiz")} data-testid="button-start-daily-quiz">
-              <Play className="h-4 w-4 mr-2" /> Start daily quiz
-            </Button>
+            <div className="flex flex-col gap-2 shrink-0">
+              <Button onClick={() => navigate("/daily-quiz")} data-testid="button-start-daily-quiz">
+                <Play className="h-4 w-4 mr-2" /> Start daily quiz
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/daily-quiz/history")}
+                data-testid="button-daily-quiz-history"
+              >
+                <History className="h-4 w-4 mr-2" /> Past daily quizzes
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

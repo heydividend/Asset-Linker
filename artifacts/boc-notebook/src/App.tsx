@@ -25,6 +25,7 @@ import StudyGuideDetail from "@/pages/StudyGuideDetail";
 import StudyGroupPage from "@/pages/StudyGroupPage";
 import AILearningPage from "@/pages/AILearningPage";
 import DailyQuizPage from "@/pages/DailyQuizPage";
+import DailyQuizHistory from "@/pages/DailyQuizHistory";
 import ReviewSheetsPage from "@/pages/ReviewSheetsPage";
 import ReviewSheetDetail from "@/pages/ReviewSheetDetail";
 import { StudyGroupTimeoutNotifier } from "@/hooks/use-study-group-timeout-notifier";
@@ -44,6 +45,7 @@ function Router() {
         <Route path="/blueprint" component={BlueprintPage} />
         <Route path="/quiz" component={QuizHub} />
         <Route path="/daily-quiz" component={DailyQuizPage} />
+        <Route path="/daily-quiz/history" component={DailyQuizHistory} />
         <Route path="/quiz/:id" component={QuizRunner} />
         <Route path="/review-sheets" component={ReviewSheetsPage} />
         <Route path="/review-sheets/:code" component={ReviewSheetDetail} />

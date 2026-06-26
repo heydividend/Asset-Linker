@@ -779,6 +779,29 @@ export const StartQuizBody = zod.object({
     ),
 });
 
+/**
+ * @summary Past daily quiz attempts by date with score
+ */
+export const getDailyQuizHistoryQueryLimitDefault = 30;
+
+export const GetDailyQuizHistoryQueryParams = zod.object({
+  limit: zod.coerce.number().default(getDailyQuizHistoryQueryLimitDefault),
+});
+
+export const GetDailyQuizHistoryResponseItem = zod.object({
+  id: zod.number(),
+  date: zod
+    .string()
+    .describe("Pacific calendar day the attempt was taken (YYYY-MM-DD)"),
+  totalQuestions: zod.number(),
+  correctCount: zod.number(),
+  score: zod.number().nullable(),
+  finishedAt: zod.coerce.date().nullable(),
+});
+export const GetDailyQuizHistoryResponse = zod.array(
+  GetDailyQuizHistoryResponseItem,
+);
+
 export const GetQuizParams = zod.object({
   id: zod.coerce.number(),
 });

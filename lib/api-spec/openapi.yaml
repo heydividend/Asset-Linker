@@ -622,6 +622,21 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Quiz" }
+  /quizzes/daily/history:
+    get:
+      operationId: getDailyQuizHistory
+      tags: [quizzes]
+      summary: Past daily quiz attempts by date with score
+      parameters:
+        - { name: limit, in: query, required: false, schema: { type: integer, default: 30 } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DailyQuizHistoryEntry" }
   /quizzes/{id}:
     get:
       operationId: getQuiz
@@ -1807,6 +1822,16 @@ components:
         mode: { type: string, enum: [adaptive, topic, domain, weakness] }
         totalQuestions: { type: integer }
         correctCount: { type: integer }
+        finishedAt: { type: ["string", "null"], format: date-time }
+    DailyQuizHistoryEntry:
+      type: object
+      required: [id, date, totalQuestions, correctCount, score, finishedAt]
+      properties:
+        id: { type: integer }
+        date: { type: string, description: "Pacific calendar day the attempt was taken (YYYY-MM-DD)" }
+        totalQuestions: { type: integer }
+        correctCount: { type: integer }
+        score: { type: ["number", "null"] }
         finishedAt: { type: ["string", "null"], format: date-time }
     Quiz:
       type: object

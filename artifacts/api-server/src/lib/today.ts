@@ -10,6 +10,12 @@ export function todayStrInTz(tz: string): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: tz });
 }
 
+// Pacific calendar day (YYYY-MM-DD) for an arbitrary instant. Used to label a
+// past daily-quiz attempt by the day it was taken.
+export function dateStrPT(date: Date): string {
+  return date.toLocaleDateString("en-CA", { timeZone: TZ });
+}
+
 // Current wall-clock time in the given timezone as "HH:MM" (24h, zero-padded).
 export function nowHHmmInTz(tz: string): string {
   return new Intl.DateTimeFormat("en-GB", {

@@ -5,6 +5,7 @@ import { parseId } from "../lib/parseId";
 import { questionCredit } from "../lib/scoring";
 import { getOrCreateSessionId } from "../lib/sessionId";
 import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
+import { dateStrPT } from "../lib/today";
 import { getOrCreateDailyQuestionIds } from "../lib/dailyQuiz";
 
 const router: IRouter = Router();
@@ -255,6 +256,43 @@ router.post("/quizzes/daily", async (_req, res): Promise<void> => {
     currentIndex: 0,
     finished: false,
   });
+});
+
+// Past daily-quiz attempts so the user can revisit an earlier day's set and
+// re-read every rationale. One row per finished daily attempt, labelled by the
+// Pacific calendar day it was taken. The detailed review reuses GET
+// /quizzes/{id} (the existing finished-quiz review screen).
+router.get("/quizzes/daily/history", async (req, res): Promise<void> => {
+  const limit = Math.min(parseInt((req.query.limit as string) ?? "30", 10) || 30, 100);
+  const rows = await db
+    .select()
+    .from(quizzes)
+    .where(and(eq(quizzes.mode, "daily"), eq(quizzes.finished, true)))
+    .orderBy(desc(quizzes.startedAt))
+    .limit(limit);
+  const ids = rows.map((r) => r.id);
+  const correctByQuiz = new Map<number, number>();
+  if (ids.length > 0) {
+    const counts = await db
+      .select({
+        quizId: quizAnswers.quizId,
+        correct: sql<number>`sum(case when ${quizAnswers.correct} then 1 else 0 end)`.as("correct"),
+      })
+      .from(quizAnswers)
+      .where(inArray(quizAnswers.quizId, ids))
+      .groupBy(quizAnswers.quizId);
+    for (const c of counts) correctByQuiz.set(c.quizId, Number(c.correct) || 0);
+  }
+  res.json(
+    rows.map((r) => ({
+      id: r.id,
+      date: dateStrPT(r.startedAt),
+      totalQuestions: r.questionIds.length,
+      correctCount: correctByQuiz.get(r.id) ?? 0,
+      score: r.score,
+      finishedAt: r.finishedAt,
+    })),
+  );
 });
 
 router.get("/quizzes/:id", async (req, res): Promise<void> => {
