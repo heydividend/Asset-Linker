@@ -10,6 +10,24 @@ import { mockPlanItemKeyForDay, earliestUncompletedPastMockKey } from "../lib/pl
 const router: IRouter = Router();
 const PASS = 75;
 
+// Link a submitted mock to the matching day's plan item. When `date` is a
+// scheduled simulated-exam day, auto-check that day's `mock_exam:<date>` plan
+// item and return its key; otherwise record nothing and return null.
+// markPlanItemComplete is idempotent, so a later manual "mark complete" tap
+// won't double-count. Days that aren't simulated-exam days are left alone so a
+// genuinely skipped mock keeps carrying forward. Extracted from the submit
+// handler so the linking can be exercised with a controlled date in tests.
+export async function linkMockSubmissionToPlan(
+  sessionId: string,
+  date: string,
+): Promise<string | null> {
+  const mockKey = await mockPlanItemKeyForDay(date);
+  if (mockKey) {
+    await markPlanItemComplete(sessionId, date, mockKey);
+  }
+  return mockKey;
+}
+
 router.get("/mock-exams", async (_req, res): Promise<void> => {
   const rows = await db.select().from(mockExams).orderBy(desc(mockExams.startedAt));
   res.json(
@@ -305,18 +323,12 @@ router.post("/mock-exams/:id/submit", async (req, res): Promise<void> => {
       .set({ submitted: true, autoSubmitted: auto, submittedAt: new Date() })
       .where(eq(mockExams.id, id));
 
-    // Link this submission to the matching day's plan item: when the mock is
-    // submitted on a scheduled simulated-exam day, auto-check that day's
-    // `mock_exam:<date>` plan item. markPlanItemComplete is idempotent, so a
-    // later manual "mark complete" tap won't double-count. Days that aren't
-    // simulated-exam days return null and are left alone, so a genuinely
-    // skipped mock keeps carrying forward.
+    // Link this submission to the matching day's plan item (see
+    // linkMockSubmissionToPlan for the auto-check + idempotency contract).
     const sessionId = getOrCreateSessionId(req, res);
     const today = todayStr();
-    const mockKey = await mockPlanItemKeyForDay(today);
-    if (mockKey) {
-      await markPlanItemComplete(sessionId, today, mockKey);
-    } else {
+    const mockKey = await linkMockSubmissionToPlan(sessionId, today);
+    if (!mockKey) {
       // Make-up mock: today isn't itself a scheduled simulated-exam day, so
       // count this submission toward the earliest still-uncompleted past mock,
       // clearing its carried-forward `mock_exam:<date>` item. The lookup uses
