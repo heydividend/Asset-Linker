@@ -144,6 +144,19 @@ router.delete("/flashcards/:id", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
+// Auto-check today's daily flashcards plan item when a card is reviewed. A
+// single review counts toward the mandatory mix. markPlanItemComplete is
+// idempotent, so reviewing many cards (or a later manual mark complete) won't
+// double-count. Extracted from the review handler so it can be tested.
+export async function linkFlashcardReviewToPlan(
+  sessionId: string,
+  date: string,
+): Promise<string> {
+  const key = "flashcards:due";
+  await markPlanItemComplete(sessionId, date, key);
+  return key;
+}
+
 router.post("/flashcards/:id/review", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {
@@ -182,11 +195,10 @@ router.post("/flashcards/:id/review", async (req, res): Promise<void> => {
     .where(eq(flashcards.id, id))
     .returning();
 
-  // Reviewing a flashcard satisfies today's daily flashcards plan item.
-  // Single review is enough to count toward the mandatory mix — the user
-  // has visibly engaged with spaced repetition.
+  // Reviewing a flashcard satisfies today's daily flashcards plan item
+  // (see linkFlashcardReviewToPlan).
   const sessionId = getOrCreateSessionId(req, res);
-  await markPlanItemComplete(sessionId, todayStr(), "flashcards:due");
+  await linkFlashcardReviewToPlan(sessionId, todayStr());
 
   res.json(updated);
 });

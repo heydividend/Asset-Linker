@@ -11,6 +11,20 @@ function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Auto-check the matching daily plan game item when a game session is recorded.
+// markPlanItemComplete is idempotent, so replaying the same game (or a later
+// manual mark complete) won't double-count. Extracted from the handler so the
+// key derivation can be tested.
+export async function linkGameSessionToPlan(
+  sessionId: string,
+  date: string,
+  gameId: string,
+): Promise<string> {
+  const key = `game:${gameId}`;
+  await markPlanItemComplete(sessionId, date, key);
+  return key;
+}
+
 router.post("/games/sessions", async (req, res): Promise<void> => {
   const sessionId = getOrCreateSessionId(req, res);
   const { gameId, score, totalPairs, misses, bestStreak, durationMs } = req.body ?? {};
@@ -33,8 +47,8 @@ router.post("/games/sessions", async (req, res): Promise<void> => {
     .insert(gameSessions)
     .values({ sessionId, gameId, ...safe })
     .returning();
-  // Mark the matching daily plan game item complete (idempotent).
-  await markPlanItemComplete(sessionId, todayStr(), `game:${gameId}`);
+  // Mark the matching daily plan game item complete (see linkGameSessionToPlan).
+  await linkGameSessionToPlan(sessionId, todayStr(), gameId);
   res.status(201).json(row);
 });
 

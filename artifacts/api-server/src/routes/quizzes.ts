@@ -382,6 +382,28 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
   });
 });
 
+// Auto-check today's quiz plan-items for a finished quiz. We mark the most
+// specific key matching this quiz (topicId > domainId > "any") so finishing a
+// targeted quiz checks the targeted plan row, not just the generic one. The
+// generic "quiz:any" is always marked. markPlanItemComplete is idempotent, so a
+// retried finish or a later manual "mark complete" tap won't double-count.
+// Extracted from the finish handler so the key derivation can be tested.
+export async function linkQuizFinishToPlan(
+  sessionId: string,
+  date: string,
+  quiz: { topicId: number | null; domainId: number | null; mode?: string | null },
+): Promise<string[]> {
+  const keys: string[] = [];
+  if (quiz.topicId) keys.push(`quiz:topic:${quiz.topicId}`);
+  if (quiz.domainId) keys.push(`quiz:domain:${quiz.domainId}`);
+  if (quiz.mode === "daily") keys.push("quiz:daily");
+  keys.push("quiz:any");
+  for (const key of keys) {
+    await markPlanItemComplete(sessionId, date, key);
+  }
+  return keys;
+}
+
 router.post("/quizzes/:id/finish", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {
@@ -406,22 +428,10 @@ router.post("/quizzes/:id/finish", async (req, res): Promise<void> => {
     .where(eq(quizzes.id, id))
     .returning();
 
-  // Auto-mark today's quiz plan-items complete. We mark the most-specific key
-  // matching this quiz (topicId > domainId > "any") so finishing a targeted
-  // quiz checks the targeted plan row, not just the generic one.
+  // Auto-mark today's quiz plan-items complete (see linkQuizFinishToPlan).
   if (updated) {
     const sessionId = getOrCreateSessionId(req, res);
-    const date = todayStr();
-    if (updated.topicId) {
-      await markPlanItemComplete(sessionId, date, `quiz:topic:${updated.topicId}`);
-    }
-    if (updated.domainId) {
-      await markPlanItemComplete(sessionId, date, `quiz:domain:${updated.domainId}`);
-    }
-    if (updated.mode === "daily") {
-      await markPlanItemComplete(sessionId, date, "quiz:daily");
-    }
-    await markPlanItemComplete(sessionId, date, "quiz:any");
+    await linkQuizFinishToPlan(sessionId, todayStr(), updated);
   }
 
   res.json({ id, score, total: ans.length, correct: ans.filter((a) => a.correct).length });

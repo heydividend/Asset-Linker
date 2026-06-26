@@ -101,6 +101,24 @@ router.post("/notebooks/:id/study-guides", async (req, res): Promise<void> => {
   res.status(201).json(guide);
 });
 
+// Auto-check today's study_guide plan item when a guide is opened
+// (notebook-specific first, then the generic "any" fallback). markPlanItemComplete
+// is idempotent, so re-opening a guide (or a later manual mark complete) won't
+// double-count. Extracted from the GET handler so the key derivation can be tested.
+export async function linkStudyGuideOpenToPlan(
+  sessionId: string,
+  date: string,
+  guide: { notebookId: number | null },
+): Promise<string[]> {
+  const keys: string[] = [];
+  if (guide.notebookId) keys.push(`study_guide:notebook:${guide.notebookId}`);
+  keys.push("study_guide:any");
+  for (const key of keys) {
+    await markPlanItemComplete(sessionId, date, key);
+  }
+  return keys;
+}
+
 router.get("/study-guides/:id", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {
@@ -125,13 +143,9 @@ router.get("/study-guides/:id", async (req, res): Promise<void> => {
     return;
   }
   // Opening a study guide counts as completing today's study_guide plan item
-  // (notebook-specific first, then the generic "any" fallback).
+  // (see linkStudyGuideOpenToPlan).
   const sessionId = getOrCreateSessionId(req, res);
-  const date = todayStr();
-  if (g.notebookId) {
-    await markPlanItemComplete(sessionId, date, `study_guide:notebook:${g.notebookId}`);
-  }
-  await markPlanItemComplete(sessionId, date, "study_guide:any");
+  await linkStudyGuideOpenToPlan(sessionId, todayStr(), g);
   res.json(g);
 });
 

@@ -25,6 +25,24 @@ const router: IRouter = Router();
 
 const STUDY_GROUP_NOTEBOOK_TITLE = "Study Group";
 
+// Auto-check today's "AI study group session" plan item when a round completes.
+// We mark the generic key and any domain-specific key so whichever form the
+// schedule injected today is satisfied. markPlanItemComplete is idempotent, so a
+// re-run round (or a later manual mark complete) won't double-count. Extracted
+// from the round handler so the key derivation can be tested.
+export async function linkStudyGroupRoundToPlan(
+  sessionId: string,
+  date: string,
+  domainId: number | null,
+): Promise<string[]> {
+  const keys: string[] = ["study_group:any"];
+  if (domainId != null) keys.push(`study_group:domain:${domainId}`);
+  for (const key of keys) {
+    await markPlanItemComplete(sessionId, date, key);
+  }
+  return keys;
+}
+
 async function getOrCreateStudyGroupNotebook(): Promise<number> {
   const [existing] = await db
     .select({ id: notebooks.id })
@@ -1318,20 +1336,11 @@ async function executeStudyGroupRound(args: {
     }
 
     // Mark today's mandatory "AI study group session" plan item as complete
-    // so the carry-forward logic in /plan/today stops surfacing it tomorrow.
-    // We mark both the generic key and any domain-specific key so whichever
-    // form the schedule injected today is satisfied.
+    // so the carry-forward logic in /plan/today stops surfacing it tomorrow
+    // (see linkStudyGroupRoundToPlan).
     if (userSessionId) {
       try {
-        const date = todayStr();
-        await markPlanItemComplete(userSessionId, date, "study_group:any");
-        if (t.domainId != null) {
-          await markPlanItemComplete(
-            userSessionId,
-            date,
-            `study_group:domain:${t.domainId}`,
-          );
-        }
+        await linkStudyGroupRoundToPlan(userSessionId, todayStr(), t.domainId);
       } catch {
         // Non-fatal — the user can still re-run the round.
       }
