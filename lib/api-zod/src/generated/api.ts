@@ -1710,15 +1710,30 @@ export const GetVapidPublicKeyResponse = zod.object({
 export const getReminderPreferencesResponseTimeRegExp = new RegExp(
   "^([01][0-9]|2[0-3]):[0-5][0-9]$",
 );
+export const getReminderPreferencesResponseSkippedDaysItemMin = 0;
+export const getReminderPreferencesResponseSkippedDaysItemMax = 6;
 
 export const GetReminderPreferencesResponse = zod.object({
   enabled: zod.boolean().describe("Whether daily study reminders are on."),
   time: zod
     .string()
     .regex(getReminderPreferencesResponseTimeRegExp)
+    .describe("Reminder time as HH:MM (24h), interpreted in `timezone`."),
+  timezone: zod
+    .string()
+    .optional()
     .describe(
-      "Reminder time as HH:MM (24h), in the app's reference timezone (Pacific).",
+      "IANA timezone the reminder time is interpreted in (e.g. America\/New_York). Defaults to America\/Los_Angeles.",
     ),
+  skippedDays: zod
+    .array(
+      zod
+        .number()
+        .min(getReminderPreferencesResponseSkippedDaysItemMin)
+        .max(getReminderPreferencesResponseSkippedDaysItemMax),
+    )
+    .optional()
+    .describe("Weekdays to silence reminders on (0=Sunday … 6=Saturday)."),
 });
 
 /**
@@ -1727,29 +1742,59 @@ export const GetReminderPreferencesResponse = zod.object({
 export const updateReminderPreferencesBodyTimeRegExp = new RegExp(
   "^([01][0-9]|2[0-3]):[0-5][0-9]$",
 );
+export const updateReminderPreferencesBodySkippedDaysItemMin = 0;
+export const updateReminderPreferencesBodySkippedDaysItemMax = 6;
 
 export const UpdateReminderPreferencesBody = zod.object({
   enabled: zod.boolean().describe("Whether daily study reminders are on."),
   time: zod
     .string()
     .regex(updateReminderPreferencesBodyTimeRegExp)
+    .describe("Reminder time as HH:MM (24h), interpreted in `timezone`."),
+  timezone: zod
+    .string()
+    .optional()
     .describe(
-      "Reminder time as HH:MM (24h), in the app's reference timezone (Pacific).",
+      "IANA timezone the reminder time is interpreted in (e.g. America\/New_York). Defaults to America\/Los_Angeles.",
     ),
+  skippedDays: zod
+    .array(
+      zod
+        .number()
+        .min(updateReminderPreferencesBodySkippedDaysItemMin)
+        .max(updateReminderPreferencesBodySkippedDaysItemMax),
+    )
+    .optional()
+    .describe("Weekdays to silence reminders on (0=Sunday … 6=Saturday)."),
 });
 
 export const updateReminderPreferencesResponseTimeRegExp = new RegExp(
   "^([01][0-9]|2[0-3]):[0-5][0-9]$",
 );
+export const updateReminderPreferencesResponseSkippedDaysItemMin = 0;
+export const updateReminderPreferencesResponseSkippedDaysItemMax = 6;
 
 export const UpdateReminderPreferencesResponse = zod.object({
   enabled: zod.boolean().describe("Whether daily study reminders are on."),
   time: zod
     .string()
     .regex(updateReminderPreferencesResponseTimeRegExp)
+    .describe("Reminder time as HH:MM (24h), interpreted in `timezone`."),
+  timezone: zod
+    .string()
+    .optional()
     .describe(
-      "Reminder time as HH:MM (24h), in the app's reference timezone (Pacific).",
+      "IANA timezone the reminder time is interpreted in (e.g. America\/New_York). Defaults to America\/Los_Angeles.",
     ),
+  skippedDays: zod
+    .array(
+      zod
+        .number()
+        .min(updateReminderPreferencesResponseSkippedDaysItemMin)
+        .max(updateReminderPreferencesResponseSkippedDaysItemMax),
+    )
+    .optional()
+    .describe("Weekdays to silence reminders on (0=Sunday … 6=Saturday)."),
 });
 
 /**

@@ -2267,7 +2267,14 @@ components:
         time:
           type: string
           pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
-          description: "Reminder time as HH:MM (24h), in the app's reference timezone (Pacific)."
+          description: "Reminder time as HH:MM (24h), interpreted in `timezone`."
+        timezone:
+          type: string
+          description: "IANA timezone the reminder time is interpreted in (e.g. America/New_York). Defaults to America/Los_Angeles."
+        skippedDays:
+          type: array
+          items: { type: integer, minimum: 0, maximum: 6 }
+          description: "Weekdays to silence reminders on (0=Sunday … 6=Saturday)."
     PushSubscriptionInput:
       type: object
       required: [endpoint, keys]

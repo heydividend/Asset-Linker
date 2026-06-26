@@ -10,8 +10,12 @@ export interface ReminderPreferences {
   /** Whether daily study reminders are on. */
   enabled: boolean;
   /**
-   * Reminder time as HH:MM (24h), in the app's reference timezone (Pacific).
+   * Reminder time as HH:MM (24h), interpreted in `timezone`.
    * @pattern ^([01][0-9]|2[0-3]):[0-5][0-9]$
    */
   time: string;
+  /** IANA timezone the reminder time is interpreted in (e.g. America/New_York). Defaults to America/Los_Angeles. */
+  timezone?: string;
+  /** Weekdays to silence reminders on (0=Sunday … 6=Saturday). */
+  skippedDays?: number[];
 }

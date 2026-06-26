@@ -1,9 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useNotificationPermission } from "@/hooks/use-notification-permission";
 import {
@@ -14,6 +22,57 @@ import {
   sendTestReminder,
 } from "@/hooks/use-push-reminders";
 
+// 0=Sunday … 6=Saturday (matches JS Date.getDay and the server's convention).
+const WEEKDAYS = [
+  { value: 0, short: "Sun" },
+  { value: 1, short: "Mon" },
+  { value: 2, short: "Tue" },
+  { value: 3, short: "Wed" },
+  { value: 4, short: "Thu" },
+  { value: 5, short: "Fri" },
+  { value: 6, short: "Sat" },
+];
+
+// A curated set of common timezones. The user's current preference and the
+// browser-detected zone are merged in so any saved value is always selectable.
+const COMMON_TIMEZONES = [
+  "America/Los_Angeles",
+  "America/Denver",
+  "America/Chicago",
+  "America/New_York",
+  "America/Anchorage",
+  "Pacific/Honolulu",
+  "America/Phoenix",
+  "America/Toronto",
+  "America/Sao_Paulo",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/Madrid",
+  "Europe/Athens",
+  "Africa/Johannesburg",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Shanghai",
+  "Asia/Tokyo",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+  "UTC",
+];
+
+function detectBrowserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Los_Angeles";
+  } catch {
+    return "America/Los_Angeles";
+  }
+}
+
+function labelForTimezone(tz: string): string {
+  return tz.replace(/_/g, " ");
+}
+
 // Self-contained panel for managing daily study reminders. Reuses the existing
 // notification-permission hook to surface granted/denied/unsupported states.
 export function ReminderSettings() {
@@ -22,12 +81,29 @@ export function ReminderSettings() {
   const { supported, prefs, isLoading, busy, setBusy, invalidate } =
     usePushReminders();
 
+  const prefTimezone = prefs.timezone ?? "America/Los_Angeles";
+  const prefSkippedDays = prefs.skippedDays ?? [];
+
   const [time, setTime] = useState(prefs.time);
+  const [timezone, setTimezone] = useState(prefTimezone);
+  const [skippedDays, setSkippedDays] = useState<number[]>(prefSkippedDays);
   useEffect(() => {
     setTime(prefs.time);
-  }, [prefs.time]);
+    setTimezone(prefTimezone);
+    setSkippedDays(prefSkippedDays);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs.time, prefTimezone, JSON.stringify(prefSkippedDays)]);
 
   const enabled = prefs.enabled;
+
+  // Always include the saved + browser-detected zones so the Select never shows
+  // an empty value for a timezone outside the curated list.
+  const timezoneOptions = useMemo(() => {
+    const set = new Set<string>(COMMON_TIMEZONES);
+    set.add(detectBrowserTimezone());
+    if (timezone) set.add(timezone);
+    return [...set].sort();
+  }, [timezone]);
 
   const onToggle = async (next: boolean) => {
     setBusy(true);
@@ -46,13 +122,23 @@ export function ReminderSettings() {
           }
         }
         await enablePushSubscription();
-        await saveReminderPreferences({ enabled: true, time });
+        await saveReminderPreferences({
+          enabled: true,
+          time,
+          timezone,
+          skippedDays,
+        });
         toast({
           title: "Daily reminders on",
           description: `You'll get a study nudge at ${time} each day — even with this tab closed.`,
         });
       } else {
-        await saveReminderPreferences({ enabled: false, time });
+        await saveReminderPreferences({
+          enabled: false,
+          time,
+          timezone,
+          skippedDays,
+        });
         await disablePushSubscription();
         toast({
           title: "Daily reminders off",
@@ -74,26 +160,71 @@ export function ReminderSettings() {
     }
   };
 
-  const onSaveTime = async (nextTime: string) => {
-    setTime(nextTime);
+  // Persist any preference field change (time, timezone, skipped days) when
+  // reminders are enabled. Local state is updated optimistically by callers.
+  const persist = async (
+    overrides: Partial<{
+      time: string;
+      timezone: string;
+      skippedDays: number[];
+    }>,
+    successTitle: string,
+    successDescription: string,
+  ) => {
     if (!enabled) return;
     setBusy(true);
     try {
-      await saveReminderPreferences({ enabled: true, time: nextTime });
-      invalidate();
-      toast({
-        title: "Reminder time updated",
-        description: `Daily reminders will now arrive at ${nextTime}.`,
+      await saveReminderPreferences({
+        enabled: true,
+        time,
+        timezone,
+        skippedDays,
+        ...overrides,
       });
+      invalidate();
+      toast({ title: successTitle, description: successDescription });
     } catch (e) {
       toast({
-        title: "Couldn't save the time",
+        title: "Couldn't save your reminder settings",
         description: e instanceof Error ? e.message : "Try again in a moment.",
         variant: "destructive",
       });
     } finally {
       setBusy(false);
     }
+  };
+
+  const onSaveTime = async (nextTime: string) => {
+    setTime(nextTime);
+    await persist(
+      { time: nextTime },
+      "Reminder time updated",
+      `Daily reminders will now arrive at ${nextTime}.`,
+    );
+  };
+
+  const onChangeTimezone = async (nextTz: string) => {
+    setTimezone(nextTz);
+    await persist(
+      { timezone: nextTz },
+      "Timezone updated",
+      `Reminders now follow ${labelForTimezone(nextTz)} time.`,
+    );
+  };
+
+  const onChangeSkippedDays = async (values: string[]) => {
+    const next = values.map((v) => Number(v)).sort((a, b) => a - b);
+    setSkippedDays(next);
+    const skippedLabels = WEEKDAYS.filter((d) => next.includes(d.value)).map(
+      (d) => d.short,
+    );
+    await persist(
+      { skippedDays: next },
+      "Rest days updated",
+      skippedLabels.length
+        ? `No reminders on ${skippedLabels.join(", ")}.`
+        : "Reminders will arrive every day.",
+    );
   };
 
   const onTest = async () => {
@@ -195,6 +326,59 @@ export function ReminderSettings() {
             Send a test
           </Button>
         )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Label htmlFor="reminder-timezone" className="text-xs text-muted-foreground">
+          Timezone
+        </Label>
+        <Select value={timezone} onValueChange={onChangeTimezone} disabled={busy}>
+          <SelectTrigger
+            id="reminder-timezone"
+            className="h-8 w-56"
+            data-testid="select-reminder-timezone"
+          >
+            <SelectValue placeholder="Choose a timezone" />
+          </SelectTrigger>
+          <SelectContent>
+            {timezoneOptions.map((tz) => (
+              <SelectItem key={tz} value={tz}>
+                {labelForTimezone(tz)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <Label className="text-xs text-muted-foreground">
+          Rest days (no reminder)
+        </Label>
+        <ToggleGroup
+          type="multiple"
+          variant="outline"
+          size="sm"
+          value={skippedDays.map(String)}
+          onValueChange={onChangeSkippedDays}
+          disabled={busy}
+          className="flex-wrap justify-start gap-1"
+          data-testid="toggle-skipped-days"
+        >
+          {WEEKDAYS.map((d) => (
+            <ToggleGroupItem
+              key={d.value}
+              value={String(d.value)}
+              aria-label={`Skip ${d.short}`}
+              className="h-8 w-11"
+              data-testid={`toggle-skip-day-${d.value}`}
+            >
+              {d.short}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        <p className="text-[11px] text-muted-foreground">
+          Tap a day to silence reminders on it — handy for your rest day.
+        </p>
       </div>
     </div>
   );

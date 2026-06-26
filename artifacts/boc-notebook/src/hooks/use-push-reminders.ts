@@ -95,7 +95,14 @@ export async function disablePushSubscription(): Promise<void> {
 export async function saveReminderPreferences(prefs: {
   enabled: boolean;
   time: string;
-}): Promise<{ enabled: boolean; time: string }> {
+  timezone?: string;
+  skippedDays?: number[];
+}): Promise<{
+  enabled: boolean;
+  time: string;
+  timezone: string;
+  skippedDays: number[];
+}> {
   const res = await fetch(api("/reminders/preferences"), {
     method: "PUT",
     credentials: "include",
@@ -135,7 +142,12 @@ export function usePushReminders() {
 
   return {
     supported: isPushSupported(),
-    prefs: prefs ?? { enabled: false, time: "08:00" },
+    prefs: prefs ?? {
+      enabled: false,
+      time: "08:00",
+      timezone: "America/Los_Angeles",
+      skippedDays: [],
+    },
     isLoading,
     busy,
     setBusy,

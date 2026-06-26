@@ -1,22 +1,27 @@
 import { eq } from "drizzle-orm";
 import { db, reminderPrefs } from "@workspace/db";
 import { logger } from "./logger";
-import { nowHHmmPT, todayStrPT } from "./today";
+import {
+  isValidTimeZone,
+  nowHHmmInTz,
+  todayStrInTz,
+  weekdayInTz,
+} from "./today";
 import { buildReminderPayload } from "./reminderSummary";
 import { ensureWebPushConfigured, sendPushToSession } from "./webPush";
 
 const TICK_INTERVAL_MS = 60 * 1000;
+const DEFAULT_TZ = "America/Los_Angeles";
 
 // One scheduler pass: find every enabled reminder whose chosen time has
-// arrived (PT) and that hasn't been sent yet today, build a fresh plan
-// summary, push it to all of that session's browsers, and stamp lastSentDate
-// so we never double-send within a day. Using ">=" (rather than exact-minute
-// equality) means a reminder still fires — late — if the server happened to
-// be down at the exact minute.
+// arrived (in that session's timezone) and that hasn't been sent yet today,
+// build a fresh plan summary, push it to all of that session's browsers, and
+// stamp lastSentDate so we never double-send within a day. Using ">=" (rather
+// than exact-minute equality) means a reminder still fires — late — if the
+// server happened to be down at the exact minute. Weekdays the user silenced
+// are skipped entirely.
 export async function runReminderTick(): Promise<number> {
   if (!ensureWebPushConfigured()) return 0;
-  const today = todayStrPT();
-  const nowHHmm = nowHHmmPT();
 
   const due = await db
     .select()
@@ -25,8 +30,23 @@ export async function runReminderTick(): Promise<number> {
 
   let sentSessions = 0;
   for (const pref of due) {
+    const tz =
+      pref.timezone && isValidTimeZone(pref.timezone)
+        ? pref.timezone
+        : DEFAULT_TZ;
+    const today = todayStrInTz(tz);
+    const nowHHmm = nowHHmmInTz(tz);
     if (pref.lastSentDate === today) continue;
     if (nowHHmm < pref.time) continue;
+    // Honor silenced weekdays (0=Sunday … 6=Saturday in the user's timezone).
+    // Stamp lastSentDate so we don't re-check this session every minute today.
+    if ((pref.skippedDays ?? []).includes(weekdayInTz(tz))) {
+      await db
+        .update(reminderPrefs)
+        .set({ lastSentDate: today, updatedAt: new Date() })
+        .where(eq(reminderPrefs.sessionId, pref.sessionId));
+      continue;
+    }
     try {
       const payload = await buildReminderPayload(pref.sessionId);
       const count = await sendPushToSession(pref.sessionId, payload);
