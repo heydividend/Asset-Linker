@@ -23,9 +23,14 @@ import { getOrCreateSchedule } from "../lib/planSchedule";
 
 const router: IRouter = Router();
 
+// Hard cap on how many items the Today list surfaces. buildTodayItems
+// assembles today's native items first and appends carry-overs after, so this
+// cap can only ever trim trailing carry-overs — never today's own work.
+export const TODAY_ITEM_CAP = 16;
+
 // Adds key + mandatory to every plan item, deduping repeats by key so a day
 // only ever has one canonical representative for a given activity.
-function decorateItems(items: PlanItem[]) {
+export function decorateItems(items: PlanItem[]) {
   const seen = new Set<string>();
   const out: (PlanItem & { key: string; mandatory: boolean })[] = [];
   for (const it of items) {
@@ -35,6 +40,15 @@ function decorateItems(items: PlanItem[]) {
     out.push({ ...it, key, mandatory: isMandatoryKind(it.kind) });
   }
   return out;
+}
+
+// Finalize the assembled Today list: dedupe by key (the first/most-canonical
+// occurrence wins) and cap the length. Because buildTodayItems pushes today's
+// native items before any carry-overs, this (a) collapses a carry-over that
+// shares a key with a native item into the native entry, and (b) guarantees the
+// cap drops trailing carry-overs rather than today's mandatory work.
+export function finalizeTodayList(items: PlanItem[]) {
+  return decorateItems(items).slice(0, TODAY_ITEM_CAP);
 }
 
 router.get("/plan/schedule", async (_req, res): Promise<void> => {
@@ -177,7 +191,7 @@ export async function buildTodayItems(sessionId: string) {
 
   // Allow more items in the daily list to make room for carry-overs without
   // squeezing out today's mandatory work.
-  const decorated = decorateItems(items).slice(0, 16);
+  const decorated = finalizeTodayList(items);
   const completedKeys = new Set(await listCompletedKeys(sessionId, today));
   const itemsOut = decorated.map((it) => ({
     ...it,

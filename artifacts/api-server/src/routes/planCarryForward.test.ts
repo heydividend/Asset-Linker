@@ -7,7 +7,12 @@ import { buildSchedule, type ScheduleDay } from "../lib/scheduleBuilder";
 import { getDomainMasteryMap } from "../lib/domainMastery";
 import { isMandatoryKind, planItemKey } from "../lib/planItemKey";
 import { markPlanItemComplete } from "../lib/planCompletions";
-import { computeCarriedForwardItems } from "./plan";
+import {
+  TODAY_ITEM_CAP,
+  computeCarriedForwardItems,
+  finalizeTodayList,
+} from "./plan";
+import type { PlanItem } from "../lib/scheduleBuilder";
 
 // Session id unique to this test run so the rows we create can never collide
 // with real user data and are trivially cleaned up by session id.
@@ -130,6 +135,81 @@ describe("Today list carry-forward of missed items", () => {
       carried.every((it) => isMandatoryKind(it.kind)),
       "only mandatory items are eligible for carry-forward",
     );
+  });
+});
+
+// These exercise the pure finalize step (/plan/today's dedupe + cap) directly,
+// composing items exactly the way buildTodayItems does — today's native items
+// first, carry-overs appended after — so the guarantees hold without standing
+// up the full DB-backed handler.
+describe("Today list dedupe + cap", () => {
+  it("collapses a carry-over that shares a key with a native today item into a single native entry", () => {
+    const todayNative: PlanItem = {
+      kind: "study_group",
+      title: "AI study group — today's focus",
+      estMinutes: 25,
+      domainId: 1,
+      link: "/study-group",
+    };
+    // Same activity (identical key) that was missed earlier and carried in.
+    const carriedDup: PlanItem = {
+      ...todayNative,
+      title: "AI study group — missed yesterday",
+      carriedFrom: "2026-01-01",
+    };
+
+    // Mirror buildTodayItems: native first, carry-overs appended after.
+    const out = finalizeTodayList([todayNative, carriedDup]);
+    const key = planItemKey(todayNative);
+    const matches = out.filter((it) => it.key === key);
+
+    assert.equal(
+      matches.length,
+      1,
+      "a carry-over sharing a key with a native item must appear only once",
+    );
+    assert.equal(
+      matches[0]!.carriedFrom,
+      undefined,
+      "the surviving entry must be today's native item, not the carry-over",
+    );
+  });
+
+  it("never drops today's mandatory items when many carry-overs pile up against the cap", () => {
+    // A realistic spread of distinct today-native mandatory items.
+    const todayNative: PlanItem[] = [
+      { kind: "reading", title: "Read the BOC text", estMinutes: 30, domainId: 1 },
+      { kind: "study_guide", title: "Study guide", estMinutes: 45, domainId: 1 },
+      { kind: "flashcards", title: "Spaced-repetition session", estMinutes: 20 },
+      { kind: "quiz", title: "Daily 50-question quiz", estMinutes: 50, daily: true },
+      { kind: "review_sheet", title: "High-yield review sheet", estMinutes: 15, domainId: 1 },
+      { kind: "game", title: "Quick game", estMinutes: 8, gameId: "today-game" },
+      { kind: "study_group", title: "AI study group session", estMinutes: 25, domainId: 1 },
+    ];
+    // Far more carry-overs than the cap, each with a distinct key so none of
+    // them dedupe against a native item or against each other.
+    const carried: PlanItem[] = Array.from({ length: 40 }, (_, i) => ({
+      kind: "game" as const,
+      title: `Carried game ${i}`,
+      estMinutes: 8,
+      gameId: `carried-${i}`,
+      carriedFrom: "2026-01-01",
+    }));
+
+    const out = finalizeTodayList([...todayNative, ...carried]);
+
+    assert.equal(
+      out.length,
+      TODAY_ITEM_CAP,
+      "the list must be capped at TODAY_ITEM_CAP",
+    );
+    for (const native of todayNative) {
+      const key = planItemKey(native);
+      assert.ok(
+        out.some((it) => it.key === key && it.carriedFrom === undefined),
+        `today's native ${native.kind} (${key}) must survive the cap`,
+      );
+    }
   });
 });
 
