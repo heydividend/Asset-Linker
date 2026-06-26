@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { formatDateShort } from "@/lib/formatDate";
+import { useMemo, useState } from "react";
+import { formatDate, formatDateShort } from "@/lib/formatDate";
 import type { ReadinessHistoryPoint } from "@workspace/api-client-react";
 import {
   READINESS_RANGE_OPTIONS,
@@ -31,6 +31,9 @@ export function ReadinessTrend({
   const W = 100; // viewBox width units (responsive via preserveAspectRatio="none")
   const H = height;
   const PAD_Y = 4;
+
+  // Index of the data point currently hovered/tapped (null when not active).
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const rangeSelector =
     range != null && onRangeChange ? (
@@ -98,6 +101,31 @@ export function ReadinessTrend({
     );
   }
 
+  // Map a pointer position to the nearest data point index. Points are evenly
+  // spaced by index across the full width, so we convert the pointer's
+  // horizontal fraction into the closest index. preserveAspectRatio="none"
+  // means viewBox x maps linearly to pixel width.
+  const indexFromPointer = (clientX: number, rect: DOMRect): number => {
+    if (rect.width === 0) return 0;
+    const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const n = points.length;
+    return n <= 1 ? 0 : Math.round(frac * (n - 1));
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setActiveIndex(indexFromPointer(e.clientX, rect));
+  };
+
+  const handlePointerLeave = () => setActiveIndex(null);
+
+  // Clamp in case the active index outlives a range change that shortened the
+  // series, then resolve the active coordinate from the model.
+  const active =
+    activeIndex == null
+      ? null
+      : model.coords[Math.min(activeIndex, model.coords.length - 1)];
+
   const first = points[0];
   const last = points[points.length - 1];
   const rangeLabel =
@@ -125,13 +153,18 @@ export function ReadinessTrend({
         </span>
         {rangeSelector}
       </div>
+      <div className="relative">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
-        className="w-full"
+        className="w-full touch-none"
         style={{ height: `${H}px` }}
         role="img"
         aria-label={`Readiness trend, goal band ${model.goalMin} to ${model.goalMax}`}
+        onPointerMove={handlePointerMove}
+        onPointerDown={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
+        onPointerCancel={handlePointerLeave}
       >
         {/* Goal band 80–85 */}
         <rect
@@ -169,7 +202,50 @@ export function ReadinessTrend({
         )}
         {/* Latest point marker */}
         <circle cx={model.last.x} cy={model.last.y} r={2} fill="currentColor" vectorEffect="non-scaling-stroke" />
+        {/* Hovered/tapped point marker + guide line */}
+        {active && (
+          <>
+            <line
+              x1={active.x}
+              y1={0}
+              x2={active.x}
+              y2={H}
+              stroke="currentColor"
+              strokeWidth={0.5}
+              opacity={0.5}
+              vectorEffect="non-scaling-stroke"
+            />
+            <circle
+              cx={active.x}
+              cy={active.y}
+              r={2.5}
+              fill="currentColor"
+              stroke="var(--primary, currentColor)"
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+            />
+          </>
+        )}
       </svg>
+      {active && (
+        <div
+          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-md bg-primary-foreground px-1.5 py-1 text-center text-primary shadow-md"
+          style={{
+            left: `${Math.min(88, Math.max(12, (active.x / W) * 100))}%`,
+            top: `${Math.max(0, active.y - 6)}px`,
+          }}
+          role="status"
+          data-testid={testId ? `${testId}-tooltip` : undefined}
+        >
+          <span className="block text-[10px] font-medium leading-tight whitespace-nowrap">
+            {formatDate(active.p.date)}
+          </span>
+          <span className="block text-[11px] font-semibold leading-tight">
+            {active.p.score}
+          </span>
+        </div>
+      )}
+      </div>
       <div className="flex items-center justify-between gap-2 mt-1">
         <span className="text-[10px] opacity-70">
           Goal band {model.goalMin}–{model.goalMax}
