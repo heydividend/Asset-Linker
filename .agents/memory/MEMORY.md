@@ -3,3 +3,4 @@
 - [Plan carry-forward completion](plan-carryforward-completion.md) — clear an overdue plan item by recording ITS key in planCompletions (date≤today; key, not date, drives carry-forward); mock keys are per scheduledDate.
 - [Web Push daily reminders](web-push-reminders.md) — PT-based scheduler, per-day dedupe via lastSentDate, no immediate catch-up on enable; preserve both rules or users get instant/duplicate pushes.
 - [Daily quiz / domain mastery](daily-quiz-domain-mastery.md) — domain mastery aggregates only from topicMastery; questions must carry a topicId (fall back to a domain topic) or they don't count.
+- [Readiness trend hover](readiness-trend-hover.md) — today's readiness_snapshot is upserted live on dashboard load, so seed/assert hover values on historical days, not today.
