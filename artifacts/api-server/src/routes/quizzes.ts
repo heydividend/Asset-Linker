@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import { db, questions, quizzes, quizAnswers, topicMastery } from "@workspace/db";
+import { db, questions, quizzes, quizAnswers, topicMastery, taskMastery } from "@workspace/db";
 import { parseId } from "../lib/parseId";
 import { questionCredit } from "../lib/scoring";
 import { getOrCreateSessionId } from "../lib/sessionId";
@@ -105,7 +105,7 @@ router.get("/quizzes", async (req, res): Promise<void> => {
 });
 
 router.post("/quizzes", async (req, res): Promise<void> => {
-  const { mode = "adaptive", count = 10, notebookId, topicId, topicIds, domainId, sourceKind, pendingReviewOnly } = req.body ?? {};
+  const { mode = "adaptive", count = 10, notebookId, topicId, topicIds, domainId, taskId, sourceKind, pendingReviewOnly } = req.body ?? {};
 
   const baseConditions = [eq(questions.enabled, true)];
   if (typeof sourceKind === "string" && sourceKind) {
@@ -115,6 +115,10 @@ router.post("/quizzes", async (req, res): Promise<void> => {
     baseConditions.push(eq(questions.pendingReview, true));
   }
   if (domainId) baseConditions.push(eq(questions.domainId, domainId));
+  // Task-level drill: when a taskId is supplied the quiz is pinned to the
+  // questions tagged to that single PA8 task statement. This bypasses the
+  // topic-coherence resolution below entirely.
+  if (taskId) baseConditions.push(eq(questions.taskId, taskId));
   // "multi_select" mode drills only scenario/multi-answer questions — the exam
   // item type the student struggles with — pulled from across the whole pool
   // (not restricted to a single topic like adaptive/weakness modes).
@@ -125,7 +129,10 @@ router.post("/quizzes", async (req, res): Promise<void> => {
   // attempted) so the user never sees e.g. knee questions mixed in when they
   // expected head injury. Explicit topicId / topicIds still override.
   let resolvedTopicIds: number[] | null = null;
-  if (Array.isArray(topicIds) && topicIds.length > 0) {
+  if (taskId) {
+    // Already pinned to a task above — don't also constrain by topic.
+    resolvedTopicIds = null;
+  } else if (Array.isArray(topicIds) && topicIds.length > 0) {
     resolvedTopicIds = topicIds.filter((n: unknown): n is number => typeof n === "number");
   } else if (topicId) {
     resolvedTopicIds = [topicId];
@@ -286,6 +293,24 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
         mastery: correct ? 1 : 0,
       });
     }
+  }
+
+  // Mirror mastery tracking at the PA8 task level so the Blueprint page shows
+  // objective progress per task statement, not just per topic.
+  if (q.taskId) {
+    const inc = correct ? 1 : 0;
+    await db
+      .insert(taskMastery)
+      .values({ taskId: q.taskId, attempts: 1, correct: inc, mastery: inc })
+      .onConflictDoUpdate({
+        target: taskMastery.taskId,
+        set: {
+          attempts: sql`${taskMastery.attempts} + 1`,
+          correct: sql`${taskMastery.correct} + ${inc}`,
+          mastery: sql`(${taskMastery.correct} + ${inc})::double precision / (${taskMastery.attempts} + 1)`,
+          updatedAt: new Date(),
+        },
+      });
   }
 
   res.json({

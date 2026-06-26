@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Sparkles,
   Stethoscope,
+  Target,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -26,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/notebooks", label: "Notebooks", icon: BookText },
   { href: "/study-guides", label: "Study Guides", icon: Headphones },
   { href: "/flashcards", label: "Flashcards", icon: Brain },
+  { href: "/blueprint", label: "Exam Blueprint", icon: Target },
   { href: "/quiz", label: "Practice Quizzes", icon: ClipboardList },
   { href: "/mock-exam", label: "Mock Exam", icon: Stethoscope },
   { href: "/body-map", label: "Body Map", icon: Activity },

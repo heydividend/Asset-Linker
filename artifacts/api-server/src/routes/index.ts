@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import catalogRouter from "./catalog";
+import blueprintRouter from "./blueprint";
 import notebooksRouter from "./notebooks";
 import notesRouter from "./notes";
 import flashcardsRouter from "./flashcards";
@@ -23,6 +24,7 @@ const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(catalogRouter);
+router.use(blueprintRouter);
 router.use(notebooksRouter);
 router.use(notesRouter);
 router.use(flashcardsRouter);

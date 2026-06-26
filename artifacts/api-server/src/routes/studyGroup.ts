@@ -15,6 +15,7 @@ import {
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { parseId } from "../lib/parseId";
 import { chatJson } from "../lib/openaiHelpers";
+import { classifyTaskId } from "../lib/classifyTask";
 import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
 import { getOrCreateSessionId } from "../lib/sessionId";
 
@@ -1594,6 +1595,12 @@ router.post("/study-group/artifacts/:id/promote", async (req, res): Promise<void
       const [t] = await db.select({ domainId: topics.domainId }).from(topics).where(eq(topics.id, a.topicId));
       domainId = t?.domainId ?? null;
     }
+    // Tag the new question to a PA8 task so it shows up in task drills and
+    // task mastery. Best-effort: leaves taskId null if it can't be classified.
+    const taskId = await classifyTaskId(
+      { stem: payload.stem, choices: payload.choices, rationale: payload.rationale },
+      domainId,
+    );
     const [qRow] = await db
       .insert(questions)
       .values({
@@ -1603,6 +1610,7 @@ router.post("/study-group/artifacts/:id/promote", async (req, res): Promise<void
         rationale: payload.rationale ?? "(Promoted from study group — review pending.)",
         topicId: a.topicId ?? null,
         domainId,
+        taskId,
         sourceKind: "study_group",
         enabled: true,
         pendingReview: true,

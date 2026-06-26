@@ -68,6 +68,38 @@ paths:
                 type: array
                 items: { $ref: "#/components/schemas/Topic" }
 
+  # ---- Blueprint (BOC PA8 content outline) ----
+  /blueprint:
+    get:
+      operationId: getBlueprint
+      tags: [catalog]
+      summary: Official BOC PA8 blueprint with per-task confidence and mastery
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Blueprint" }
+  /tasks/{id}:
+    patch:
+      operationId: rateTaskConfidence
+      tags: [catalog]
+      summary: Set the student's self-rated confidence for a task
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskConfidenceInput" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskConfidenceResult" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   # ---- Notebooks ----
   /notebooks:
     get:
@@ -1378,6 +1410,53 @@ components:
         domainId: { type: integer }
         name: { type: string }
         description: { type: ["string", "null"] }
+    BlueprintTask:
+      type: object
+      required: [id, code, statement, confidence, sortOrder, mastery, attempts, correct, questionCount]
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        statement: { type: string }
+        confidence: { type: ["integer", "null"], description: "Self-rating: 1 shaky, 2 okay, 3 solid; null unrated" }
+        sortOrder: { type: integer }
+        mastery: { type: number, description: "Objective mastery 0-1 from answered tagged questions" }
+        attempts: { type: integer }
+        correct: { type: integer }
+        questionCount: { type: integer, description: "Enabled questions tagged to this task" }
+    BlueprintDomain:
+      type: object
+      required: [id, code, name, weight, description, tasks]
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        name: { type: string }
+        weight: { type: number }
+        description: { type: ["string", "null"] }
+        tasks:
+          type: array
+          items: { $ref: "#/components/schemas/BlueprintTask" }
+    Blueprint:
+      type: object
+      required: [domains]
+      properties:
+        domains:
+          type: array
+          items: { $ref: "#/components/schemas/BlueprintDomain" }
+    TaskConfidenceInput:
+      type: object
+      required: [confidence]
+      properties:
+        confidence:
+          type: ["integer", "null"]
+          enum: [1, 2, 3, null]
+          description: "1 shaky, 2 okay, 3 solid, null to clear"
+    TaskConfidenceResult:
+      type: object
+      required: [id, code, confidence]
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        confidence: { type: ["integer", "null"] }
 
     Notebook:
       type: object
@@ -1686,6 +1765,7 @@ components:
           type: array
           items: { type: integer }
         domainId: { type: integer }
+        taskId: { type: integer, description: "Drill a single PA8 task: pin the quiz to questions tagged to this task." }
         sourceKind:
           type: string
           enum: [study_group, ai, manual]

@@ -29,6 +29,67 @@ export interface Topic {
   description?: string | null;
 }
 
+export interface BlueprintTask {
+  id: number;
+  code: string;
+  statement: string;
+  /**
+   * Self-rating: 1 shaky, 2 okay, 3 solid; null unrated
+   * @nullable
+   */
+  confidence: number | null;
+  sortOrder: number;
+  /** Objective mastery 0-1 from answered tagged questions */
+  mastery: number;
+  attempts: number;
+  correct: number;
+  /** Enabled questions tagged to this task */
+  questionCount: number;
+}
+
+export interface BlueprintDomain {
+  id: number;
+  code: string;
+  name: string;
+  weight: number;
+  /** @nullable */
+  description: string | null;
+  tasks: BlueprintTask[];
+}
+
+export interface Blueprint {
+  domains: BlueprintDomain[];
+}
+
+/**
+ * 1 shaky, 2 okay, 3 solid, null to clear
+ * @nullable
+ */
+export type TaskConfidenceInputConfidence =
+  | (typeof TaskConfidenceInputConfidence)[keyof typeof TaskConfidenceInputConfidence]
+  | null;
+
+export const TaskConfidenceInputConfidence = {
+  NUMBER_1: 1,
+  NUMBER_2: 2,
+  NUMBER_3: 3,
+} as const;
+
+export interface TaskConfidenceInput {
+  /**
+   * 1 shaky, 2 okay, 3 solid, null to clear
+   * @nullable
+   */
+  confidence: TaskConfidenceInputConfidence;
+}
+
+export interface TaskConfidenceResult {
+  id: number;
+  code: string;
+  /** @nullable */
+  confidence: number | null;
+}
+
 export interface Notebook {
   id: number;
   title: string;
@@ -484,6 +545,8 @@ export interface QuizInput {
   topicId?: number;
   topicIds?: number[];
   domainId?: number;
+  /** Drill a single PA8 task: pin the quiz to questions tagged to this task. */
+  taskId?: number;
   /** Filter the question pool by where the question came from. */
   sourceKind?: QuizInputSourceKind;
   /** Only include questions still flagged pendingReview (admin/review surface). */

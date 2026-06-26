@@ -8,6 +8,7 @@ import multer from "multer";
 import { PDFParse } from "pdf-parse";
 import { COACHING_STRATEGIES } from "../lib/coachingStrategies";
 import { BOC_GLOSSARY } from "../lib/bocGlossary";
+import { pa8BlueprintText } from "../lib/pa8Blueprint";
 
 export async function extractPdfText(buf: Buffer): Promise<string> {
   const parser = new PDFParse({ data: new Uint8Array(buf) });
@@ -97,6 +98,12 @@ Be warm, precise, and clinically accurate. Use the BOC's 5 domains as your frame
 4) Therapeutic Intervention
 5) Healthcare Administration & Professional Responsibility
 When the user asks about a flashcard, quiz question, note, or weak topic, anchor your answer in the supplied context. Be concise but thorough; favor mechanism, indication, contraindication, and red-flag callouts.
+
+Ground every answer in the official BOC Practice Analysis 8th Edition (PA8) blueprint below. Use its exact domain descriptions and task statements as the authoritative scope of the exam. When relevant, tell the student which domain and task (by code, e.g. 0303) a concept maps to so they can target their studying. Do not invent domains, weights, or tasks that conflict with this blueprint.
+
+<<<PA8_BLUEPRINT_START>>>
+${pa8BlueprintText()}
+<<<PA8_BLUEPRINT_END>>>
 
 FORMATTING RULES — every reply must be well-structured Markdown:
 - Open with a one-sentence direct answer (no preamble like "Great question").

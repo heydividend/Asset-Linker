@@ -19,6 +19,8 @@ export interface QuizInput {
   topicId?: number;
   topicIds?: number[];
   domainId?: number;
+  /** Drill a single PA8 task: pin the quiz to questions tagged to this task. */
+  taskId?: number;
   /** Filter the question pool by where the question came from. */
   sourceKind?: QuizInputSourceKind;
   /** Only include questions still flagged pendingReview (admin/review surface). */

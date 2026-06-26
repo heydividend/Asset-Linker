@@ -2,6 +2,7 @@ import {
   db,
   domains,
   topics,
+  tasks,
   notebooks,
   notes,
   questions,
@@ -9,28 +10,45 @@ import {
   examSchedule,
 } from "@workspace/db";
 import { sql } from "drizzle-orm";
+import { PA8_DOMAIN_DESCRIPTIONS, PA8_TASKS } from "./lib/pa8Blueprint";
 
 async function main() {
   console.log("Seeding…");
 
   await db.execute(sql`TRUNCATE
-    domains, topics, notebooks, notes, flashcards, study_guides, audio_overviews,
+    domains, topics, tasks, task_mastery, notebooks, notes, flashcards, study_guides, audio_overviews,
     questions, quizzes, quiz_answers, mock_exams, topic_mastery, resources,
     scrape_jobs, conversations, messages, exam_schedule
     RESTART IDENTITY CASCADE`);
 
-  // 1. Domains (BOC Practice Analysis 8th Edition — official blueprint weights)
+  // 1. Domains (BOC Practice Analysis 8th Edition — official blueprint weights
+  //    + official domain descriptions from the PA8 content outline)
   const dRows = await db
     .insert(domains)
     .values([
-      { code: "D1", name: "Risk Reduction, Wellness & Health Literacy", weight: 0.2 },
-      { code: "D2", name: "Assessment, Evaluation & Diagnosis", weight: 0.256 },
-      { code: "D3", name: "Critical Incident Management", weight: 0.208 },
-      { code: "D4", name: "Therapeutic Intervention", weight: 0.256 },
-      { code: "D5", name: "Healthcare Administration & Professional Responsibility", weight: 0.08 },
+      { code: "D1", name: "Risk Reduction, Wellness & Health Literacy", weight: 0.2, description: PA8_DOMAIN_DESCRIPTIONS.D1 },
+      { code: "D2", name: "Assessment, Evaluation & Diagnosis", weight: 0.256, description: PA8_DOMAIN_DESCRIPTIONS.D2 },
+      { code: "D3", name: "Critical Incident Management", weight: 0.208, description: PA8_DOMAIN_DESCRIPTIONS.D3 },
+      { code: "D4", name: "Therapeutic Intervention", weight: 0.256, description: PA8_DOMAIN_DESCRIPTIONS.D4 },
+      { code: "D5", name: "Healthcare Administration & Professional Responsibility", weight: 0.08, description: PA8_DOMAIN_DESCRIPTIONS.D5 },
     ])
     .returning();
   const D = Object.fromEntries(dRows.map((d) => [d.code, d.id])) as Record<string, number>;
+
+  // 1b. Official PA8 task statements (the 23 sub-competencies the exam is built
+  //     from). Each is tied to its domain; questions are tagged to these.
+  const taskRows = await db
+    .insert(tasks)
+    .values(
+      PA8_TASKS.map((t, i) => ({
+        code: t.code,
+        domainId: D[t.domain],
+        statement: t.statement,
+        sortOrder: i,
+      })),
+    )
+    .returning();
+  const TASK = Object.fromEntries(taskRows.map((t) => [t.code, t.id])) as Record<string, number>;
 
   // 2. Topics
   const tRows = await db
@@ -188,6 +206,7 @@ BEST PRACTICES:
   const Q = (
     domainCode: keyof typeof D,
     topicName: string,
+    taskCode: string,
     stem: string,
     choices: string[],
     correctIndex: number,
@@ -196,6 +215,7 @@ BEST PRACTICES:
   ) => ({
     domainId: D[domainCode],
     topicId: T[topicName],
+    taskId: TASK[taskCode],
     stem,
     choices,
     correctIndex,
@@ -208,175 +228,175 @@ BEST PRACTICES:
 
   await db.insert(questions).values([
     Q(
-      "D3", "Heat Illness",
+      "D3", "Heat Illness", "0303",
       "An athlete collapses during a football practice with WBGT 88°F. Rectal temperature is 106.2°F and they are confused. What is the FIRST priority?",
       ["Transport to ED immediately", "Begin cold-water immersion on-site", "Administer IV fluids", "Apply ice packs to femoral arteries only"],
       1,
       "Exertional heat stroke is treated with COOL FIRST, TRANSPORT SECOND. Cold-water immersion is the gold standard and should begin on-site before EMS transport.",
     ),
     Q(
-      "D3", "Heat Illness",
+      "D3", "Heat Illness", "0303",
       "Which body site provides the only accurate measurement of core temperature in a suspected exertional heat stroke?",
       ["Tympanic", "Axillary", "Rectal", "Oral"],
       2,
       "Only rectal temperature is accurate during exercise; oral, tympanic, and axillary readings are unreliable when an athlete is sweating or dehydrated.",
     ),
     Q(
-      "D3", "Cardiopulmonary Emergencies",
+      "D3", "Cardiopulmonary Emergencies", "0303",
       "An adult athlete collapses and is unresponsive with no normal breathing. After calling for help and an AED, what is the next step?",
       ["Check pulse for 30 seconds", "Begin chest compressions at 100-120/min", "Wait for AED before starting CPR", "Give 2 rescue breaths first"],
       1,
       "Per current ECC guidelines, begin high-quality compressions immediately at 100-120/min. Pulse check should not exceed 10 seconds. Do not delay compressions for the AED.",
     ),
     Q(
-      "D3", "Spinal Injury Management",
+      "D3", "Spinal Injury Management", "0303",
       "On-field, a football player has a suspected cervical spine injury and is supine in pads and helmet. The athlete is breathing normally. What is the recommended approach?",
       ["Remove the helmet immediately, leave shoulder pads", "Leave helmet and shoulder pads on, immobilize as a unit", "Remove both helmet and shoulder pads at once", "Cut the face mask only and immobilize with helmet/pads in place"],
       3,
       "Current consensus: if the airway is patent, cut/remove the face mask for airway access but keep both helmet and shoulder pads in place to maintain spinal alignment.",
     ),
     Q(
-      "D2", "Concussion Assessment",
+      "D2", "Concussion Assessment", "0203",
       "Which finding on the sideline most strongly indicates the need for IMMEDIATE EMS activation?",
       ["Headache rated 4/10", "Brief disorientation lasting 30 seconds", "Repeated vomiting and worsening headache", "Mild balance error on BESS"],
       2,
       "Repeated vomiting and worsening headache are red flags for intracranial pathology and require immediate EMS activation and physician evaluation.",
     ),
     Q(
-      "D2", "Concussion Assessment",
+      "D2", "Concussion Assessment", "0202",
       "VOMS testing primarily evaluates which system?",
       ["Cardiopulmonary", "Vestibular and ocular-motor", "Peripheral nervous", "Cervical mechanical"],
       1,
       "The Vestibular/Ocular Motor Screening (VOMS) examines smooth pursuits, saccades, near-point convergence, VOR, and visual motion sensitivity.",
     ),
     Q(
-      "D2", "Lower Extremity Special Tests",
+      "D2", "Lower Extremity Special Tests", "0202",
       "A positive Lachman test indicates injury to which structure?",
       ["Posterior cruciate ligament", "Anterior cruciate ligament", "Medial meniscus", "Lateral collateral ligament"],
       1,
       "The Lachman test isolates the ACL by assessing anterior tibial translation at 20-30° of knee flexion. It is the most sensitive ACL test.",
     ),
     Q(
-      "D2", "Lower Extremity Special Tests",
+      "D2", "Lower Extremity Special Tests", "0202",
       "Which test is most specific for an anterior talofibular ligament (ATFL) sprain?",
       ["Talar tilt", "Anterior drawer of the ankle", "Squeeze test", "Thompson test"],
       1,
       "The anterior drawer test stresses the ATFL specifically. The talar tilt assesses the CFL; the squeeze test assesses syndesmosis; Thompson assesses Achilles.",
     ),
     Q(
-      "D2", "Upper Extremity Special Tests",
+      "D2", "Upper Extremity Special Tests", "0202",
       "A positive Hawkins-Kennedy test suggests:",
       ["Glenohumeral instability", "Subacromial impingement", "AC joint sprain", "Biceps tendon rupture"],
       1,
       "Hawkins-Kennedy passively flexes the shoulder to 90° and internally rotates, compressing the supraspinatus under the coracoacromial arch — positive for subacromial impingement.",
     ),
     Q(
-      "D2", "Upper Extremity Special Tests",
+      "D2", "Upper Extremity Special Tests", "0202",
       "The empty-can (Jobe) test primarily evaluates which muscle?",
       ["Infraspinatus", "Teres minor", "Supraspinatus", "Subscapularis"],
       2,
       "Resisted abduction at 90° in the scapular plane with thumbs down (empty can) isolates the supraspinatus.",
     ),
     Q(
-      "D2", "Spine Evaluation",
+      "D2", "Spine Evaluation", "0202",
       "Spurling's test is positive when:",
       ["Hip flexion reproduces low back pain", "Cervical compression with extension and rotation reproduces radicular arm pain", "Resisted shoulder abduction reproduces shoulder pain", "SI compression reproduces buttock pain"],
       1,
       "Spurling's compresses the cervical spine in extension and rotation toward the affected side, narrowing the neural foramen and reproducing radicular symptoms in cervical radiculopathy.",
     ),
     Q(
-      "D4", "Therapeutic Modalities",
+      "D4", "Therapeutic Modalities", "0404",
       "Therapeutic ultrasound at 3 MHz is BEST suited for tissues at what depth?",
       ["1-2 cm (superficial)", "3-5 cm (deep)", "Bone interface only", "Any depth"],
       0,
       "Higher frequency (3 MHz) is absorbed superficially (1-2 cm). 1 MHz penetrates deeper (3-5 cm). Wavelength is inversely related to frequency.",
     ),
     Q(
-      "D4", "Therapeutic Modalities",
+      "D4", "Therapeutic Modalities", "0404",
       "Cryotherapy is contraindicated in which condition?",
       ["Acute ankle sprain", "Raynaud's phenomenon", "Post-exercise muscle soreness", "Tendinitis"],
       1,
       "Raynaud's phenomenon causes vasospasm with cold exposure — cryotherapy is contraindicated. Other listed conditions are common indications.",
     ),
     Q(
-      "D4", "Therapeutic Exercise",
+      "D4", "Therapeutic Exercise", "0403",
       "Closed kinetic chain exercises for ACL rehabilitation are preferred over open-chain because they:",
       ["Place greater stress on the ACL graft", "Better simulate functional weight-bearing and reduce ACL strain", "Allow heavier loading for hypertrophy", "Are required for HIPAA compliance"],
       1,
       "CKC exercises (squats, lunges) better replicate functional demands and produce less anterior tibial shear/ACL strain than open-chain leg extension at end-range.",
     ),
     Q(
-      "D4", "Pharmacology",
+      "D4", "Pharmacology", "0407",
       "An athlete reports taking an NSAID for shin pain. Which is a recognized risk of chronic NSAID use?",
       ["Improved bone healing", "GI bleeding and renal impairment", "Hypoglycemia", "Tendon hypertrophy"],
       1,
       "NSAIDs inhibit COX, with well-known risks of GI ulceration/bleeding and renal impairment. They may also impair early bone and soft-tissue healing.",
     ),
     Q(
-      "D4", "Manual Therapy",
+      "D4", "Manual Therapy", "0405",
       "Grade I-II joint mobilizations are primarily used to:",
       ["Increase joint range of motion", "Modulate pain", "Stretch the joint capsule", "Replace surgical intervention"],
       1,
       "Low-grade (I-II) oscillations stay within slack and are used for pain modulation and neuromuscular reflex inhibition. Grades III-IV target capsule stretching for ROM.",
     ),
     Q(
-      "D1", "Environmental Conditions",
+      "D1", "Environmental Conditions", "0105",
       "Activity should be SUSPENDED based on lightning safety guidelines when:",
       ["Lightning is visible 30+ miles away", "Thunder is heard or lightning seen, regardless of distance", "Rain begins falling", "Wind exceeds 25 mph"],
       1,
       "If thunder is heard or lightning seen, suspend activity and seek shelter; resume no sooner than 30 minutes after the LAST observed thunder/lightning.",
     ),
     Q(
-      "D1", "Protective Equipment",
+      "D1", "Protective Equipment", "0102",
       "Properly fitted football shoulder pads should:",
       ["Extend 1 inch beyond the shoulder tip", "Cover the AC joint with the cup centered over the deltoid", "Allow free shoulder shrugging without restriction", "Sit loosely so airflow is maximized"],
       1,
       "Shoulder pads must cover and protect the AC joint with the cup centered over the deltoid. They should fit snugly and not rotate during contact.",
     ),
     Q(
-      "D1", "Nutrition & Hydration",
+      "D1", "Nutrition & Hydration", "0104",
       "RED-S (Relative Energy Deficiency in Sport) is characterized by:",
       ["Excess caloric intake", "Low energy availability with broad health and performance consequences", "Acute dehydration only", "Solely menstrual dysfunction"],
       1,
       "RED-S expands beyond the female athlete triad to recognize low energy availability impacting metabolism, bone, immune, cardiovascular, and psychological health in all athletes.",
     ),
     Q(
-      "D1", "Mental Health Screening",
+      "D1", "Mental Health Screening", "0101",
       "Which screening tool is most appropriate for routine depression screening in athletes?",
       ["BESS", "PHQ-9", "VOMS", "Y-Balance"],
       1,
       "The PHQ-9 is a validated 9-item self-report screen for depression. BESS/VOMS assess concussion; Y-Balance assesses dynamic stability.",
     ),
     Q(
-      "D5", "Documentation & SOAP Notes",
+      "D5", "Documentation & SOAP Notes", "0504",
       "In a SOAP note, the 'O' section contains:",
       ["The athlete's reported symptoms", "Objective measurable findings (ROM, MMT, special tests)", "Treatment plan", "The clinician's interpretation of the diagnosis"],
       1,
       "S = subjective (athlete report); O = objective (measurable findings); A = assessment (clinical impression/diagnosis); P = plan (treatment and progression).",
     ),
     Q(
-      "D5", "Documentation & SOAP Notes",
+      "D5", "Documentation & SOAP Notes", "0503",
       "Which law primarily protects the privacy of student educational records, including some athletic injury records in school settings?",
       ["HIPAA", "FERPA", "OSHA", "ADA"],
       1,
       "FERPA governs student education records in schools that receive federal funding. HIPAA covers protected health information in healthcare settings.",
     ),
     Q(
-      "D5", "Emergency Action Plans",
+      "D5", "Emergency Action Plans", "0502",
       "Which is a REQUIRED element of an Emergency Action Plan (EAP)?",
       ["A list of preferred sports drinks", "Venue-specific personnel roles, communication, and EMS access", "Strength-and-conditioning program", "Annual nutrition assessment"],
       1,
       "EAPs must define personnel roles, communication, equipment, transportation, and venue-specific EMS access; they should be rehearsed annually.",
     ),
     Q(
-      "D5", "Professional Standards",
+      "D5", "Professional Standards", "0503",
       "An AT is asked to evaluate an injury outside their state of licensure during travel with the team. The most appropriate action is to:",
       ["Refuse all care", "Practice as in their home state — credentials transfer automatically", "Verify the host state's regulatory requirements and any travel exemptions before practicing", "Have the coach perform the evaluation"],
       2,
       "State regulation governs scope of practice. ATs must verify host-state requirements; some states have travel/visiting-clinician exemptions, others do not.",
     ),
     Q(
-      "D5", "Professional Standards",
+      "D5", "Professional Standards", "0503",
       "Per the BOC Standards of Professional Practice, discussing specific BOC exam content publicly:",
       ["Is encouraged to help future candidates", "Is acceptable in private study groups", "Violates the standards and may result in disciplinary action", "Is permitted after one year"],
       2,

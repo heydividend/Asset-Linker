@@ -40,6 +40,61 @@ export const ListTopicsResponseItem = zod.object({
 });
 export const ListTopicsResponse = zod.array(ListTopicsResponseItem);
 
+/**
+ * @summary Official BOC PA8 blueprint with per-task confidence and mastery
+ */
+export const GetBlueprintResponse = zod.object({
+  domains: zod.array(
+    zod.object({
+      id: zod.number(),
+      code: zod.string(),
+      name: zod.string(),
+      weight: zod.number(),
+      description: zod.string().nullable(),
+      tasks: zod.array(
+        zod.object({
+          id: zod.number(),
+          code: zod.string(),
+          statement: zod.string(),
+          confidence: zod
+            .number()
+            .nullable()
+            .describe("Self-rating: 1 shaky, 2 okay, 3 solid; null unrated"),
+          sortOrder: zod.number(),
+          mastery: zod
+            .number()
+            .describe("Objective mastery 0-1 from answered tagged questions"),
+          attempts: zod.number(),
+          correct: zod.number(),
+          questionCount: zod
+            .number()
+            .describe("Enabled questions tagged to this task"),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
+ * @summary Set the student's self-rated confidence for a task
+ */
+export const RateTaskConfidenceParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const RateTaskConfidenceBody = zod.object({
+  confidence: zod
+    .union([zod.literal(1), zod.literal(2), zod.literal(3), zod.literal(null)])
+    .nullable()
+    .describe("1 shaky, 2 okay, 3 solid, null to clear"),
+});
+
+export const RateTaskConfidenceResponse = zod.object({
+  id: zod.number(),
+  code: zod.string(),
+  confidence: zod.number().nullable(),
+});
+
 export const ListNotebooksResponseItem = zod.object({
   id: zod.number(),
   title: zod.string(),
@@ -688,6 +743,12 @@ export const StartQuizBody = zod.object({
   topicId: zod.number().optional(),
   topicIds: zod.array(zod.number()).optional(),
   domainId: zod.number().optional(),
+  taskId: zod
+    .number()
+    .optional()
+    .describe(
+      "Drill a single PA8 task: pin the quiz to questions tagged to this task.",
+    ),
   sourceKind: zod
     .enum(["study_group", "ai", "manual"])
     .optional()

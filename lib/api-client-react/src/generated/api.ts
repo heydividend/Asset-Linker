@@ -21,6 +21,7 @@ import type {
   ApiError,
   AudioOverview,
   AudioOverviewInput,
+  Blueprint,
   DashboardSummary,
   Domain,
   FixItStreak,
@@ -98,6 +99,8 @@ import type {
   StudyGuideInput,
   StudyGuideListItem,
   StudyPlan,
+  TaskConfidenceInput,
+  TaskConfidenceResult,
   Topic,
   TopicHistoryEntry,
   TopicMasteryEntry,
@@ -354,6 +357,168 @@ export function useListTopics<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Official BOC PA8 blueprint with per-task confidence and mastery
+ */
+export const getGetBlueprintUrl = () => {
+  return `/api/blueprint`;
+};
+
+export const getBlueprint = async (
+  options?: RequestInit,
+): Promise<Blueprint> => {
+  return customFetch<Blueprint>(getGetBlueprintUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetBlueprintQueryKey = () => {
+  return [`/api/blueprint`] as const;
+};
+
+export const getGetBlueprintQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBlueprint>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBlueprint>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBlueprintQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBlueprint>>> = ({
+    signal,
+  }) => getBlueprint({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBlueprint>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBlueprintQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBlueprint>>
+>;
+export type GetBlueprintQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Official BOC PA8 blueprint with per-task confidence and mastery
+ */
+
+export function useGetBlueprint<
+  TData = Awaited<ReturnType<typeof getBlueprint>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBlueprint>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBlueprintQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Set the student's self-rated confidence for a task
+ */
+export const getRateTaskConfidenceUrl = (id: number) => {
+  return `/api/tasks/${id}`;
+};
+
+export const rateTaskConfidence = async (
+  id: number,
+  taskConfidenceInput: TaskConfidenceInput,
+  options?: RequestInit,
+): Promise<TaskConfidenceResult> => {
+  return customFetch<TaskConfidenceResult>(getRateTaskConfidenceUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(taskConfidenceInput),
+  });
+};
+
+export const getRateTaskConfidenceMutationOptions = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rateTaskConfidence>>,
+    TError,
+    { id: number; data: BodyType<TaskConfidenceInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof rateTaskConfidence>>,
+  TError,
+  { id: number; data: BodyType<TaskConfidenceInput> },
+  TContext
+> => {
+  const mutationKey = ["rateTaskConfidence"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof rateTaskConfidence>>,
+    { id: number; data: BodyType<TaskConfidenceInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return rateTaskConfidence(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RateTaskConfidenceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rateTaskConfidence>>
+>;
+export type RateTaskConfidenceMutationBody = BodyType<TaskConfidenceInput>;
+export type RateTaskConfidenceMutationError = ErrorType<NotFoundResponse>;
+
+/**
+ * @summary Set the student's self-rated confidence for a task
+ */
+export const useRateTaskConfidence = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rateTaskConfidence>>,
+    TError,
+    { id: number; data: BodyType<TaskConfidenceInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof rateTaskConfidence>>,
+  TError,
+  { id: number; data: BodyType<TaskConfidenceInput> },
+  TContext
+> => {
+  return useMutation(getRateTaskConfidenceMutationOptions(options));
+};
 
 export const getListNotebooksUrl = () => {
   return `/api/notebooks`;

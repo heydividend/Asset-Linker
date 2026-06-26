@@ -5,6 +5,7 @@ export const domains = pgTable("domains", {
   code: text("code").notNull().unique(),
   name: text("name").notNull(),
   weight: doublePrecision("weight").notNull(),
+  description: text("description"),
 });
 
 export type Domain = typeof domains.$inferSelect;

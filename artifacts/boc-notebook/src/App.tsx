@@ -11,6 +11,7 @@ import NotebooksList from "@/pages/NotebooksList";
 import NotebookDetail from "@/pages/NotebookDetail";
 import FlashcardsReview from "@/pages/FlashcardsReview";
 import QuizHub from "@/pages/QuizHub";
+import BlueprintPage from "@/pages/BlueprintPage";
 import QuizRunner from "@/pages/QuizRunner";
 import MockExamLanding from "@/pages/MockExamLanding";
 import MockExamRunner from "@/pages/MockExamRunner";
@@ -37,6 +38,7 @@ function Router() {
         <Route path="/notebooks" component={NotebooksList} />
         <Route path="/notebooks/:id" component={NotebookDetail} />
         <Route path="/flashcards" component={FlashcardsReview} />
+        <Route path="/blueprint" component={BlueprintPage} />
         <Route path="/quiz" component={QuizHub} />
         <Route path="/quiz/:id" component={QuizRunner} />
         <Route path="/mock-exam" component={MockExamLanding} />

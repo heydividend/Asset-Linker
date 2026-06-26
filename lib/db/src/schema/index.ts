@@ -1,5 +1,7 @@
 export * from "./domains";
 export * from "./topics";
+export * from "./tasks";
+export * from "./taskMastery";
 export * from "./notebooks";
 export * from "./notes";
 export * from "./flashcards";

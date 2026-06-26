@@ -1,6 +1,1 @@
-- [Flashcard re-rate SRS compounding](flashcard-rerate-srs.md) — "change my rating" re-calls the SM-2 review endpoint (not an overwrite); mild compounding accepted, not a bug.
-- [BOC multi-select partial credit](boc-multiselect-partial-credit.md) — conservative (correct−incorrect)/total floored at 0; formula duplicated in server + QuizRunner + MockExamRunner; mastery left on full-correct by design.
-- [Deploy as Reserved VM not autoscale](deployment-vm-vs-autoscale.md) — timed-exam app: autoscale cold-start = edge "invalid request"; type can only be changed in Publishing UI, not in code.
-- [BOC domain weights](boc-domain-weights.md) — five domain weights must equal official Practice Analysis 8th Ed %; drive mocks, schedule allocation, readiness.
-- [Readiness score honesty](readiness-score-honesty.md) — readiness = blueprint-weighted mastery + mock only; never padded by study-activity volume.
-- [BOC exam format facts](boc-exam-format-facts.md) — real exam ≈82s/q; multi_select quiz mode drills ~214 cross-domain items; timed mode is frontend-only via localStorage; matching low-ROI.
+- [API server dev restart](api-server-dev-restart.md) — boc-notebook's api-server dev script builds-then-starts (no watch); restart the workflow after backend route/schema changes or stale routes 404.

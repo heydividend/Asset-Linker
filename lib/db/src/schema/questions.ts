@@ -1,6 +1,7 @@
 import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 import { domains } from "./domains";
 import { topics } from "./topics";
+import { tasks } from "./tasks";
 
 export const questions = pgTable("questions", {
   id: serial("id").primaryKey(),
@@ -12,6 +13,7 @@ export const questions = pgTable("questions", {
   rationale: text("rationale").notNull(),
   domainId: integer("domain_id").references(() => domains.id, { onDelete: "set null" }),
   topicId: integer("topic_id").references(() => topics.id, { onDelete: "set null" }),
+  taskId: integer("task_id").references(() => tasks.id, { onDelete: "set null" }),
   difficulty: integer("difficulty").notNull().default(2),
   sourceKind: text("source_kind").notNull().default("ai"),
   sourceUrl: text("source_url"),
