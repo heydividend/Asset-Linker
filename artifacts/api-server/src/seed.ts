@@ -19,15 +19,15 @@ async function main() {
     scrape_jobs, conversations, messages, exam_schedule
     RESTART IDENTITY CASCADE`);
 
-  // 1. Domains (BOC Practice Analysis 8th Edition — approximate weights)
+  // 1. Domains (BOC Practice Analysis 8th Edition — official blueprint weights)
   const dRows = await db
     .insert(domains)
     .values([
-      { code: "D1", name: "Risk Reduction, Wellness & Health Literacy", weight: 0.21 },
-      { code: "D2", name: "Assessment, Evaluation & Diagnosis", weight: 0.22 },
-      { code: "D3", name: "Critical Incident Management", weight: 0.16 },
-      { code: "D4", name: "Therapeutic Intervention", weight: 0.24 },
-      { code: "D5", name: "Healthcare Administration & Professional Responsibility", weight: 0.17 },
+      { code: "D1", name: "Risk Reduction, Wellness & Health Literacy", weight: 0.2 },
+      { code: "D2", name: "Assessment, Evaluation & Diagnosis", weight: 0.256 },
+      { code: "D3", name: "Critical Incident Management", weight: 0.208 },
+      { code: "D4", name: "Therapeutic Intervention", weight: 0.256 },
+      { code: "D5", name: "Healthcare Administration & Professional Responsibility", weight: 0.08 },
     ])
     .returning();
   const D = Object.fromEntries(dRows.map((d) => [d.code, d.id])) as Record<string, number>;
@@ -101,19 +101,19 @@ EXAM SECURITY:
     {
       notebookId: nb.id,
       title: "Five BOC Domains (Practice Analysis 8th Edition)",
-      content: `1) Risk Reduction, Wellness, and Health Literacy (~21%)
+      content: `1) Risk Reduction, Wellness, and Health Literacy (20.0%)
    Prevention, education, environmental monitoring, protective equipment, nutrition, mental health screening, pre-participation exams.
 
-2) Assessment, Evaluation, and Diagnosis (~22%)
+2) Assessment, Evaluation, and Diagnosis (25.6%)
    History, observation, palpation, ROM, MMT, special tests, neurologic screening, imaging interpretation, differential diagnosis.
 
-3) Critical Incident Management (~16%)
+3) Critical Incident Management (20.8%)
    Cardiac emergencies, AED use, airway management, anaphylaxis, heat stroke (immediate cold-water immersion), cervical spine immobilization, hemorrhage control, on-field equipment removal.
 
-4) Therapeutic Intervention (~24%)
+4) Therapeutic Intervention (25.6%)
    Therapeutic modalities (thermal, electrical, mechanical), therapeutic exercise progression, manual therapy, neuromuscular re-education, return-to-play decision-making, pharmacology basics.
 
-5) Healthcare Administration and Professional Responsibility (~17%)
+5) Healthcare Administration and Professional Responsibility (8.0%)
    Documentation (SOAP), HIPAA/FERPA, emergency action plans (EAP), risk management, BOC Standards of Professional Practice, billing, supervision, scope of practice.`,
       sourceKind: "paste",
     },

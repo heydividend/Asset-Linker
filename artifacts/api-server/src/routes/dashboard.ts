@@ -110,18 +110,26 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     };
   });
 
-  const totalAttAll = domainMastery.reduce((s, d) => s + d.total, 0);
-  const totalCorrAll = domainMastery.reduce((s, d) => s + d.correct, 0);
+  // Blueprint-weighted knowledge: each domain contributes in proportion to its
+  // share of the real BOC exam (domain.weight), and a domain with no attempts
+  // counts as 0. This stops one heavily-drilled domain from masking the others
+  // and makes the number mirror the actual exam's domain mix — so you can't be
+  // "ready" until you're competent across all five weighted domains.
+  const weightById = new Map(dRows.map((d) => [d.id, d.weight]));
   const masteryReadiness =
-    totalAttAll === 0 ? 0 : (totalCorrAll / totalAttAll) * 100;
+    domainMastery.reduce((s, d) => {
+      const w = weightById.get(d.domainId) ?? 0;
+      const pct = d.total > 0 ? d.correct / d.total : 0;
+      return s + w * pct;
+    }, 0) * 100;
   const lastMock = recentMocks[0]?.scorePercent;
   const readinessBaseScore = Math.round(
     lastMock != null ? masteryReadiness * 0.4 + lastMock * 0.6 : masteryReadiness,
   );
 
-  // 7-day learning-activity bonus (capped at +10): study guides, ready
-  // podcasts, and game sessions in the last week each contribute up to a
-  // small share so just-started users still get visible progress.
+  // Recent (7-day) study-activity counts for the dashboard's activity stats.
+  // These are shown to the user but deliberately do NOT feed the readiness
+  // score (see below), so progress can't be inflated with busywork.
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const todayStart = startOfTodayUtc();
   const [{ guidesAll }] = await db
@@ -138,10 +146,6 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     WHERE ao.status = 'ready'
   `)) as unknown as { rows: Array<{ guidesWithPodcast: number }> };
   const guidesWithPodcast = Number(guidesWithPodcastRes.rows[0]?.guidesWithPodcast ?? 0);
-  const [{ podcasts7d }] = await db
-    .select({ podcasts7d: sql<number>`cast(count(*) as int)` })
-    .from(audioOverviews)
-    .where(and(eq(audioOverviews.status, "ready"), gte(audioOverviews.createdAt, sevenDaysAgo)));
   const [{ gamesAll }] = await db
     .select({ gamesAll: sql<number>`cast(count(*) as int)` })
     .from(gameSessions)
@@ -155,11 +159,12 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     .from(gameSessions)
     .where(and(eq(gameSessions.sessionId, sessionId), gte(gameSessions.completedAt, sevenDaysAgo)));
 
-  const guidesPts = Math.min(5, Number(guides7d) || 0);
-  const podcastsPts = Math.min(3, Number(podcasts7d) || 0);
-  const gamesPts = Math.min(2, Math.floor((Number(games7d) || 0) / 2));
-  const readinessBonus = Math.min(10, guidesPts + podcastsPts + gamesPts);
-  const readinessScore = Math.min(100, readinessBaseScore + readinessBonus);
+  // Readiness reflects demonstrated knowledge only (blueprint-weighted mastery
+  // blended with recent mock-exam performance). It is intentionally NOT padded
+  // by study-activity volume, so it can never read "ready" without the mastery
+  // and mock scores to back it up. Bonus kept at 0 for response compatibility.
+  const readinessBonus = 0;
+  const readinessScore = readinessBaseScore;
 
   // Continue learning: latest 5 touched items across notes / guides / ready
   // podcasts / game sessions, deduped per kind+id and sorted newest-first.

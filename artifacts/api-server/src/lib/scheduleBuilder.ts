@@ -122,6 +122,29 @@ export function buildSchedule(
   // Weighted ordering of domains for the rotation by exam weight (heaviest first)
   const orderedDomains = [...domains].sort((a, b) => b.weight - a.weight);
 
+  // Allocate focus days *proportional* to each domain's exam weight (not an
+  // even rotation), so heavier domains (e.g. Assessment & Therapeutic at 25.6%)
+  // get materially more study days than light ones (Health Admin at 8%). Uses
+  // the D'Hondt highest-averages method for a deterministic, well-interleaved
+  // sequence; ties favor heavier domains since orderedDomains is sorted desc.
+  const focusByDay: (Domain | undefined)[] = [];
+  if (orderedDomains.length > 0) {
+    const counts = new Map<number, number>(orderedDomains.map((d) => [d.id, 0]));
+    for (let n = 0; n < totalDays; n++) {
+      let best = orderedDomains[0];
+      let bestScore = -Infinity;
+      for (const d of orderedDomains) {
+        const score = d.weight / ((counts.get(d.id) ?? 0) + 1);
+        if (score > bestScore) {
+          bestScore = score;
+          best = d;
+        }
+      }
+      counts.set(best.id, (counts.get(best.id) ?? 0) + 1);
+      focusByDay.push(best);
+    }
+  }
+
   // Phase boundaries
   const lastIdx = totalDays - 1;
   const finalReviewStart = Math.max(0, lastIdx - 2); // last 3 days = final review
@@ -140,7 +163,7 @@ export function buildSchedule(
     else if (i >= deepStudyStart) phase = "deep_study";
     else phase = "foundation";
 
-    const focusDomain = orderedDomains[i % orderedDomains.length];
+    const focusDomain = focusByDay[i];
     const content = contentFor(focusDomain?.name);
     const region = pick(content.regions, i);
     const gameId = pick(content.gameIds, i);
