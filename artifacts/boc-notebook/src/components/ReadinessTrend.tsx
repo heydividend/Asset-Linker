@@ -100,6 +100,10 @@ export function ReadinessTrend({
 
   const first = points[0];
   const last = points[points.length - 1];
+  const rangeLabel =
+    points.length < 2 || first.date === last.date
+      ? formatDateShort(first.date)
+      : `${formatDateShort(first.date)} – ${formatDateShort(last.date)}`;
   const delta = last.score - first.score;
   const deltaLabel =
     points.length < 2
@@ -112,7 +116,15 @@ export function ReadinessTrend({
 
   return (
     <div className="mt-2" data-testid={testId}>
-      {rangeSelector && <div className="flex justify-end mb-1">{rangeSelector}</div>}
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <span
+          className="text-[10px] opacity-70 tabular-nums"
+          data-testid={testId ? `${testId}-window` : undefined}
+        >
+          {rangeLabel}
+        </span>
+        {rangeSelector}
+      </div>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
