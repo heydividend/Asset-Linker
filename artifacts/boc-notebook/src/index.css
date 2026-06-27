@@ -300,3 +300,13 @@
 .cl-footerAction {
   display: none !important;
 }
+
+/* Social sign-in (Google, etc.) is disabled — accounts are admin-provisioned
+   and sign-in is email/password only. Hide the social buttons and the "or"
+   divider so only the email field remains. */
+.cl-socialButtons,
+.cl-socialButtonsBlockButton,
+.cl-socialButtonsIconButton,
+.cl-dividerRow {
+  display: none !important;
+}
