@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { CalendarCheck, ClipboardList, History, Play, Sparkles, Timer, Trash2, Users } from "lucide-react";
+import { CalendarCheck, ClipboardList, History, Play, RefreshCw, Sparkles, Timer, Trash2, Users } from "lucide-react";
 
 const MODES = [
   { value: "adaptive", label: "Adaptive (focus on your weak areas)" },
@@ -36,6 +36,11 @@ export default function QuizHub() {
   const start = useStartQuiz();
   const del = useDeleteQuiz();
   const { toast } = useToast();
+
+  const onRegenerateDaily = () => {
+    if (!confirm("Build a brand-new daily quiz? This replaces today's set and clears any in-progress daily attempt. It can take up to a minute.")) return;
+    navigate("/daily-quiz?regenerate=1");
+  };
 
   const onDelete = (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
@@ -145,6 +150,14 @@ export default function QuizHub() {
             <div className="flex flex-col gap-2 shrink-0">
               <Button onClick={() => navigate("/daily-quiz")} data-testid="button-start-daily-quiz">
                 <Play className="h-4 w-4 mr-2" /> Start daily quiz
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRegenerateDaily}
+                data-testid="button-regenerate-daily-quiz"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" /> Regenerate today's set
               </Button>
               <Button
                 variant="ghost"

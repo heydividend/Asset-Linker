@@ -5,8 +5,8 @@ import { parseId } from "../lib/parseId";
 import { questionCredit } from "../lib/scoring";
 import { getOrCreateSessionId } from "../lib/sessionId";
 import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
-import { dateStrPT } from "../lib/today";
-import { getOrCreateDailyQuestionIds } from "../lib/dailyQuiz";
+import { dateStrPT, todayStrPT } from "../lib/today";
+import { getOrCreateDailyQuestionIds, clearTodayDailySet } from "../lib/dailyQuiz";
 
 const router: IRouter = Router();
 
@@ -237,6 +237,14 @@ router.post("/quizzes", async (req, res): Promise<void> => {
 // unfinished daily attempt if one exists, otherwise starts a new one.
 router.post("/quizzes/daily", async (req, res): Promise<void> => {
   const userId = getOrCreateSessionId(req, res);
+  const regenerate = req.body?.regenerate === true;
+  // For a "build a brand-new set" request, clear ONLY today's cached set so a
+  // fresh set is generated below. We deliberately leave the user's in-progress
+  // attempt untouched until generation succeeds, so a failed regeneration can
+  // never destroy their existing daily attempt.
+  if (regenerate) {
+    await clearTodayDailySet(userId);
+  }
   let questionIds: number[];
   try {
     questionIds = await getOrCreateDailyQuestionIds(userId);
@@ -256,6 +264,29 @@ router.post("/quizzes/daily", async (req, res): Promise<void> => {
     .where(and(eq(quizzes.userId, userId), eq(quizzes.mode, "daily")))
     .orderBy(desc(quizzes.startedAt))
     .limit(1);
+
+  // Regenerate path: generation has now succeeded, so it's safe to discard
+  // today's in-progress attempt (if any) and always start a brand-new one.
+  // Scoped to the single resumable attempt AND to today (Pacific), so older
+  // days' attempts are never touched. quiz_answers cascade-delete with the quiz.
+  if (regenerate) {
+    if (recent && !recent.finished && dateStrPT(recent.startedAt) === todayStrPT()) {
+      await db.delete(quizzes).where(and(eq(quizzes.id, recent.id), eq(quizzes.userId, userId)));
+    }
+    const [quiz] = await db
+      .insert(quizzes)
+      .values({ userId, mode: "daily", questionIds })
+      .returning();
+    res.status(201).json({
+      id: quiz.id,
+      mode: quiz.mode,
+      questions: await buildQuizQuestionView(quiz.questionIds, new Map()),
+      currentIndex: 0,
+      finished: false,
+    });
+    return;
+  }
+
   const sameSet =
     recent &&
     !recent.finished &&

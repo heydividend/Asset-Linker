@@ -250,3 +250,12 @@ export async function getOrCreateDailyQuestionIds(userId: string): Promise<numbe
     .where(and(eq(dailyQuizSets.userId, userId), eq(dailyQuizSets.date, date)));
   return row?.questionIds ?? ids;
 }
+
+// Delete today's cached daily set so the next request regenerates a brand-new
+// one. Backs the "Regenerate today's set" action.
+export async function clearTodayDailySet(userId: string): Promise<void> {
+  const date = todayStrPT();
+  await db
+    .delete(dailyQuizSets)
+    .where(and(eq(dailyQuizSets.userId, userId), eq(dailyQuizSets.date, date)));
+}
