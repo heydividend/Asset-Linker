@@ -45,13 +45,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobile]);
 
-  // Auto-collapse the global sidebar on the crowded notebook detail page
-  // (which already has its own Sources column + AI Tutor chat). Restore the
-  // user's prior sidebar state when leaving.
-  const inNotebookDetail = /^\/notebooks\/\d+/.test(location);
+  // Auto-collapse the global sidebar on crowded full-width pages — the notebook
+  // detail page (its own Sources column + AI Tutor chat) and the study-group
+  // page (its own wide collaborative layout). Restore the user's prior sidebar
+  // state when leaving.
+  const autoCollapseSidebar = /^\/notebooks\/\d+/.test(location) || location === "/study-group";
   const sidebarBeforeAutoCollapse = useRef<boolean | null>(null);
   useEffect(() => {
-    if (inNotebookDetail) {
+    if (autoCollapseSidebar) {
       if (sidebarBeforeAutoCollapse.current === null) {
         sidebarBeforeAutoCollapse.current = sidebarCollapsed;
         if (!sidebarCollapsed) setSidebarCollapsed(true);
@@ -62,7 +63,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       if (sidebarCollapsed && !prev) setSidebarCollapsed(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inNotebookDetail]);
+  }, [autoCollapseSidebar]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
