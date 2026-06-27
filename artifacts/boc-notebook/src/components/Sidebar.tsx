@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useClerk } from "@clerk/react";
-import { Stethoscope, ChevronLeft, Compass, MapPin, FileText, RotateCcw, HelpCircle, Check, PlayCircle, LogOut, Shield } from "lucide-react";
+import { ChevronLeft, Compass, MapPin, FileText, RotateCcw, HelpCircle, Check, PlayCircle, LogOut, Shield } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
 import { PAGES } from "@/lib/tour";
 import { useMe } from "@/hooks/use-me";
 import { HelpDialog } from "./HelpDialog";
@@ -33,7 +34,7 @@ export function Sidebar() {
       style={{ width: sidebarWidth }}
     >
       <div className="h-12 flex items-center px-3 border-b border-sidebar-border gap-1.5 min-w-0">
-        <Stethoscope className="h-5 w-5 text-primary shrink-0" />
+        <LogoMark className="h-6 w-6 shrink-0" />
         <span className="font-semibold text-sm text-sidebar-foreground truncate flex-1">BOC Notebook</span>
         <Button
           size="icon"

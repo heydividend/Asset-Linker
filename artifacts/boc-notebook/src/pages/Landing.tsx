@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
 
 // Concept: "The Score Report." The real BOC reports a 200–800 scaled score
 // (passing at 500) across five practice-analysis domains. The landing borrows
@@ -126,9 +127,7 @@ export default function Landing() {
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Stethoscope className="h-4 w-4 text-primary-foreground" />
-            </span>
+            <LogoMark className="h-8 w-8" />
             <span className="text-sm font-semibold tracking-tight">
               BOC Study Notebook
             </span>
