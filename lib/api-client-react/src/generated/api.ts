@@ -41,8 +41,10 @@ import type {
   GetDashboardReadinessHistoryParams,
   GetDashboardTopicHistoryParams,
   GetDashboardTopicMasteryParams,
+  GetItemAnalysisParams,
   GetStudyGroupLibraryParams,
   HealthStatus,
+  ItemAnalysisResult,
   ListAllFlashcardsParams,
   ListAllQuestionsParams,
   ListAllStudyGuidesParams,
@@ -5983,6 +5985,100 @@ export function useGetDashboardReadinessHistory<
     params,
     options,
   );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Classical item statistics (difficulty, discrimination, distractor analysis) over the answer history.
+ */
+export const getGetItemAnalysisUrl = (params?: GetItemAnalysisParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/item-analysis?${stringifiedParams}`
+    : `/api/item-analysis`;
+};
+
+export const getItemAnalysis = async (
+  params?: GetItemAnalysisParams,
+  options?: RequestInit,
+): Promise<ItemAnalysisResult> => {
+  return customFetch<ItemAnalysisResult>(getGetItemAnalysisUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetItemAnalysisQueryKey = (params?: GetItemAnalysisParams) => {
+  return [`/api/item-analysis`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetItemAnalysisQueryOptions = <
+  TData = Awaited<ReturnType<typeof getItemAnalysis>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetItemAnalysisParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getItemAnalysis>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetItemAnalysisQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getItemAnalysis>>> = ({
+    signal,
+  }) => getItemAnalysis(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getItemAnalysis>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetItemAnalysisQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getItemAnalysis>>
+>;
+export type GetItemAnalysisQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Classical item statistics (difficulty, discrimination, distractor analysis) over the answer history.
+ */
+
+export function useGetItemAnalysis<
+  TData = Awaited<ReturnType<typeof getItemAnalysis>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetItemAnalysisParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getItemAnalysis>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetItemAnalysisQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

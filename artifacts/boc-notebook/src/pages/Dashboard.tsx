@@ -960,6 +960,14 @@ export default function Dashboard() {
                       </>
                     );
                   })()}
+                  {summary?.readinessScaled && (
+                    <p className="text-[10px] opacity-80 mt-1 truncate" data-testid="readiness-scaled">
+                      Scaled {summary.readinessScaled.scaledScore} / {summary.readinessScaled.passingScaledScore}
+                      {summary.readinessScaled.passing
+                        ? " · passing"
+                        : ` · ${summary.readinessScaled.pointsToPass} to pass`}
+                    </p>
+                  )}
                   <ReadinessTrend
                     points={readinessHistory}
                     testId="readiness-trend"
@@ -1829,6 +1837,24 @@ export default function Dashboard() {
                               >
                                 <div className="flex justify-between items-center gap-2 text-xs min-w-0">
                                   <span className="font-medium truncate flex-1 min-w-0" title={domain.name}>{domain.name}</span>
+                                  {domain.total > 0 && domain.band && (
+                                    <span
+                                      className={`shrink-0 text-[9px] px-1 py-0.5 rounded font-medium ${
+                                        domain.band === "considerably lower"
+                                          ? "bg-destructive/15 text-destructive"
+                                          : domain.band === "marginally lower"
+                                            ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                                            : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                      }`}
+                                      title={`Performance vs. passing candidates: ${domain.band}`}
+                                    >
+                                      {domain.band === "considerably lower"
+                                        ? "Far below"
+                                        : domain.band === "marginally lower"
+                                          ? "Near pass"
+                                          : "At/above"}
+                                    </span>
+                                  )}
                                   {isStartingThis ? (
                                     <span className="text-[10px] text-muted-foreground shrink-0">Starting…</span>
                                   ) : (

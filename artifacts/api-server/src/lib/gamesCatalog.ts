@@ -26,6 +26,10 @@ export const GAMES_CATALOG: GameMeta[] = [
   { id: "ch25-spine", title: "Ch 25: The Spine", estMinutes: 10 },
   { id: "ch27-thorax", title: "Ch 27: The Thorax & Abdomen", estMinutes: 10 },
   { id: "ch28-skin", title: "Ch 28: The Skin", estMinutes: 10 },
+  // Question-driven games (not matching decks) — drill the weakest domains.
+  { id: "code-blue", title: "Code Blue: Emergency Triage", estMinutes: 8 },
+  { id: "survivor", title: "Survivor: Streak Gauntlet", estMinutes: 8 },
+  { id: "spot-contraindication", title: "Spot the Contraindication", estMinutes: 8 },
 ];
 
 export function gameForDayIndex(i: number): GameMeta {

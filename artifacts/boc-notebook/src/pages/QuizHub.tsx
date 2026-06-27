@@ -16,35 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { ArrowDown, ArrowUp, CalendarCheck, ClipboardList, History, Minus, Play, Sparkles, Timer, Trash2, Users } from "lucide-react";
-
-function toPct(x: { score?: number | null; correctCount: number; totalQuestions: number }): number {
-  return x.score != null
-    ? Math.round(x.score)
-    : x.totalQuestions > 0
-      ? Math.round((x.correctCount / x.totalQuestions) * 100)
-      : 0;
-}
-
-function DeltaBadge({ delta }: { delta: number }) {
-  if (delta === 0) {
-    return (
-      <span className="text-[11px] text-muted-foreground inline-flex items-center gap-0.5">
-        <Minus className="h-3 w-3" /> 0
-      </span>
-    );
-  }
-  const up = delta > 0;
-  return (
-    <span
-      className={`text-[11px] font-medium inline-flex items-center gap-0.5 ${up ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}
-    >
-      {up ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-      {up ? "+" : ""}
-      {delta}
-    </span>
-  );
-}
+import { CalendarCheck, ClipboardList, History, Play, Sparkles, Timer, Trash2, Users } from "lucide-react";
 
 const MODES = [
   { value: "adaptive", label: "Adaptive (focus on your weak areas)" },
@@ -300,89 +272,37 @@ export default function QuizHub() {
               <div className="space-y-2">
                 {attempts.map((a) => {
                   const finished = !!a.finishedAt;
-                  const pct = toPct(a);
-                  const retakes = a.retakes ?? [];
+                  const pct = a.totalQuestions > 0 ? Math.round((a.correctCount / a.totalQuestions) * 100) : 0;
                   return (
                     <div
                       key={a.id}
-                      className="p-2.5 border rounded-md min-w-0 space-y-2"
+                      className="flex items-center gap-2 p-2.5 border rounded-md hover-elevate min-w-0"
                       data-testid={`attempt-${a.id}`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <button
-                          onClick={() => navigate(`/quiz/${a.id}`)}
-                          className="flex-1 flex items-center justify-between gap-2 text-left min-w-0 hover-elevate rounded-md -m-1 p-1"
-                        >
-                          <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                            <Badge variant="outline" className="uppercase text-[10px] px-1.5 py-0">{a.mode}</Badge>
-                            <span className="font-medium text-xs">{a.totalQuestions}q</span>
-                            {!finished && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">In progress</Badge>}
-                            {retakes.length > 0 && (
-                              <Badge
-                                variant="secondary"
-                                className="text-[10px] px-1.5 py-0"
-                                data-testid={`attempt-retake-count-${a.id}`}
-                              >
-                                {retakes.length} retake{retakes.length === 1 ? "" : "s"}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground shrink-0">
-                            {finished ? `${pct}% (${a.correctCount}/${a.totalQuestions})` : "Resume"}
-                          </div>
-                        </button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
-                          onClick={(e) => onDelete(e, a.id)}
-                          disabled={del.isPending}
-                          data-testid={`button-delete-attempt-${a.id}`}
-                          aria-label="Delete attempt"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                      {retakes.length > 0 && (
-                        <div
-                          className="pl-6 space-y-1 border-l ml-2"
-                          data-testid={`attempt-retakes-${a.id}`}
-                        >
-                          {retakes.map((rt, i) => {
-                            const rtFinished = !!rt.finishedAt;
-                            const rtPct = toPct(rt);
-                            return (
-                              <button
-                                key={rt.id}
-                                onClick={() => navigate(`/quiz/${rt.id}`)}
-                                className="w-full flex items-center justify-between gap-2 text-left text-xs hover-elevate rounded-md p-1.5"
-                                data-testid={`attempt-retake-${rt.id}`}
-                              >
-                                <span className="text-muted-foreground">
-                                  Retake {i + 1}
-                                  {rtFinished ? (
-                                    <span className="opacity-70"> · original {pct}% → {rtPct}%</span>
-                                  ) : (
-                                    <span className="opacity-70"> · in progress</span>
-                                  )}
-                                </span>
-                                <span className="flex items-center gap-2 shrink-0">
-                                  {rtFinished ? (
-                                    <>
-                                      <span className="text-muted-foreground">
-                                        ({rt.correctCount}/{rt.totalQuestions})
-                                      </span>
-                                      {finished && <DeltaBadge delta={rtPct - pct} />}
-                                    </>
-                                  ) : (
-                                    <span className="text-muted-foreground">Resume</span>
-                                  )}
-                                </span>
-                              </button>
-                            );
-                          })}
+                      <button
+                        onClick={() => navigate(`/quiz/${a.id}`)}
+                        className="flex-1 flex items-center justify-between gap-2 text-left min-w-0"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                          <Badge variant="outline" className="uppercase text-[10px] px-1.5 py-0">{a.mode}</Badge>
+                          <span className="font-medium text-xs">{a.totalQuestions}q</span>
+                          {!finished && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">In progress</Badge>}
                         </div>
-                      )}
+                        <div className="text-xs text-muted-foreground shrink-0">
+                          {finished ? `${pct}% (${a.correctCount}/${a.totalQuestions})` : "Resume"}
+                        </div>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={(e) => onDelete(e, a.id)}
+                        disabled={del.isPending}
+                        data-testid={`button-delete-attempt-${a.id}`}
+                        aria-label="Delete attempt"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   );
                 })}

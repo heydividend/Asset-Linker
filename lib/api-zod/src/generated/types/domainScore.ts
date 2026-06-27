@@ -5,6 +5,7 @@
  * BOC Study Notebook API
  * OpenAPI spec version: 0.1.0
  */
+import type { DomainScoreBand } from "./domainScoreBand";
 
 export interface DomainScore {
   domainId: number;
@@ -12,4 +13,10 @@ export interface DomainScore {
   name: string;
   correct: number;
   total: number;
+  /** Domain performance as a percentage (0-100). */
+  percent?: number;
+  /** Domain performance on the BOC 200-800 scaled frame. */
+  scaledScore?: number;
+  /** Performance vs. the passing standard, in BOC score-report language. */
+  band?: DomainScoreBand;
 }

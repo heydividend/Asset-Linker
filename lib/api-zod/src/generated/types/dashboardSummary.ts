@@ -11,6 +11,7 @@ import type { DomainFlashcardCount } from "./domainFlashcardCount";
 import type { DomainScore } from "./domainScore";
 import type { GamesActivitySummary } from "./gamesActivitySummary";
 import type { QuizSummary } from "./quizSummary";
+import type { ScaledReadout } from "./scaledReadout";
 import type { StudyGuidesSummary } from "./studyGuidesSummary";
 import type { TopicScore } from "./topicScore";
 
@@ -27,6 +28,7 @@ export interface DashboardSummary {
   readinessGoalMax: number;
   /** True once readinessScore reaches the goal's lower bound. */
   readinessOnTrack: boolean;
+  readinessScaled?: ScaledReadout;
   lastUpdated: Date;
   totalQuestionsAnswered: number;
   totalCorrect: number;

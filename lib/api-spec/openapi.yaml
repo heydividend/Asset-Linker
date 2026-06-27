@@ -1051,6 +1051,28 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/ReadinessHistoryPoint" }
+  /item-analysis:
+    get:
+      operationId: getItemAnalysis
+      tags: [dashboard]
+      summary: Classical item statistics (difficulty, discrimination, distractor analysis) over the answer history.
+      parameters:
+        - name: minN
+          in: query
+          required: false
+          description: "Minimum responses before an item is stat-flagged (default 5)."
+          schema: { type: integer, minimum: 1, default: 5 }
+        - name: limit
+          in: query
+          required: false
+          description: "Max problematic items returned (1-500, default 100)."
+          schema: { type: integer, minimum: 1, maximum: 500, default: 100 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ItemAnalysisResult" }
   /plan/today:
     get:
       operationId: getStudyPlanToday
@@ -1841,12 +1863,7 @@ components:
         mode: { type: string, enum: [adaptive, topic, domain, weakness, daily, practice] }
         totalQuestions: { type: integer }
         correctCount: { type: integer }
-        score: { type: ["number", "null"], description: "Percent score (0-100) of this attempt, if finished." }
         finishedAt: { type: ["string", "null"], format: date-time }
-        retakes:
-          type: array
-          description: "Practice re-takes cloned from this attempt's set, oldest → newest. Omitted for retakes themselves."
-          items: { $ref: "#/components/schemas/QuizRetake" }
     DailyQuizHistoryEntry:
       type: object
       required: [id, date, totalQuestions, correctCount, score, finishedAt, retakes]
@@ -2075,6 +2092,20 @@ components:
         name: { type: string }
         correct: { type: integer }
         total: { type: integer }
+        percent: { type: integer, description: "Domain performance as a percentage (0-100)." }
+        scaledScore: { type: integer, description: "Domain performance on the BOC 200-800 scaled frame." }
+        band:
+          type: string
+          enum: ["at or above passing", "marginally lower", "considerably lower"]
+          description: "Performance vs. the passing standard, in BOC score-report language."
+    ScaledReadout:
+      type: object
+      required: [scaledScore, passingScaledScore, passing, pointsToPass]
+      properties:
+        scaledScore: { type: integer, description: "Overall readiness on the BOC 200-800 scaled frame." }
+        passingScaledScore: { type: integer, description: "The passing point (500)." }
+        passing: { type: boolean, description: "True when scaledScore >= 500." }
+        pointsToPass: { type: integer, description: "Scaled points still needed to reach 500 (0 if passing)." }
     TopicScore:
       type: object
       required: [topicId, name, mastery]
@@ -2211,6 +2242,7 @@ components:
         readinessGoalMin: { type: number, description: "Lower bound of the target readiness band to be exam-ready." }
         readinessGoalMax: { type: number, description: "Upper bound of the target readiness band to be exam-ready." }
         readinessOnTrack: { type: boolean, description: "True once readinessScore reaches the goal's lower bound." }
+        readinessScaled: { $ref: "#/components/schemas/ScaledReadout" }
         lastUpdated: { type: string, format: date-time }
         totalQuestionsAnswered: { type: integer }
         totalCorrect: { type: integer }
@@ -2808,4 +2840,36 @@ components:
         attempts: { type: integer }
         correct: { type: integer }
         accuracy: { type: number, nullable: true }
+    ItemAnalysisEntry:
+      type: object
+      required: [questionId, stem, n, pValue, discrimination, nonFunctionalDistractors, flags]
+      properties:
+        questionId: { type: integer }
+        stem: { type: string, description: "Truncated question stem for display." }
+        domain: { type: ["string", "null"], description: "Domain code (D1-D5) the item is tagged to." }
+        n: { type: integer, description: "Number of recorded responses." }
+        pValue: { type: number, description: "Difficulty: fraction answered correctly (0-1)." }
+        discrimination: { type: number, description: "Point-biserial vs. attempt performance; negative = likely miskeyed." }
+        nonFunctionalDistractors:
+          type: array
+          items: { type: integer }
+          description: "Distractor choice indices chosen by almost no one."
+        flags:
+          type: array
+          items: { type: string }
+          description: "e.g. negative-discrimination, low-discrimination, too-easy, too-hard, non-functional-distractor."
+    ItemAnalysisResult:
+      type: object
+      required: [totalAnswers, analyzed, flagCounts, items]
+      properties:
+        totalAnswers: { type: integer, description: "Total answer records analyzed." }
+        analyzed: { type: integer, description: "Distinct questions analyzed." }
+        flagCounts:
+          type: object
+          additionalProperties: { type: integer }
+          description: "Count of items carrying each flag."
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ItemAnalysisEntry" }
+        note: { type: string, description: "Present when there is no data yet." }
 

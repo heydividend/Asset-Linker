@@ -1,0 +1,128 @@
+[
+  {
+    "chapter": 17,
+    "type": "mc",
+    "stem": "What is classified solely as a disinfectant?",
+    "choices": [
+      "alcohol",
+      "phenol",
+      "hydrogen peroxide",
+      "chlorine",
+      "betadine"
+    ],
+    "correctLetters": [
+      "a"
+    ],
+    "multiSelect": false,
+    "rationale": "Alcohol is one of the most widely used skin disinfectants.",
+    "quarantineReason": "Flawed: alcohol (keyed) is also an antiseptic; ambiguous best answer."
+  },
+  {
+    "chapter": 18,
+    "type": "mc",
+    "stem": "What structure in the foot is the main weight-bearing support during walking and running?",
+    "choices": [
+      "calcaneus",
+      "medial longitudinal arch",
+      "tarsal bones",
+      "ligaments of the foot",
+      "first metatarsal joint"
+    ],
+    "correctLetters": [
+      "e"
+    ],
+    "multiSelect": false,
+    "rationale": "First metatarsal joint is the largest and strongest joint which acts with the other phalangeal joints in a hinge action.",
+    "quarantineReason": "Ambiguous key (medial longitudinal arch is equally defensible)."
+  },
+  {
+    "chapter": 12,
+    "type": "mc",
+    "stem": "When giving cardiopulmonary resuscitation to a child, after establishing unresponsiveness and calling 911, what should be the next step?",
+    "choices": [
+      "get the AED",
+      "compress chest about 2 inches",
+      "perform 30 compressions",
+      "perform mouth-to-mouth breathing after opening the airway",
+      "perform bag-valve-mask respirations"
+    ],
+    "correctLetters": [
+      "a"
+    ],
+    "multiSelect": false,
+    "rationale": "After establishing unresponsiveness and calling 911, an athletic trainer should get the AED/defibrillator or send a second rescuer to get one.",
+    "quarantineReason": "Ambiguous CPR sequence; CPR application specifics are not tested on the BOC exam."
+  },
+  {
+    "chapter": 15,
+    "type": "mc",
+    "stem": "Which of the following statements is correct regarding this modality?",
+    "choices": [
+      "The spray should be held at a 90 degree angle.",
+      "The spray should only be 2/3 inches from the injured muscle.",
+      "The spray should be perpendicular.",
+      "The patient should do active stretching while the spray is being applied.",
+      "The spray should cover the skin area 1/2 times."
+    ],
+    "correctLetters": [
+      "e"
+    ],
+    "multiSelect": false,
+    "rationale": "You should spray the area in order to cover the skin area 1/2 times.",
+    "quarantineReason": "Vague/context-dependent (\"this modality\") — unanswerable standalone."
+  },
+  {
+    "chapter": 19,
+    "type": "mc",
+    "stem": "This stretching technique would be best if a person is suffering from what?",
+    "choices": [
+      "Achilles tendon strain",
+      "Achilles tendinosis",
+      "Achilles tendon rupture",
+      "peroneal tendon subluxation",
+      "peroneal tendinitis"
+    ],
+    "correctLetters": [
+      "a"
+    ],
+    "multiSelect": false,
+    "rationale": "Stretching and strengthening the Achilles complex should begin as soon as possible with an Achilles tendon strain.",
+    "quarantineReason": "Vague/context-dependent (\"this technique\") — unanswerable standalone."
+  },
+  {
+    "chapter": 25,
+    "type": "mc",
+    "stem": "In the history section of a spine assessment, what would be considered an INAPPROPRIATE question to ask the patient?",
+    "choices": [
+      "Did you hit someone with, or land directly on, the top of your head?",
+      "How do you prefer to sit?",
+      "Do you have radicular paraesthesia down the extremities?",
+      "Is there any pain in your buttocks or the back of the legs?",
+      "Do you have a low level of pain?"
+    ],
+    "correctLetters": [
+      "c"
+    ],
+    "multiSelect": false,
+    "rationale": "Using medical terms like “radicular paraesthesia” is inappropriate and could be difficult for the patient to understand when trying to create a patient history of an initial assessment.",
+    "quarantineReason": "Flawed: radicular paresthesia (keyed as INAPPROPRIATE) is in fact an appropriate spine-history question."
+  },
+  {
+    "chapter": 8,
+    "type": "mc",
+    "stem": "What is the purpose of using prewrap under adhesive tape?",
+    "choices": [
+      "to decrease chaffing to the underlying skin",
+      "increases the tensile strength of adhesive tape",
+      "to act as a barrier in cases of sensitive skin",
+      "to extend the effectiveness of the adhesive tape application in controlling motion longer",
+      "to eliminate the need to use skin lubricant"
+    ],
+    "correctLetters": [
+      "d"
+    ],
+    "multiSelect": false,
+    "rationale": "Using prewrap under adhesive tape in cases of sensitive skin. Where maximum support is desired, it is ideal to tape directly over skin.",
+    "quarantineReason": "Flawed: keyed answer (d, extends taping effectiveness) contradicts its own rationale (skin protection); choices a and c are both defensible — two correct answers on a single-select item."
+  }
+]

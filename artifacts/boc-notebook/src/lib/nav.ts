@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Gamepad2,
   Headphones,
+  Microscope,
   LayoutDashboard,
   ScrollText,
   Sparkles,
@@ -39,4 +40,5 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/tutor", label: "AI Tutor", icon: Bot },
   { href: "/study-group", label: "Study Group", icon: Users },
   { href: "/ai-learning", label: "AI Learning", icon: Sparkles },
+  { href: "/item-quality", label: "Item Quality", icon: Microscope },
 ];

@@ -1,0 +1,214 @@
+[
+  {
+    "stem": "A soccer player plants and pivots, feels a \"pop,\" and the knee swells within 2 hours. Which findings/tests would support an anterior cruciate ligament (ACL) tear? Select all that apply.",
+    "choices": [
+      "Positive Lachman test",
+      "Positive anterior drawer of the knee",
+      "Positive pivot shift",
+      "Positive McMurray test",
+      "Positive Thompson test"
+    ],
+    "correctIndices": [0, 1, 2],
+    "multiSelect": true,
+    "rationale": "Lachman (most sensitive), anterior drawer, and pivot shift all assess anterior tibial translation/rotatory instability from ACL deficiency. McMurray assesses the meniscus; Thompson assesses Achilles continuity — neither evaluates the ACL.",
+    "domainHint": "D2"
+  },
+  {
+    "stem": "Per the Ottawa Ankle Rules, radiographs of the ankle are indicated when there is pain in the malleolar zone AND which of the following? Select all that apply.",
+    "choices": [
+      "Bony tenderness at the posterior edge or tip of the lateral malleolus",
+      "Bony tenderness at the posterior edge or tip of the medial malleolus",
+      "Inability to bear weight for 4 steps both immediately and in the clinic",
+      "Visible swelling over the anterior talofibular ligament",
+      "A positive anterior drawer of the ankle"
+    ],
+    "correctIndices": [0, 1, 2],
+    "multiSelect": true,
+    "rationale": "The Ottawa Ankle Rules image when malleolar-zone pain is accompanied by bony tenderness at the posterior edge/tip of either malleolus OR inability to bear weight 4 steps immediately and in the clinic. Soft-tissue swelling and ligamentous laxity (anterior drawer) are not part of the rule.",
+    "domainHint": "D2"
+  },
+  {
+    "stem": "Which single special test is the MOST sensitive for an anterior cruciate ligament tear?",
+    "choices": ["Anterior drawer", "Lachman test", "Pivot shift", "Valgus stress at 30°", "McMurray test"],
+    "correctIndices": [1],
+    "multiSelect": false,
+    "rationale": "The Lachman test (anterior tibial translation at 20–30° flexion) is the most sensitive ACL test; the pivot shift is the most specific. Valgus stress assesses the MCL and McMurray the meniscus.",
+    "domainHint": "D2"
+  },
+  {
+    "stem": "A swimmer reports anterior shoulder pain with overhead motion. Which findings would support subacromial impingement / rotator-cuff pathology? Select all that apply.",
+    "choices": [
+      "Positive Hawkins-Kennedy test",
+      "Positive Neer test",
+      "Positive empty-can (Jobe) test",
+      "Positive drop-arm test",
+      "Positive Spurling test"
+    ],
+    "correctIndices": [0, 1, 2, 3],
+    "multiSelect": true,
+    "rationale": "Hawkins-Kennedy and Neer reproduce subacromial impingement; the empty-can isolates the supraspinatus; a positive drop-arm suggests a rotator-cuff (supraspinatus) tear. Spurling assesses cervical radiculopathy, not the shoulder.",
+    "domainHint": "D2"
+  },
+  {
+    "stem": "An athlete has neck and radiating arm pain after a stinger. Spurling's test reproduces radicular symptoms down the arm. This finding most directly supports which clinical diagnosis?",
+    "choices": [
+      "Cervical radiculopathy / nerve-root compression",
+      "Acromioclavicular joint sprain",
+      "Thoracic outlet syndrome",
+      "Glenohumeral instability",
+      "Subacromial bursitis"
+    ],
+    "correctIndices": [0],
+    "multiSelect": false,
+    "rationale": "Spurling's (extension + rotation + axial compression toward the symptomatic side) narrows the neural foramen and reproduces radicular pain in cervical radiculopathy. It does not implicate the AC joint, glenohumeral capsule, or subacromial bursa.",
+    "domainHint": "D2"
+  },
+  {
+    "stem": "Which assessment tools are appropriate for evaluating a suspected sport-related concussion? Select all that apply.",
+    "choices": [
+      "SCAT6 (Sport Concussion Assessment Tool)",
+      "VOMS (Vestibular/Ocular-Motor Screening)",
+      "BESS (Balance Error Scoring System)",
+      "King-Devick test",
+      "Ottawa Ankle Rules"
+    ],
+    "correctIndices": [0, 1, 2, 3],
+    "multiSelect": true,
+    "rationale": "SCAT6, VOMS, BESS, and King-Devick all assess concussion-related domains (symptoms, vestibular/ocular function, balance, rapid number naming). The Ottawa Ankle Rules are an ankle-imaging decision tool, unrelated to concussion.",
+    "domainHint": "D2"
+  },
+  {
+    "stem": "The anterior drawer test of the ANKLE primarily assesses the integrity of which structure?",
+    "choices": [
+      "Anterior talofibular ligament (ATFL)",
+      "Calcaneofibular ligament (CFL)",
+      "Deltoid ligament",
+      "Anterior inferior tibiofibular ligament (syndesmosis)",
+      "Achilles tendon"
+    ],
+    "correctIndices": [0],
+    "multiSelect": false,
+    "rationale": "The ankle anterior drawer stresses the ATFL (the most commonly injured lateral ligament). The talar tilt assesses the CFL; the squeeze/external-rotation tests assess the syndesmosis; Thompson assesses the Achilles.",
+    "domainHint": "D2"
+  },
+  {
+    "stem": "A runner reports deep, exercise-induced leg pain with numbness that resolves with rest. Which findings should raise concern for chronic exertional compartment syndrome and prompt physician referral? Select all that apply.",
+    "choices": [
+      "Pain that predictably begins at a set exertion level and resolves with rest",
+      "Paresthesia in the distribution of a compartment's nerve",
+      "Tense, firm compartment after exertion",
+      "Immediate relief with stretching the involved muscle",
+      "Elevated intracompartmental pressure on testing"
+    ],
+    "correctIndices": [0, 1, 2, 4],
+    "multiSelect": true,
+    "rationale": "Reproducible exertional pain, post-exertion compartment tightness, nerve-distribution paresthesia, and elevated intracompartmental pressures characterize chronic exertional compartment syndrome. Symptoms are not relieved by stretching — that finding points away from the diagnosis.",
+    "domainHint": "D2"
+  },
+  {
+    "stem": "When taking a focused history (the H in HOPS / the S in SOAP), which items are appropriate to elicit? Select all that apply.",
+    "choices": [
+      "Mechanism of injury",
+      "Location and behavior of symptoms",
+      "Prior injury to the area",
+      "Goniometric range-of-motion measurements",
+      "Aggravating and easing factors"
+    ],
+    "correctIndices": [0, 1, 2, 4],
+    "multiSelect": true,
+    "rationale": "History is subjective: mechanism, symptom location/behavior, prior injury, and aggravating/easing factors. Goniometric ROM is an objective, measured finding obtained during the physical exam, not the history.",
+    "domainHint": "D2"
+  },
+  {
+    "stem": "A wrestler lands on a flexed, adducted hip and cannot bear weight; the limb appears shortened, flexed, adducted, and internally rotated. The most likely clinical diagnosis is:",
+    "choices": [
+      "Posterior hip dislocation",
+      "Anterior hip dislocation",
+      "Femoral neck stress fracture",
+      "Hip flexor strain",
+      "Greater trochanteric bursitis"
+    ],
+    "correctIndices": [0],
+    "multiSelect": false,
+    "rationale": "A posterior hip dislocation classically presents with the limb shortened, flexed, adducted, and internally rotated — a medical emergency requiring immobilization and urgent transport (risk to the femoral head blood supply and sciatic nerve).",
+    "domainHint": "D2"
+  },
+  {
+    "stem": "An athlete collapses during football in a WBGT of 90°F with confusion and a rectal temperature of 105.8°F. Which actions are appropriate in immediate management? Select all that apply.",
+    "choices": [
+      "Begin cold-water immersion on-site before transport (cool first, transport second)",
+      "Monitor core temperature with a rectal thermistor during cooling",
+      "Activate EMS",
+      "Delay cooling until the athlete reaches the emergency department",
+      "Stop cooling when rectal temperature reaches approximately 102°F"
+    ],
+    "correctIndices": [0, 1, 2, 4],
+    "multiSelect": true,
+    "rationale": "Exertional heat stroke is treated cool-first/transport-second with cold-water immersion, continuous rectal-temperature monitoring, EMS activation, and cooling to ~102°F before stopping. Delaying cooling until the ED increases morbidity/mortality.",
+    "domainHint": "D3"
+  },
+  {
+    "stem": "Which body site provides the ONLY accurate measure of core temperature in a collapsed, exercising athlete with suspected exertional heat stroke?",
+    "choices": ["Rectal", "Oral", "Tympanic (ear)", "Axillary", "Temporal/forehead"],
+    "correctIndices": [0],
+    "multiSelect": false,
+    "rationale": "Only rectal temperature is valid in this setting; oral, tympanic, axillary, and temporal readings are unreliable in a sweating, exercising, or dehydrated athlete and can falsely lower the reading.",
+    "domainHint": "D3"
+  },
+  {
+    "stem": "A bee sting triggers hives, lip swelling, and wheezing in an athlete with known severe allergy. Which actions are appropriate in immediate management of anaphylaxis? Select all that apply.",
+    "choices": [
+      "Administer intramuscular epinephrine to the mid-outer thigh",
+      "Activate EMS",
+      "Position the patient and support the airway; give supplemental oxygen if available",
+      "Be prepared to give a second epinephrine dose if symptoms persist",
+      "Withhold epinephrine and give only an oral antihistamine"
+    ],
+    "correctIndices": [0, 1, 2, 3],
+    "multiSelect": true,
+    "rationale": "Anaphylaxis is treated with prompt IM epinephrine (vastus lateralis), EMS activation, airway/oxygen support, and a repeat dose if needed. Antihistamines are adjuncts only and never replace epinephrine.",
+    "domainHint": "D3"
+  },
+  {
+    "stem": "An adult athlete is unresponsive with no normal breathing. After activating EMS and sending for an AED, the next immediate step is:",
+    "choices": [
+      "Begin chest compressions at 100–120/min, 2–2.4 inches deep",
+      "Give 2 rescue breaths first",
+      "Check the pulse for a full 30 seconds before acting",
+      "Wait for the AED to arrive before starting CPR",
+      "Place the athlete in the recovery position"
+    ],
+    "correctIndices": [0],
+    "multiSelect": false,
+    "rationale": "Start high-quality chest compressions immediately; a pulse check should take no more than 10 seconds, and compressions should not be delayed for the AED or for breaths in adult sudden cardiac arrest.",
+    "domainHint": "D3"
+  },
+  {
+    "stem": "A venue-specific Emergency Action Plan (EAP) should include which required elements? Select all that apply.",
+    "choices": [
+      "Assigned personnel roles (caller, scene manager, equipment retriever, EMS escort)",
+      "Primary and backup communication methods and the 911/EMS contact",
+      "Location of emergency equipment, including the AED",
+      "Venue-specific EMS access routes, gate codes, and a map",
+      "The team's seasonal strength-and-conditioning periodization plan"
+    ],
+    "correctIndices": [0, 1, 2, 3],
+    "multiSelect": true,
+    "rationale": "An EAP defines personnel roles, communication, equipment locations, and venue-specific EMS access — and should be written, rehearsed, and reviewed annually. A conditioning periodization plan is unrelated to emergency response.",
+    "domainHint": "D3"
+  },
+  {
+    "stem": "An equipped football player is supine with a suspected cervical-spine injury and is breathing normally. Which immediate actions are appropriate? Select all that apply.",
+    "choices": [
+      "Maintain manual in-line cervical stabilization",
+      "Activate EMS",
+      "If airway access is needed, remove the face mask while leaving the helmet and shoulder pads in place",
+      "Routinely remove the helmet immediately while leaving shoulder pads on",
+      "Log-roll only with adequate trained personnel and cervical control if the patient must be moved or repositioned"
+    ],
+    "correctIndices": [0, 1, 2, 4],
+    "multiSelect": true,
+    "rationale": "Maintain in-line stabilization, activate EMS, and gain airway access by removing the face mask while keeping helmet and shoulder pads together (they keep the head/spine aligned). Removing the helmet alone leaves the head extended on the pads and is not routine; movement requires trained personnel with cervical control.",
+    "domainHint": "D3"
+  }
+]

@@ -455,6 +455,15 @@ export const QuizSummaryMode = {
   practice: "practice",
 } as const;
 
+export interface QuizSummary {
+  id: number;
+  mode: QuizSummaryMode;
+  totalQuestions: number;
+  correctCount: number;
+  /** @nullable */
+  finishedAt: string | null;
+}
+
 export interface QuizRetake {
   id: number;
   totalQuestions: number;
@@ -463,22 +472,6 @@ export interface QuizRetake {
   score: number | null;
   /** @nullable */
   finishedAt: string | null;
-}
-
-export interface QuizSummary {
-  id: number;
-  mode: QuizSummaryMode;
-  totalQuestions: number;
-  correctCount: number;
-  /**
-   * Percent score (0-100) of this attempt, if finished.
-   * @nullable
-   */
-  score?: number | null;
-  /** @nullable */
-  finishedAt: string | null;
-  /** Practice re-takes cloned from this attempt's set, oldest → newest. Omitted for retakes themselves. */
-  retakes?: QuizRetake[];
 }
 
 export interface DailyQuizHistoryEntry {
@@ -723,12 +716,30 @@ export interface MockExamHeartbeatInput {
   event: MockExamHeartbeatInputEvent;
 }
 
+/**
+ * Performance vs. the passing standard, in BOC score-report language.
+ */
+export type DomainScoreBand =
+  (typeof DomainScoreBand)[keyof typeof DomainScoreBand];
+
+export const DomainScoreBand = {
+  at_or_above_passing: "at or above passing",
+  marginally_lower: "marginally lower",
+  considerably_lower: "considerably lower",
+} as const;
+
 export interface DomainScore {
   domainId: number;
   code: string;
   name: string;
   correct: number;
   total: number;
+  /** Domain performance as a percentage (0-100). */
+  percent?: number;
+  /** Domain performance on the BOC 200-800 scaled frame. */
+  scaledScore?: number;
+  /** Performance vs. the passing standard, in BOC score-report language. */
+  band?: DomainScoreBand;
 }
 
 export interface TopicScore {
@@ -743,6 +754,17 @@ export interface MockExamResult {
   passed: boolean;
   domainBreakdown: DomainScore[];
   weakTopics: TopicScore[];
+}
+
+export interface ScaledReadout {
+  /** Overall readiness on the BOC 200-800 scaled frame. */
+  scaledScore: number;
+  /** The passing point (500). */
+  passingScaledScore: number;
+  /** True when scaledScore >= 500. */
+  passing: boolean;
+  /** Scaled points still needed to reach 500 (0 if passing). */
+  pointsToPass: number;
 }
 
 export interface RecentAttempt {
@@ -979,6 +1001,7 @@ export interface DashboardSummary {
   readinessGoalMax: number;
   /** True once readinessScore reaches the goal's lower bound. */
   readinessOnTrack: boolean;
+  readinessScaled?: ScaledReadout;
   lastUpdated: string;
   totalQuestionsAnswered: number;
   totalCorrect: number;
@@ -1560,6 +1583,44 @@ export interface AiLearningOverview {
   accuracy: AiLearningOverviewAccuracy;
 }
 
+export interface ItemAnalysisEntry {
+  questionId: number;
+  /** Truncated question stem for display. */
+  stem: string;
+  /**
+   * Domain code (D1-D5) the item is tagged to.
+   * @nullable
+   */
+  domain?: string | null;
+  /** Number of recorded responses. */
+  n: number;
+  /** Difficulty: fraction answered correctly (0-1). */
+  pValue: number;
+  /** Point-biserial vs. attempt performance; negative = likely miskeyed. */
+  discrimination: number;
+  /** Distractor choice indices chosen by almost no one. */
+  nonFunctionalDistractors: number[];
+  /** e.g. negative-discrimination, low-discrimination, too-easy, too-hard, non-functional-distractor. */
+  flags: string[];
+}
+
+/**
+ * Count of items carrying each flag.
+ */
+export type ItemAnalysisResultFlagCounts = { [key: string]: number };
+
+export interface ItemAnalysisResult {
+  /** Total answer records analyzed. */
+  totalAnswers: number;
+  /** Distinct questions analyzed. */
+  analyzed: number;
+  /** Count of items carrying each flag. */
+  flagCounts: ItemAnalysisResultFlagCounts;
+  items: ItemAnalysisEntry[];
+  /** Present when there is no data yet. */
+  note?: string;
+}
+
 /**
  * Not found
  */
@@ -1650,6 +1711,20 @@ export type GetDashboardReadinessHistoryParams = {
    * @maximum 365
    */
   days?: number;
+};
+
+export type GetItemAnalysisParams = {
+  /**
+   * Minimum responses before an item is stat-flagged (default 5).
+   * @minimum 1
+   */
+  minN?: number;
+  /**
+   * Max problematic items returned (1-500, default 100).
+   * @minimum 1
+   * @maximum 500
+   */
+  limit?: number;
 };
 
 export type ListGameSessionsParams = {

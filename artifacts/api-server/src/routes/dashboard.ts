@@ -21,6 +21,7 @@ import { getOrCreateSessionId } from "../lib/sessionId";
 const router: IRouter = Router();
 
 import { startOfTodayPT, todayStrPT } from "../lib/today";
+import { scaledReadout, domainBand, toScaledScore } from "../lib/scaledScore";
 
 function startOfTodayUtc(): Date {
   // Name kept for back-compat; semantics are now "start of today in Pacific"
@@ -102,12 +103,18 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     const ms = mastery.filter((m) => tIds.includes(m.topicId));
     const totalAtt = ms.reduce((s, m) => s + m.attempts, 0);
     const totalC = ms.reduce((s, m) => s + m.correct, 0);
+    // Per-domain performance vs. the passing standard, in the same language as
+    // the official BOC failing-result report ("marginally/considerably lower").
+    const percent = totalAtt > 0 ? (totalC / totalAtt) * 100 : 0;
     return {
       domainId: d.id,
       code: d.code,
       name: d.name,
       correct: totalC,
       total: totalAtt,
+      percent: Math.round(percent),
+      scaledScore: toScaledScore(percent),
+      band: totalAtt > 0 ? domainBand(percent) : ("considerably lower" as const),
     };
   });
 
@@ -348,6 +355,9 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     readinessGoalMin,
     readinessGoalMax,
     readinessOnTrack,
+    // BOC-style scaled readout (200–800, passing point 500) mirroring the
+    // official score report, derived from the honest readiness percentage.
+    readinessScaled: scaledReadout(readinessScore),
     lastUpdated: new Date().toISOString(),
     totalQuestionsAnswered: totalAns,
     totalCorrect: totalCorr,

@@ -21,6 +21,7 @@ import studyGroupRouter from "./studyGroup";
 import aiLearningRouter from "./aiLearning";
 import remindersRouter from "./reminders";
 import reviewSheetsRouter from "./reviewSheets";
+import itemAnalysisRouter from "./itemAnalysis";
 
 const router: IRouter = Router();
 
@@ -46,5 +47,6 @@ router.use(studyGroupRouter);
 router.use(aiLearningRouter);
 router.use(remindersRouter);
 router.use(reviewSheetsRouter);
+router.use(itemAnalysisRouter);
 
 export default router;

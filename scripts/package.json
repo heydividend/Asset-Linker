@@ -6,10 +6,16 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "backfill-flashcard-topics": "tsx ./src/backfillFlashcardTopics.ts",
+    "import-markdown": "tsx ./src/importMarkdown.ts",
+    "import-questions": "tsx ./src/importQuestions.ts",
+    "import-flashcards": "tsx ./src/importFlashcards.ts",
+    "lint-questions": "tsx ./src/lintQuestions.ts",
+    "generate-questions": "tsx ./src/generateQuestions.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@workspace/db": "workspace:*",
+    "@workspace/integrations-anthropic-ai": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",
     "drizzle-orm": "catalog:"
   },

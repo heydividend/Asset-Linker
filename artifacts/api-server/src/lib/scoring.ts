@@ -1,15 +1,20 @@
 // Partial-credit scoring for BOC-style questions.
 //
-// BOC rules we model:
-//  - Multi-select items are eligible for partial credit.
+// The BOC exam uses five item types (per the official sample exam): single
+// multiple-choice, multi-select, drag-and-drop (ordering / matching), and hot
+// spot (click a region on an image) — plus focused testlets, which are ordinary
+// items that share a scenario and so score per-item like any other.
+//
+// BOC scoring rules we model:
+//  - Multi-response items (multi-select, drag-and-drop, multi hot spot) are
+//    eligible for partial credit.
 //  - An individual item can never score below zero ("no negative point value").
 //
 // The BOC does not publish its exact partial-credit formula, so we use a
-// conservative proportional scheme: an item's credit is the number of correctly
-// chosen options minus the number of incorrectly chosen options, divided by the
-// number of options that should have been chosen, clamped to [0, 1]. Picking
-// wrong options reduces credit; the item can never go below zero. This rewards
-// justified selections and discourages indiscriminate guessing.
+// conservative proportional scheme consistently across types: credit reflects
+// how much of the correct response the candidate produced, with wrong selections
+// docking credit, clamped to [0, 1]. This rewards justified responses and
+// discourages indiscriminate guessing.
 
 export function multiSelectCredit(selected: number[], correctIndices: number[]): number {
   if (correctIndices.length === 0) return 0;
@@ -24,8 +29,70 @@ export function multiSelectCredit(selected: number[], correctIndices: number[]):
   return Math.max(0, Math.min(1, raw));
 }
 
-// Credit in [0, 1] for any question. Single-select is all-or-nothing (1 or 0);
-// multi-select earns partial credit via multiSelectCredit.
+// Drag-and-drop ORDERING (e.g. "sequence these steps of the EAP"): credit is the
+// fraction of positions placed correctly. A response shorter/longer than the key
+// scores only the positions that line up.
+export function orderingCredit(response: number[], correctOrder: number[]): number {
+  if (correctOrder.length === 0) return 0;
+  let inPlace = 0;
+  for (let i = 0; i < correctOrder.length; i += 1) {
+    if (response[i] === correctOrder[i]) inPlace += 1;
+  }
+  return Math.max(0, Math.min(1, inPlace / correctOrder.length));
+}
+
+// Drag-and-drop MATCHING (e.g. "drag each special test onto the joint it
+// assesses"): correctSlots[i] is the slot the i-th prompt belongs in; response[i]
+// is the slot the candidate placed it in (null = left unplaced). Credit is the
+// fraction of prompts matched correctly.
+export function matchingCredit(response: Array<number | null>, correctSlots: number[]): number {
+  if (correctSlots.length === 0) return 0;
+  let matched = 0;
+  for (let i = 0; i < correctSlots.length; i += 1) {
+    if (response[i] != null && response[i] === correctSlots[i]) matched += 1;
+  }
+  return Math.max(0, Math.min(1, matched / correctSlots.length));
+}
+
+// HOT SPOT: the candidate clicks one or more regions on an image; correctRegions
+// is the set of acceptable region ids. Scores like a multi-select over regions
+// (single-region hot spots are the one-correct case).
+export function hotspotCredit(selectedRegions: number[], correctRegions: number[]): number {
+  return multiSelectCredit(selectedRegions, correctRegions);
+}
+
+// Discriminated answer key for any item type. `mc`/`multi` keep the existing
+// shape so current questions and callers are unaffected.
+export type ItemKey =
+  | { kind: "mc"; correctIndex: number }
+  | { kind: "multi"; correctIndices: number[] }
+  | { kind: "ordering"; correctOrder: number[] }
+  | { kind: "matching"; correctSlots: number[] }
+  | { kind: "hotspot"; correctRegions: number[] };
+
+// Credit in [0, 1] for any item type, given the candidate's response. Single
+// multiple-choice is all-or-nothing; every multi-response type earns proportional
+// partial credit via the helpers above. An unanswered item scores 0.
+export function scoreItem(key: ItemKey, response: unknown): number {
+  switch (key.kind) {
+    case "mc":
+      return response === key.correctIndex ? 1 : 0;
+    case "multi":
+      return Array.isArray(response) ? multiSelectCredit(response as number[], key.correctIndices) : 0;
+    case "ordering":
+      return Array.isArray(response) ? orderingCredit(response as number[], key.correctOrder) : 0;
+    case "matching":
+      return Array.isArray(response) ? matchingCredit(response as Array<number | null>, key.correctSlots) : 0;
+    case "hotspot":
+      return Array.isArray(response) ? hotspotCredit(response as number[], key.correctRegions) : 0;
+    default:
+      return 0;
+  }
+}
+
+// Credit in [0, 1] for a stored question. Single-select is all-or-nothing (1 or
+// 0); multi-select earns partial credit via multiSelectCredit. Retained for the
+// existing mock-exam / quiz callers; new item types should use scoreItem.
 export function questionCredit(
   q: { multiSelect: boolean; correctIndex: number; correctIndices: number[] | null },
   selected: number | number[] | null | undefined,

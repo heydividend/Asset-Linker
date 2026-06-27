@@ -745,25 +745,7 @@ export const ListQuizAttemptsResponseItem = zod.object({
   ]),
   totalQuestions: zod.number(),
   correctCount: zod.number(),
-  score: zod
-    .number()
-    .nullish()
-    .describe("Percent score (0-100) of this attempt, if finished."),
   finishedAt: zod.coerce.date().nullable(),
-  retakes: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        totalQuestions: zod.number(),
-        correctCount: zod.number(),
-        score: zod.number().nullable(),
-        finishedAt: zod.coerce.date().nullable(),
-      }),
-    )
-    .optional()
-    .describe(
-      "Practice re-takes cloned from this attempt's set, oldest → newest. Omitted for retakes themselves.",
-    ),
 });
 export const ListQuizAttemptsResponse = zod.array(ListQuizAttemptsResponseItem);
 
@@ -1151,6 +1133,20 @@ export const SubmitMockExamResponse = zod.object({
       name: zod.string(),
       correct: zod.number(),
       total: zod.number(),
+      percent: zod
+        .number()
+        .optional()
+        .describe("Domain performance as a percentage (0-100)."),
+      scaledScore: zod
+        .number()
+        .optional()
+        .describe("Domain performance on the BOC 200-800 scaled frame."),
+      band: zod
+        .enum(["at or above passing", "marginally lower", "considerably lower"])
+        .optional()
+        .describe(
+          "Performance vs. the passing standard, in BOC score-report language.",
+        ),
     }),
   ),
   weakTopics: zod.array(
@@ -1387,6 +1383,18 @@ export const GetDashboardSummaryResponse = zod.object({
   readinessOnTrack: zod
     .boolean()
     .describe("True once readinessScore reaches the goal's lower bound."),
+  readinessScaled: zod
+    .object({
+      scaledScore: zod
+        .number()
+        .describe("Overall readiness on the BOC 200-800 scaled frame."),
+      passingScaledScore: zod.number().describe("The passing point (500)."),
+      passing: zod.boolean().describe("True when scaledScore >= 500."),
+      pointsToPass: zod
+        .number()
+        .describe("Scaled points still needed to reach 500 (0 if passing)."),
+    })
+    .optional(),
   lastUpdated: zod.coerce.date(),
   totalQuestionsAnswered: zod.number(),
   totalCorrect: zod.number(),
@@ -1406,25 +1414,7 @@ export const GetDashboardSummaryResponse = zod.object({
       ]),
       totalQuestions: zod.number(),
       correctCount: zod.number(),
-      score: zod
-        .number()
-        .nullish()
-        .describe("Percent score (0-100) of this attempt, if finished."),
       finishedAt: zod.coerce.date().nullable(),
-      retakes: zod
-        .array(
-          zod.object({
-            id: zod.number(),
-            totalQuestions: zod.number(),
-            correctCount: zod.number(),
-            score: zod.number().nullable(),
-            finishedAt: zod.coerce.date().nullable(),
-          }),
-        )
-        .optional()
-        .describe(
-          "Practice re-takes cloned from this attempt's set, oldest → newest. Omitted for retakes themselves.",
-        ),
     }),
   ),
   weakTopics: zod.array(
@@ -1441,6 +1431,20 @@ export const GetDashboardSummaryResponse = zod.object({
       name: zod.string(),
       correct: zod.number(),
       total: zod.number(),
+      percent: zod
+        .number()
+        .optional()
+        .describe("Domain performance as a percentage (0-100)."),
+      scaledScore: zod
+        .number()
+        .optional()
+        .describe("Domain performance on the BOC 200-800 scaled frame."),
+      band: zod
+        .enum(["at or above passing", "marginally lower", "considerably lower"])
+        .optional()
+        .describe(
+          "Performance vs. the passing standard, in BOC score-report language.",
+        ),
     }),
   ),
   domainFlashcardCounts: zod
@@ -1631,6 +1635,64 @@ export const GetDashboardReadinessHistoryResponseItem = zod.object({
 export const GetDashboardReadinessHistoryResponse = zod.array(
   GetDashboardReadinessHistoryResponseItem,
 );
+
+/**
+ * @summary Classical item statistics (difficulty, discrimination, distractor analysis) over the answer history.
+ */
+export const getItemAnalysisQueryMinNDefault = 5;
+
+export const getItemAnalysisQueryLimitDefault = 100;
+export const getItemAnalysisQueryLimitMax = 500;
+
+export const GetItemAnalysisQueryParams = zod.object({
+  minN: zod.coerce
+    .number()
+    .min(1)
+    .default(getItemAnalysisQueryMinNDefault)
+    .describe("Minimum responses before an item is stat-flagged (default 5)."),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(getItemAnalysisQueryLimitMax)
+    .default(getItemAnalysisQueryLimitDefault)
+    .describe("Max problematic items returned (1-500, default 100)."),
+});
+
+export const GetItemAnalysisResponse = zod.object({
+  totalAnswers: zod.number().describe("Total answer records analyzed."),
+  analyzed: zod.number().describe("Distinct questions analyzed."),
+  flagCounts: zod
+    .record(zod.string(), zod.number())
+    .describe("Count of items carrying each flag."),
+  items: zod.array(
+    zod.object({
+      questionId: zod.number(),
+      stem: zod.string().describe("Truncated question stem for display."),
+      domain: zod
+        .string()
+        .nullish()
+        .describe("Domain code (D1-D5) the item is tagged to."),
+      n: zod.number().describe("Number of recorded responses."),
+      pValue: zod
+        .number()
+        .describe("Difficulty: fraction answered correctly (0-1)."),
+      discrimination: zod
+        .number()
+        .describe(
+          "Point-biserial vs. attempt performance; negative = likely miskeyed.",
+        ),
+      nonFunctionalDistractors: zod
+        .array(zod.number())
+        .describe("Distractor choice indices chosen by almost no one."),
+      flags: zod
+        .array(zod.string())
+        .describe(
+          "e.g. negative-discrimination, low-discrimination, too-easy, too-hard, non-functional-distractor.",
+        ),
+    }),
+  ),
+  note: zod.string().optional().describe("Present when there is no data yet."),
+});
 
 export const GetStudyPlanTodayResponse = zod.object({
   date: zod.coerce.date(),

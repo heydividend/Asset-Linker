@@ -1,11 +1,64 @@
 import { Router, type IRouter } from "express";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { db, gameSessions } from "@workspace/db";
+import { db, gameSessions, questions, domains } from "@workspace/db";
 import { getOrCreateSessionId } from "../lib/sessionId";
 import { GAMES_CATALOG } from "../lib/gamesCatalog";
 import { markPlanItemComplete } from "../lib/planCompletions";
 
 const router: IRouter = Router();
+
+// Lightweight question sampler for the question-driven games (Code Blue,
+// Survivor). Returns enabled questions, optionally filtered to a domain and to
+// single-answer items, in random order. Read-only; client scores locally.
+router.get("/games/questions", async (req, res): Promise<void> => {
+  const domainCode = typeof req.query.domain === "string" ? req.query.domain.toUpperCase() : null;
+  const limit = Math.max(1, Math.min(60, Number(req.query.limit) || 20));
+  const singleOnly = req.query.single === "1" || req.query.single === "true";
+
+  const dRows = await db.select().from(domains);
+  const domainId = domainCode ? dRows.find((d) => d.code === domainCode)?.id ?? -1 : null;
+  const codeById = new Map(dRows.map((d) => [d.id, d.code]));
+
+  const conds = [eq(questions.enabled, true)];
+  if (domainId != null) conds.push(eq(questions.domainId, domainId));
+  if (singleOnly) conds.push(eq(questions.multiSelect, false));
+  // mode=contraindication → only items whose stem asks for the contraindicated /
+  // inappropriate option (the "Spot the Contraindication" game's content).
+  if (req.query.mode === "contraindication") {
+    conds.push(
+      sql`(lower(${questions.stem}) LIKE '%contraindicat%' OR lower(${questions.stem}) LIKE '%inappropriate%' OR lower(${questions.stem}) LIKE '%not appropriate%' OR lower(${questions.stem}) LIKE '%should not%' OR lower(${questions.stem}) LIKE '%avoid%')`,
+    );
+  }
+
+  const rows = await db
+    .select({
+      id: questions.id,
+      stem: questions.stem,
+      choices: questions.choices,
+      correctIndex: questions.correctIndex,
+      correctIndices: questions.correctIndices,
+      multiSelect: questions.multiSelect,
+      rationale: questions.rationale,
+      domainId: questions.domainId,
+    })
+    .from(questions)
+    .where(and(...conds))
+    .orderBy(sql`random()`)
+    .limit(limit);
+
+  res.json(
+    rows.map((r) => ({
+      id: r.id,
+      stem: r.stem,
+      choices: r.choices,
+      correctIndex: r.correctIndex,
+      correctIndices: r.correctIndices,
+      multiSelect: r.multiSelect,
+      rationale: r.rationale,
+      domain: r.domainId != null ? codeById.get(r.domainId) ?? null : null,
+    })),
+  );
+});
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);

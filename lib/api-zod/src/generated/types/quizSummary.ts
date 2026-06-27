@@ -5,7 +5,6 @@
  * BOC Study Notebook API
  * OpenAPI spec version: 0.1.0
  */
-import type { QuizRetake } from "./quizRetake";
 import type { QuizSummaryMode } from "./quizSummaryMode";
 
 export interface QuizSummary {
@@ -13,13 +12,6 @@ export interface QuizSummary {
   mode: QuizSummaryMode;
   totalQuestions: number;
   correctCount: number;
-  /**
-   * Percent score (0-100) of this attempt, if finished.
-   * @nullable
-   */
-  score?: number | null;
   /** @nullable */
   finishedAt: Date | null;
-  /** Practice re-takes cloned from this attempt's set, oldest → newest. Omitted for retakes themselves. */
-  retakes?: QuizRetake[];
 }

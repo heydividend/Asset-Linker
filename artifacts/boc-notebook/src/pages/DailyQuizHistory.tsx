@@ -239,30 +239,6 @@ export default function DailyQuizHistory() {
                         </button>
                         <PracticeAgainButton quizId={h.id} />
                       </div>
-                      {retakes.length > 0 &&
-                        (() => {
-                          const bestPct = Math.max(...retakes.map(toPct));
-                          const improvement = bestPct - pct;
-                          const beaten = improvement > 0;
-                          return (
-                            <div
-                              className="pl-6 ml-2 text-xs"
-                              data-testid={`daily-history-best-${h.id}`}
-                            >
-                              {beaten ? (
-                                <span className="font-medium inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                                  <TrendingUp className="h-3 w-3" />
-                                  Best {bestPct}% · +{improvement} vs original {pct}%
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground inline-flex items-center gap-1">
-                                  <Minus className="h-3 w-3" />
-                                  Best retake {bestPct}% — hasn't beaten your original {pct}% yet
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })()}
                       {retakes.length > 0 && (
                         <div
                           className="pl-6 space-y-1 border-l ml-2"

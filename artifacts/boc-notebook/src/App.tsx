@@ -28,6 +28,10 @@ import DailyQuizPage from "@/pages/DailyQuizPage";
 import DailyQuizHistory from "@/pages/DailyQuizHistory";
 import ReviewSheetsPage from "@/pages/ReviewSheetsPage";
 import ReviewSheetDetail from "@/pages/ReviewSheetDetail";
+import ItemQualityPage from "@/pages/ItemQualityPage";
+import CodeBlueGame from "@/pages/CodeBlueGame";
+import SurvivorGame from "@/pages/SurvivorGame";
+import SpotContraindicationGame from "@/pages/SpotContraindicationGame";
 import { StudyGroupTimeoutNotifier } from "@/hooks/use-study-group-timeout-notifier";
 
 const queryClient = new QueryClient();
@@ -53,6 +57,9 @@ function Router() {
         <Route path="/mock-exam/:id" component={MockExamRunner} />
         <Route path="/tutor" component={TutorPage} />
         <Route path="/games" component={GamesHub} />
+        <Route path="/games/code-blue" component={CodeBlueGame} />
+        <Route path="/games/survivor" component={SurvivorGame} />
+        <Route path="/games/spot-contraindication" component={SpotContraindicationGame} />
         <Route path="/games/:id" component={MatchingGame} />
         <Route path="/schedule" component={SchedulePage} />
         <Route path="/body-map" component={BodyMapPage} />
@@ -60,6 +67,7 @@ function Router() {
         <Route path="/study-guides/:id" component={StudyGuideDetail} />
         <Route path="/study-group" component={StudyGroupPage} />
         <Route path="/ai-learning" component={AILearningPage} />
+        <Route path="/item-quality" component={ItemQualityPage} />
         <Route component={NotFound} />
       </Switch>
       </Layout>
