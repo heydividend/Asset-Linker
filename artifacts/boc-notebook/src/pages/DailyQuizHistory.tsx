@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate as formatMDY } from "@/lib/formatDate";
 import { ArrowDown, ArrowUp, CalendarCheck, ChevronLeft, History, Minus, RotateCcw, Shuffle, TrendingUp } from "lucide-react";
 import { DailyScoreTrend, type DailyScorePoint } from "@/components/DailyScoreTrend";
 
@@ -15,12 +16,9 @@ function formatDate(ymd: string): string {
   // ymd is a Pacific YYYY-MM-DD; render it without timezone drift.
   const [y, m, d] = ymd.split("-").map(Number);
   if (!y || !m || !d) return ymd;
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const dt = new Date(y, m - 1, d);
+  const wk = dt.toLocaleDateString(undefined, { weekday: "short" });
+  return `${wk}, ${formatMDY(dt)}`;
 }
 
 function toPct(h: { score: number | null; correctCount: number; totalQuestions: number }): number {

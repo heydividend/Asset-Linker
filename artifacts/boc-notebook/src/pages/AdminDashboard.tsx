@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDateTime } from "@/lib/formatDate";
 import {
   Dialog,
   DialogContent,
@@ -79,16 +80,7 @@ type UserProgress = {
 
 function fmtDate(value: string | number | null): string {
   if (value == null) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
+  return formatDateTime(value) || "—";
 }
 
 function accuracy(correct: number, answered: number): string {

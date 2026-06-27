@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate as formatFullDate, formatDateShort } from "@/lib/formatDate";
 import {
   Bot,
   Users,
@@ -34,14 +35,7 @@ import {
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return "—";
-  }
+  return formatFullDate(iso) || "—";
 }
 
 function formatPct(n: number | null | undefined): string {
@@ -86,7 +80,7 @@ export default function AILearningPage() {
   const dailyChartData = useMemo(() => {
     if (!data?.accuracy?.daily) return [];
     return data.accuracy.daily.map((d) => ({
-      day: formatDate(d.day),
+      day: formatDateShort(d.day),
       accuracy: d.accuracy != null ? Math.round(d.accuracy * 100) : 0,
       attempts: d.attempts,
     }));
