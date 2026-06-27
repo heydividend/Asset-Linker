@@ -1,28 +1,31 @@
-import { randomBytes } from "crypto";
 import type { Request, Response } from "express";
+import { getAuth } from "@clerk/express";
 
 export const SESSION_COOKIE = "boc_sid";
-const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
 /**
- * Returns a stable anonymous session id from the request cookie, creating
- * and persisting one in a long-lived cookie when missing. This lets us
- * scope per-user data (like fix-it streaks) without a real auth system —
- * each browser/device gets its own id, which is exactly what the user
- * thinks of as "their" streak.
+ * Returns the authenticated user's stable id (Clerk user id). This is the
+ * scoping key for every per-user table in the app. `requireAuth` runs before
+ * the data routes and sets `req.userId`, so this normally just reads that;
+ * it falls back to `getAuth(req)` and throws a 401-tagged error if there is
+ * no authenticated user.
+ *
+ * Historically this returned an anonymous cookie id and took a `(req, res)`
+ * signature. The optional, unused `res` param is kept so the many existing
+ * call sites that pass `(req, res)` keep compiling unchanged — they now
+ * transparently scope by the logged-in user instead of a browser cookie.
  */
-export function getOrCreateSessionId(req: Request, res: Response): string {
-  const existing = req.cookies?.[SESSION_COOKIE];
-  if (typeof existing === "string" && /^[A-Za-z0-9_-]{16,}$/.test(existing)) {
-    return existing;
+export function getOrCreateSessionId(req: Request, _res?: Response): string {
+  const fromReq = (req as Request & { userId?: string }).userId;
+  if (fromReq) return fromReq;
+  const auth = getAuth(req);
+  const userId =
+    (auth?.sessionClaims as { userId?: string } | null)?.userId ?? auth?.userId;
+  if (!userId) {
+    throw Object.assign(new Error("Unauthorized"), { status: 401 });
   }
-  const fresh = randomBytes(24).toString("base64url");
-  res.cookie(SESSION_COOKIE, fresh, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: ONE_YEAR_SECONDS * 1000,
-    path: "/",
-  });
-  return fresh;
+  return userId;
 }
+
+/** Clearer alias for new code that scopes data by the authenticated user. */
+export const getUserId = getOrCreateSessionId;

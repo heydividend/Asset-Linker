@@ -10,9 +10,11 @@ import {
   flashcards,
   questions,
   quizAnswers,
+  quizzes,
   topics,
   domains,
 } from "@workspace/db";
+import { getOrCreateSessionId } from "../lib/sessionId";
 
 const router: IRouter = Router();
 
@@ -23,7 +25,8 @@ const router: IRouter = Router();
 //                      generated cards/questions, weak topics)
 //   3. accuracy      — quiz accuracy over time + by domain, plus an
 //                      AI-vs-source breakdown of the question bank
-router.get("/ai-learning/overview", async (_req, res): Promise<void> => {
+router.get("/ai-learning/overview", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
   // ----- CONVERSATIONS -----
   const tutorConvs = await db.execute(sql`
     SELECT c.id, c.title, c.created_at,
@@ -31,6 +34,7 @@ router.get("/ai-learning/overview", async (_req, res): Promise<void> => {
            MAX(m.created_at) AS last_message_at
     FROM conversations c
     LEFT JOIN messages m ON m.conversation_id = c.id
+    WHERE c.user_id = ${userId}
     GROUP BY c.id
     ORDER BY COALESCE(MAX(m.created_at), c.created_at) DESC
     LIMIT 25
@@ -79,10 +83,13 @@ router.get("/ai-learning/overview", async (_req, res): Promise<void> => {
   // Aggregate totals (independent of the LIMIT 25 above).
   const [{ tutorTotal }] = await db
     .select({ tutorTotal: sql<number>`cast(count(*) as int)` })
-    .from(conversations);
+    .from(conversations)
+    .where(eq(conversations.userId, userId));
   const [{ tutorMsgs }] = await db
     .select({ tutorMsgs: sql<number>`cast(count(*) as int)` })
-    .from(messages);
+    .from(messages)
+    .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+    .where(eq(conversations.userId, userId));
   const [{ sgTotal }] = await db
     .select({ sgTotal: sql<number>`cast(count(*) as int)` })
     .from(studyGroupSessions);
@@ -152,20 +159,24 @@ router.get("/ai-learning/overview", async (_req, res): Promise<void> => {
   // ----- ACCURACY -----
   const [{ ansTotal }] = await db
     .select({ ansTotal: sql<number>`cast(count(*) as int)` })
-    .from(quizAnswers);
+    .from(quizAnswers)
+    .innerJoin(quizzes, eq(quizzes.id, quizAnswers.quizId))
+    .where(eq(quizzes.userId, userId));
   const [{ ansCorrect }] = await db
     .select({ ansCorrect: sql<number>`cast(count(*) as int)` })
     .from(quizAnswers)
-    .where(eq(quizAnswers.correct, true));
+    .innerJoin(quizzes, eq(quizzes.id, quizAnswers.quizId))
+    .where(and(eq(quizzes.userId, userId), eq(quizAnswers.correct, true)));
 
   // 14-day daily accuracy series (in PT, but a UTC bucket is close enough
   // for a chart and avoids tz library churn here).
   const dailySeries = (await db.execute(sql`
-    SELECT date_trunc('day', answered_at) AS day,
+    SELECT date_trunc('day', qa.answered_at) AS day,
            CAST(COUNT(*) AS int) AS attempts,
-           CAST(COUNT(*) FILTER (WHERE correct = true) AS int) AS correct
-    FROM quiz_answers
-    WHERE answered_at >= now() - interval '14 days'
+           CAST(COUNT(*) FILTER (WHERE qa.correct = true) AS int) AS correct
+    FROM quiz_answers qa
+    JOIN quizzes z ON z.id = qa.quiz_id
+    WHERE qa.answered_at >= now() - interval '14 days' AND z.user_id = ${userId}
     GROUP BY day
     ORDER BY day ASC
   `)) as unknown as {
@@ -182,6 +193,8 @@ router.get("/ai-learning/overview", async (_req, res): Promise<void> => {
     JOIN questions q ON q.id = qa.question_id
     JOIN topics t    ON t.id = q.topic_id
     JOIN domains d   ON d.id = t.domain_id
+    JOIN quizzes z   ON z.id = qa.quiz_id
+    WHERE z.user_id = ${userId}
     GROUP BY d.id, d.name
     HAVING COUNT(qa.id) > 0
     ORDER BY d.name ASC

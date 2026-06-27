@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { Stethoscope, ChevronLeft, Compass, MapPin, FileText, RotateCcw, HelpCircle, Check, PlayCircle } from "lucide-react";
+import { useClerk } from "@clerk/react";
+import { Stethoscope, ChevronLeft, Compass, MapPin, FileText, RotateCcw, HelpCircle, Check, PlayCircle, LogOut } from "lucide-react";
 import { PAGES } from "@/lib/tour";
 import { HelpDialog } from "./HelpDialog";
 import { VoicePicker } from "./VoicePicker";
@@ -16,6 +17,8 @@ export function Sidebar() {
   const [location] = useLocation();
   const { sidebarWidth, setSidebarWidth, toggleSidebar } = useLayoutStore();
   const { startTour, replayWelcomeTour, progress } = useTour();
+  const { signOut } = useClerk();
+  const sidebarBasePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   const [tourMenuOpen, setTourMenuOpen] = useState(false);
   const completedSet = new Set(progress.completed);
   const progressLabel = `${progress.completed.length}/${progress.total}`;
@@ -228,6 +231,17 @@ export function Sidebar() {
             </div>
           </PopoverContent>
         </Popover>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start text-[13px] text-sidebar-foreground hover:bg-sidebar-accent/50"
+          onClick={() => signOut({ redirectUrl: sidebarBasePath || "/" })}
+          data-testid="button-log-out"
+          title="Log out"
+        >
+          <LogOut className="h-3.5 w-3.5 mr-2 shrink-0" />
+          Log out
+        </Button>
       </div>
 
       <ResizeHandle

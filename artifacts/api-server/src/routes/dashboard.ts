@@ -34,11 +34,14 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
   const sessionId = getOrCreateSessionId(req, res);
   const [{ totalAns }] = await db
     .select({ totalAns: sql<number>`cast(count(*) as int)` })
-    .from(quizAnswers);
+    .from(quizAnswers)
+    .innerJoin(quizzes, eq(quizzes.id, quizAnswers.quizId))
+    .where(eq(quizzes.userId, sessionId));
   const [{ totalCorr }] = await db
     .select({ totalCorr: sql<number>`cast(count(*) as int)` })
     .from(quizAnswers)
-    .where(eq(quizAnswers.correct, true));
+    .innerJoin(quizzes, eq(quizzes.id, quizAnswers.quizId))
+    .where(and(eq(quizzes.userId, sessionId), eq(quizAnswers.correct, true)));
 
   const now = new Date();
   const [{ due }] = await db
@@ -71,17 +74,21 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
   const recentQuizzes = await db
     .select()
     .from(quizzes)
+    .where(eq(quizzes.userId, sessionId))
     .orderBy(desc(quizzes.startedAt))
     .limit(5);
 
   const recentMocks = await db
     .select()
     .from(mockExams)
-    .where(eq(mockExams.submitted, true))
+    .where(and(eq(mockExams.userId, sessionId), eq(mockExams.submitted, true)))
     .orderBy(desc(mockExams.submittedAt))
     .limit(3);
 
-  const mastery = await db.select().from(topicMastery);
+  const mastery = await db
+    .select()
+    .from(topicMastery)
+    .where(eq(topicMastery.userId, sessionId));
   const tRows = await db.select().from(topics);
   const dRows = await db.select().from(domains);
 
@@ -276,6 +283,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
            to_char((finished_at AT TIME ZONE 'America/Los_Angeles')::date, 'YYYY-MM-DD') AS pt_date
     FROM quizzes
     WHERE mode = 'daily' AND finished = true AND finished_at IS NOT NULL
+      AND user_id = ${sessionId}
     ORDER BY finished_at DESC
   `)) as unknown as {
     rows: Array<{ id: number; score: number | null; question_ids: number[]; pt_date: string }>;
@@ -308,6 +316,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
   const inProgressRes = (await db.execute(sql`
     SELECT id FROM quizzes
     WHERE mode = 'daily' AND finished = false
+      AND user_id = ${sessionId}
       AND to_char((started_at AT TIME ZONE 'America/Los_Angeles')::date, 'YYYY-MM-DD') = ${todayPT}
     ORDER BY started_at DESC
     LIMIT 1
@@ -328,6 +337,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     await db
       .insert(readinessSnapshots)
       .values({
+        userId: sessionId,
         snapshotDate: todayStrPT(),
         score: readinessScore,
         baseScore: readinessBaseScore,
@@ -335,7 +345,7 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
         goalMax: readinessGoalMax,
       })
       .onConflictDoUpdate({
-        target: readinessSnapshots.snapshotDate,
+        target: [readinessSnapshots.userId, readinessSnapshots.snapshotDate],
         set: {
           score: readinessScore,
           baseScore: readinessBaseScore,
@@ -405,10 +415,14 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
 });
 
 router.get("/dashboard/topic-mastery", async (req, res): Promise<void> => {
+  const sessionId = getOrCreateSessionId(req, res);
   const rawLimit = typeof req.query.limit === "string" ? parseInt(req.query.limit, 10) : NaN;
   const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(20, rawLimit)) : 5;
 
-  const mastery = await db.select().from(topicMastery);
+  const mastery = await db
+    .select()
+    .from(topicMastery)
+    .where(eq(topicMastery.userId, sessionId));
   const tRows = await db.select().from(topics);
   const masteryByTopic = new Map(mastery.map((m) => [m.topicId, m]));
 
@@ -423,7 +437,8 @@ router.get("/dashboard/topic-mastery", async (req, res): Promise<void> => {
              ROW_NUMBER() OVER (PARTITION BY q.topic_id ORDER BY qa.answered_at DESC) AS rn
       FROM quiz_answers qa
       JOIN questions q ON q.id = qa.question_id
-      WHERE q.topic_id IS NOT NULL
+      JOIN quizzes z ON z.id = qa.quiz_id
+      WHERE q.topic_id IS NOT NULL AND z.user_id = ${sessionId}
     ) t
     WHERE rn <= ${limit}
     ORDER BY topic_id ASC, answered_at ASC
@@ -459,6 +474,7 @@ router.get("/dashboard/topic-mastery", async (req, res): Promise<void> => {
 });
 
 router.get("/dashboard/topic-history", async (req, res): Promise<void> => {
+  const sessionId = getOrCreateSessionId(req, res);
   const raw = typeof req.query.topicIds === "string" ? req.query.topicIds : "";
   const requested = raw
     .split(",")
@@ -477,7 +493,8 @@ router.get("/dashboard/topic-history", async (req, res): Promise<void> => {
            qa.question_id AS question_id
     FROM quiz_answers qa
     JOIN questions q ON q.id = qa.question_id
-    WHERE q.topic_id IS NOT NULL
+    JOIN quizzes z ON z.id = qa.quiz_id
+    WHERE q.topic_id IS NOT NULL AND z.user_id = ${sessionId}
     ${filterClause}
     ORDER BY q.topic_id ASC, qa.answered_at ASC
   `)) as unknown as {
@@ -511,6 +528,7 @@ router.get("/dashboard/topic-history", async (req, res): Promise<void> => {
 });
 
 router.get("/dashboard/readiness-history", async (req, res): Promise<void> => {
+  const sessionId = getOrCreateSessionId(req, res);
   const rawDays = typeof req.query.days === "string" ? parseInt(req.query.days, 10) : NaN;
   const days = Number.isFinite(rawDays) ? Math.max(7, Math.min(365, rawDays)) : 90;
 
@@ -523,6 +541,7 @@ router.get("/dashboard/readiness-history", async (req, res): Promise<void> => {
       goalMax: readinessSnapshots.goalMax,
     })
     .from(readinessSnapshots)
+    .where(eq(readinessSnapshots.userId, sessionId))
     .orderBy(desc(readinessSnapshots.snapshotDate))
     .limit(days);
 

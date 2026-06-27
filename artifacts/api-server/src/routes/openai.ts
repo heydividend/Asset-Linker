@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
-import { asc, desc, eq, notExists } from "drizzle-orm";
+import { and, asc, desc, eq, notExists } from "drizzle-orm";
 import { db, conversations, messages, notes, notebooks } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { parseId } from "../lib/parseId";
+import { getOrCreateSessionId } from "../lib/sessionId";
 import multer from "multer";
 import { PDFParse } from "pdf-parse";
 import { COACHING_STRATEGIES } from "../lib/coachingStrategies";
@@ -177,12 +178,18 @@ async function buildSystemPrompt(): Promise<string> {
   return SYSTEM_BASE + refLib;
 }
 
-router.get("/openai/conversations", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(conversations).orderBy(desc(conversations.createdAt));
+router.get("/openai/conversations", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
+  const rows = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.userId, userId))
+    .orderBy(desc(conversations.createdAt));
   res.json(rows);
 });
 
 router.post("/openai/conversations", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
   const { title, notebookId } = req.body ?? {};
   if (!title || typeof title !== "string") {
     res.status(400).json({ error: "title required" });
@@ -190,7 +197,7 @@ router.post("/openai/conversations", async (req, res): Promise<void> => {
   }
   const [c] = await db
     .insert(conversations)
-    .values({ title: title.slice(0, 200), notebookId: notebookId ?? null })
+    .values({ userId, title: title.slice(0, 200), notebookId: notebookId ?? null })
     .returning();
   res.status(201).json(c);
 });
@@ -201,7 +208,11 @@ router.get("/openai/conversations/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  const [c] = await db.select().from(conversations).where(eq(conversations.id, id));
+  const userId = getOrCreateSessionId(req, res);
+  const [c] = await db
+    .select()
+    .from(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
   if (!c) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -213,15 +224,19 @@ router.get("/openai/conversations/:id", async (req, res): Promise<void> => {
 // "New Conversation" rows pile up in the sidebar whenever the user clicks
 // "New chat" without typing anything (e.g. exploring or accidental clicks).
 // This sweeps them all in one shot so the recents list stays useful.
-router.delete("/openai/conversations/empty", async (_req, res): Promise<void> => {
+router.delete("/openai/conversations/empty", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
   const deleted = await db
     .delete(conversations)
     .where(
-      notExists(
-        db
-          .select({ id: messages.id })
-          .from(messages)
-          .where(eq(messages.conversationId, conversations.id)),
+      and(
+        eq(conversations.userId, userId),
+        notExists(
+          db
+            .select({ id: messages.id })
+            .from(messages)
+            .where(eq(messages.conversationId, conversations.id)),
+        ),
       ),
     )
     .returning({ id: conversations.id });
@@ -234,7 +249,10 @@ router.delete("/openai/conversations/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  await db.delete(conversations).where(eq(conversations.id, id));
+  const userId = getOrCreateSessionId(req, res);
+  await db
+    .delete(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
   res.sendStatus(204);
 });
 
@@ -242,6 +260,15 @@ router.get("/openai/conversations/:id/messages", async (req, res): Promise<void>
   const id = parseId(req);
   if (id == null) {
     res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const userId = getOrCreateSessionId(req, res);
+  const [owner] = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
+  if (!owner) {
+    res.status(404).json({ error: "Not found" });
     return;
   }
   const rows = await db
@@ -266,7 +293,11 @@ router.post(
       res.status(400).json({ error: "file required" });
       return;
     }
-    const [conv] = await db.select().from(conversations).where(eq(conversations.id, id));
+    const userId = getOrCreateSessionId(req, res);
+    const [conv] = await db
+      .select()
+      .from(conversations)
+      .where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
     if (!conv) {
       res.status(404).json({ error: "Conversation not found" });
       return;
@@ -332,7 +363,11 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
     return;
   }
 
-  const [conv] = await db.select().from(conversations).where(eq(conversations.id, id));
+  const userId = getOrCreateSessionId(req, res);
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
   if (!conv) {
     res.status(404).json({ error: "Conversation not found" });
     return;

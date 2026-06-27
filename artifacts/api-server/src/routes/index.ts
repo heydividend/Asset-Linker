@@ -22,10 +22,16 @@ import aiLearningRouter from "./aiLearning";
 import remindersRouter from "./reminders";
 import reviewSheetsRouter from "./reviewSheets";
 import itemAnalysisRouter from "./itemAnalysis";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+
+// Everything below requires an authenticated user. Each user gets a fully
+// isolated study session — all data routes are scoped by the Clerk user id.
+router.use(requireAuth);
+
 router.use(catalogRouter);
 router.use(blueprintRouter);
 router.use(notebooksRouter);

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, lte, sql } from "drizzle-orm";
+import { desc, eq, lte, sql } from "drizzle-orm";
 import {
   db,
   flashcards,
@@ -51,10 +51,11 @@ export function finalizeTodayList(items: PlanItem[]) {
   return decorateItems(items).slice(0, TODAY_ITEM_CAP);
 }
 
-router.get("/plan/schedule", async (_req, res): Promise<void> => {
-  const sched = await getOrCreateSchedule();
+router.get("/plan/schedule", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
+  const sched = await getOrCreateSchedule(userId);
   const dRows = await db.select().from(domains).orderBy(domains.id);
-  const masteryByDomainId = await getDomainMasteryMap();
+  const masteryByDomainId = await getDomainMasteryMap(userId);
   const days = buildSchedule(sched.startDate, sched.examDate, dRows, masteryByDomainId).map((d) => ({
     ...d,
     items: decorateItems(d.items),
@@ -80,7 +81,12 @@ router.put("/plan/schedule", async (req, res): Promise<void> => {
     res.status(400).json({ error: "startDate and examDate must be YYYY-MM-DD" });
     return;
   }
-  const existing = await db.select().from(examSchedule).limit(1);
+  const userId = getOrCreateSessionId(req, res);
+  const existing = await db
+    .select()
+    .from(examSchedule)
+    .where(eq(examSchedule.userId, userId))
+    .limit(1);
   let row;
   if (existing[0]) {
     [row] = await db
@@ -91,11 +97,12 @@ router.put("/plan/schedule", async (req, res): Promise<void> => {
         ...(examName ? { examName } : {}),
         updatedAt: new Date(),
       })
+      .where(eq(examSchedule.id, existing[0].id))
       .returning();
   } else {
     [row] = await db
       .insert(examSchedule)
-      .values({ startDate, examDate, ...(examName ? { examName } : {}) })
+      .values({ userId, startDate, examDate, ...(examName ? { examName } : {}) })
       .returning();
   }
   res.json(row);
@@ -130,9 +137,9 @@ export async function computeCarriedForwardItems(
 
 export async function buildTodayItems(sessionId: string) {
   const items: PlanItem[] = [];
-  const sched = await getOrCreateSchedule();
+  const sched = await getOrCreateSchedule(sessionId);
   const dRows = await db.select().from(domains).orderBy(domains.id);
-  const masteryByDomainId = await getDomainMasteryMap();
+  const masteryByDomainId = await getDomainMasteryMap(sessionId);
   const days = buildSchedule(sched.startDate, sched.examDate, dRows, masteryByDomainId);
   const today = todayStr();
   const todayDay = days.find((d) => d.date === today);
@@ -161,7 +168,12 @@ export async function buildTodayItems(sessionId: string) {
     });
   }
 
-  const weak = await db.select().from(topicMastery).orderBy(topicMastery.mastery).limit(2);
+  const weak = await db
+    .select()
+    .from(topicMastery)
+    .where(eq(topicMastery.userId, sessionId))
+    .orderBy(topicMastery.mastery)
+    .limit(2);
   const tRows = await db.select().from(topics);
   for (const w of weak) {
     if (w.attempts < 2) continue;

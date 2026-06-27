@@ -21,15 +21,20 @@ export async function linkMockSubmissionToPlan(
   sessionId: string,
   date: string,
 ): Promise<string | null> {
-  const mockKey = await mockPlanItemKeyForDay(date);
+  const mockKey = await mockPlanItemKeyForDay(sessionId, date);
   if (mockKey) {
     await markPlanItemComplete(sessionId, date, mockKey);
   }
   return mockKey;
 }
 
-router.get("/mock-exams", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(mockExams).orderBy(desc(mockExams.startedAt));
+router.get("/mock-exams", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
+  const rows = await db
+    .select()
+    .from(mockExams)
+    .where(eq(mockExams.userId, userId))
+    .orderBy(desc(mockExams.startedAt));
   res.json(
     rows.map((r) => ({
       id: r.id,
@@ -46,6 +51,7 @@ router.get("/mock-exams", async (_req, res): Promise<void> => {
 });
 
 router.post("/mock-exams", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
   const { totalQuestions = 175, timeLimitSec = 4 * 60 * 60 } = req.body ?? {};
   // Sample by domain weight
   const domainRows = await db.select().from(domains);
@@ -83,6 +89,7 @@ router.post("/mock-exams", async (req, res): Promise<void> => {
   const [exam] = await db
     .insert(mockExams)
     .values({
+      userId,
       totalQuestions: finalIds.length,
       timeLimitSec,
       questionIds: finalIds,
@@ -98,7 +105,8 @@ router.get("/mock-exams/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  const [exam] = await db.select().from(mockExams).where(eq(mockExams.id, id));
+  const userId = getOrCreateSessionId(req, res);
+  const [exam] = await db.select().from(mockExams).where(and(eq(mockExams.id, id), eq(mockExams.userId, userId)));
   if (!exam) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -155,7 +163,8 @@ router.delete("/mock-exams/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  await db.delete(mockExams).where(eq(mockExams.id, id));
+  const userId = getOrCreateSessionId(req, res);
+  await db.delete(mockExams).where(and(eq(mockExams.id, id), eq(mockExams.userId, userId)));
   res.sendStatus(204);
 });
 
@@ -176,7 +185,8 @@ router.post("/mock-exams/:id/answer", async (req, res): Promise<void> => {
     res.status(400).json({ error: "selectedIndex or selectedIndices required" });
     return;
   }
-  const [exam] = await db.select().from(mockExams).where(eq(mockExams.id, id));
+  const userId = getOrCreateSessionId(req, res);
+  const [exam] = await db.select().from(mockExams).where(and(eq(mockExams.id, id), eq(mockExams.userId, userId)));
   if (!exam) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -218,18 +228,19 @@ router.post("/mock-exams/:id/heartbeat", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
+  const userId = getOrCreateSessionId(req, res);
   const event = (req.body?.event ?? "tick") as string;
   if (event === "blur" || event === "hidden") {
     await db
       .update(mockExams)
       .set({ visibilityBreaks: sql`${mockExams.visibilityBreaks} + 1` })
-      .where(eq(mockExams.id, id));
+      .where(and(eq(mockExams.id, id), eq(mockExams.userId, userId)));
   }
   res.sendStatus(204);
 });
 
-async function computeResult(examId: number) {
-  const [exam] = await db.select().from(mockExams).where(eq(mockExams.id, examId));
+async function computeResult(examId: number, userId: string) {
+  const [exam] = await db.select().from(mockExams).where(and(eq(mockExams.id, examId), eq(mockExams.userId, userId)));
   if (!exam) return null;
   const qs = await db.select().from(questions).where(inArray(questions.id, exam.questionIds));
   const byId = new Map(qs.map((q) => [q.id, q]));
@@ -303,7 +314,8 @@ router.post("/mock-exams/:id/submit", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  const [existing] = await db.select().from(mockExams).where(eq(mockExams.id, id));
+  const userId = getOrCreateSessionId(req, res);
+  const [existing] = await db.select().from(mockExams).where(and(eq(mockExams.id, id), eq(mockExams.userId, userId)));
   if (!existing) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -325,9 +337,8 @@ router.post("/mock-exams/:id/submit", async (req, res): Promise<void> => {
 
     // Link this submission to the matching day's plan item (see
     // linkMockSubmissionToPlan for the auto-check + idempotency contract).
-    const sessionId = getOrCreateSessionId(req, res);
     const today = todayStr();
-    const mockKey = await linkMockSubmissionToPlan(sessionId, today);
+    const mockKey = await linkMockSubmissionToPlan(userId, today);
     if (!mockKey) {
       // Make-up mock: today isn't itself a scheduled simulated-exam day, so
       // count this submission toward the earliest still-uncompleted past mock,
@@ -335,14 +346,14 @@ router.post("/mock-exams/:id/submit", async (req, res): Promise<void> => {
       // the through-today completion set and markPlanItemComplete is
       // idempotent, so this never double-counts a mock already cleared by a
       // manual "mark complete" tap or an earlier make-up.
-      const makeupKey = await earliestUncompletedPastMockKey(sessionId, today);
+      const makeupKey = await earliestUncompletedPastMockKey(userId, today);
       if (makeupKey) {
-        await markPlanItemComplete(sessionId, today, makeupKey);
+        await markPlanItemComplete(userId, today, makeupKey);
       }
     }
   }
 
-  const computed = await computeResult(id);
+  const computed = await computeResult(id, userId);
   if (!computed) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -362,7 +373,8 @@ router.get("/mock-exams/:id/result", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  const computed = await computeResult(id);
+  const userId = getOrCreateSessionId(req, res);
+  const computed = await computeResult(id, userId);
   if (!computed) {
     res.status(404).json({ error: "Not found" });
     return;

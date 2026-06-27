@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, domains, examSchedule } from "@workspace/db";
 import { buildSchedule } from "./scheduleBuilder";
 import { getDomainMasteryMap } from "./domainMastery";
@@ -15,8 +15,12 @@ const DEFAULT_NAME = "July/August 2026 BOC Pass Plan";
 // user customization and left untouched.
 const LEGACY_DEFAULT_WINDOWS = new Set(["2026-05-11|2026-06-06"]);
 
-export async function getOrCreateSchedule() {
-  const [row] = await db.select().from(examSchedule).limit(1);
+export async function getOrCreateSchedule(userId: string) {
+  const [row] = await db
+    .select()
+    .from(examSchedule)
+    .where(eq(examSchedule.userId, userId))
+    .limit(1);
   if (row) {
     if (LEGACY_DEFAULT_WINDOWS.has(`${row.startDate}|${row.examDate}`)) {
       const [migrated] = await db
@@ -35,7 +39,7 @@ export async function getOrCreateSchedule() {
   }
   const [created] = await db
     .insert(examSchedule)
-    .values({ startDate: DEFAULT_START, examDate: DEFAULT_EXAM, examName: DEFAULT_NAME })
+    .values({ userId, startDate: DEFAULT_START, examDate: DEFAULT_EXAM, examName: DEFAULT_NAME })
     .returning();
   return created;
 }
@@ -44,10 +48,10 @@ export async function getOrCreateSchedule() {
 // or null when that date isn't a simulated-exam day. The key is derived from
 // the actual plan item (not hand-built) so it always matches the key used by
 // /plan/today, keeping auto-completion in lockstep with carry-forward.
-export async function mockPlanItemKeyForDay(date: string): Promise<string | null> {
-  const sched = await getOrCreateSchedule();
+export async function mockPlanItemKeyForDay(userId: string, date: string): Promise<string | null> {
+  const sched = await getOrCreateSchedule(userId);
   const dRows = await db.select().from(domains).orderBy(domains.id);
-  const masteryByDomainId = await getDomainMasteryMap();
+  const masteryByDomainId = await getDomainMasteryMap(userId);
   const days = buildSchedule(sched.startDate, sched.examDate, dRows, masteryByDomainId);
   const day = days.find((d) => d.date === date);
   const mock = day?.items.find((it) => it.kind === "mock_exam");
@@ -64,9 +68,9 @@ export async function earliestUncompletedPastMockKey(
   sessionId: string,
   today: string,
 ): Promise<string | null> {
-  const sched = await getOrCreateSchedule();
+  const sched = await getOrCreateSchedule(sessionId);
   const dRows = await db.select().from(domains).orderBy(domains.id);
-  const masteryByDomainId = await getDomainMasteryMap();
+  const masteryByDomainId = await getDomainMasteryMap(sessionId);
   const days = buildSchedule(sched.startDate, sched.examDate, dRows, masteryByDomainId);
   const everCompleted = new Set(await listCompletedKeysThrough(sessionId, today));
   // buildSchedule yields days in ascending date order, so the first match is

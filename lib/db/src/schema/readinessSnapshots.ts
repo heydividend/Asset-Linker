@@ -9,6 +9,7 @@ export const readinessSnapshots = pgTable(
   "readiness_snapshots",
   {
     id: serial("id").primaryKey(),
+    userId: text("user_id"),
     // Pacific calendar day (YYYY-MM-DD), matching the rest of the plan/schedule
     // date handling so "today" rolls over at PT midnight.
     snapshotDate: text("snapshot_date").notNull(),
@@ -19,7 +20,7 @@ export const readinessSnapshots = pgTable(
     capturedAt: timestamp("captured_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => ({
-    snapshotDateUnique: unique("readiness_snapshots_snapshot_date_unique").on(t.snapshotDate),
+    userSnapshotDateUnique: unique("readiness_snapshots_user_date_unique").on(t.userId, t.snapshotDate),
   }),
 );
 

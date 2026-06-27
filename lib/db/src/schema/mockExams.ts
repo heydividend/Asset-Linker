@@ -1,7 +1,10 @@
-import { boolean, doublePrecision, integer, jsonb, pgTable, serial, timestamp } from "drizzle-orm/pg-core";
+import { boolean, doublePrecision, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const mockExams = pgTable("mock_exams", {
   id: serial("id").primaryKey(),
+  // Owning user (Clerk user id). Nullable so legacy pre-auth rows remain valid
+  // but invisible to logged-in users; all new rows set it.
+  userId: text("user_id"),
   totalQuestions: integer("total_questions").notNull(),
   timeLimitSec: integer("time_limit_sec").notNull(),
   questionIds: jsonb("question_ids").$type<number[]>().notNull(),

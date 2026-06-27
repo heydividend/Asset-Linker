@@ -1,0 +1,6 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BOC Study Notebook">
+  <rect x="6" y="6" width="52" height="52" rx="12" fill="hsl(160 40% 30%)"/>
+  <path d="M20 18h18a6 6 0 0 1 6 6v22a4 4 0 0 0-4-4H20z" fill="#ffffff" fill-opacity="0.95"/>
+  <path d="M20 18a4 4 0 0 0-4 4v24a4 4 0 0 0 4 4h20" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 27v10M27 32h10" stroke="hsl(160 40% 30%)" stroke-width="3.2" stroke-linecap="round"/>
+</svg>

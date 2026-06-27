@@ -5,6 +5,9 @@ import { notebooks } from "./notebooks";
 
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
+  // Owning user (Clerk user id). Nullable for legacy rows; messages inherit
+  // ownership via conversationId.
+  userId: text("user_id"),
   title: text("title").notNull(),
   notebookId: integer("notebook_id").references(() => notebooks.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -12,6 +15,7 @@ export const conversations = pgTable("conversations", {
 
 export const insertConversationSchema = createInsertSchema(conversations).omit({
   id: true,
+  userId: true,
   createdAt: true,
 });
 

@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, sql } from "drizzle-orm";
 import { db, domains, tasks, taskMastery, questions } from "@workspace/db";
 import { parseId } from "../lib/parseId";
+import { getOrCreateSessionId } from "../lib/sessionId";
 import { PA8_DOMAIN_SUMMARIES } from "../lib/pa8Reference";
 import { PA8_TASK_RATINGS } from "../lib/pa8Blueprint";
 
@@ -12,10 +13,11 @@ const router: IRouter = Router();
 // weight) and its task statements, each carrying the student's self-rated
 // confidence, objective mastery, attempt counts, and how many tagged questions
 // exist to drill it. This is the single payload behind the Blueprint page.
-router.get("/blueprint", async (_req, res): Promise<void> => {
+router.get("/blueprint", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
   const dRows = await db.select().from(domains).orderBy(domains.id);
   const tRows = await db.select().from(tasks).orderBy(tasks.sortOrder);
-  const mRows = await db.select().from(taskMastery);
+  const mRows = await db.select().from(taskMastery).where(eq(taskMastery.userId, userId));
   const masteryByTask = new Map(mRows.map((m) => [m.taskId, m]));
 
   // Count enabled questions tagged to each task so the UI can show what is

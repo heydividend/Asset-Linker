@@ -99,8 +99,14 @@ router.get("/questions", async (req, res): Promise<void> => {
 });
 
 router.get("/quizzes", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
   const limit = Math.min(parseInt((req.query.limit as string) ?? "20", 10) || 20, 100);
-  const rows = await db.select().from(quizzes).orderBy(desc(quizzes.startedAt)).limit(limit);
+  const rows = await db
+    .select()
+    .from(quizzes)
+    .where(eq(quizzes.userId, userId))
+    .orderBy(desc(quizzes.startedAt))
+    .limit(limit);
   const ids = rows.map((r) => r.id);
   const correctByQuiz = new Map<number, number>();
   if (ids.length > 0) {
@@ -130,6 +136,7 @@ router.get("/quizzes", async (req, res): Promise<void> => {
 });
 
 router.post("/quizzes", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
   const { mode = "adaptive", count = 10, notebookId, topicId, topicIds, domainId, taskId, sourceKind, pendingReviewOnly } = req.body ?? {};
 
   const baseConditions = [eq(questions.enabled, true)];
@@ -174,7 +181,7 @@ router.post("/quizzes", async (req, res): Promise<void> => {
       const ranked = await db
         .select({ topicId: topicMastery.topicId, mastery: topicMastery.mastery })
         .from(topicMastery)
-        .where(inArray(topicMastery.topicId, availableTids))
+        .where(and(eq(topicMastery.userId, userId), inArray(topicMastery.topicId, availableTids)))
         .orderBy(topicMastery.mastery);
       const studiedTids = new Set(ranked.map((r) => r.topicId));
       // Prefer never-studied topics first (truly weakest), then lowest mastery.
@@ -206,6 +213,7 @@ router.post("/quizzes", async (req, res): Promise<void> => {
   const [quiz] = await db
     .insert(quizzes)
     .values({
+      userId,
       mode,
       notebookId: notebookId ?? null,
       topicId: topicId ?? null,
@@ -227,10 +235,11 @@ router.post("/quizzes", async (req, res): Promise<void> => {
 // generated fresh (AI, PA8-aligned, weak-area weighted) and cached so the set
 // is stable within the day and regenerates the next day. Resumes today's
 // unfinished daily attempt if one exists, otherwise starts a new one.
-router.post("/quizzes/daily", async (_req, res): Promise<void> => {
+router.post("/quizzes/daily", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
   let questionIds: number[];
   try {
-    questionIds = await getOrCreateDailyQuestionIds();
+    questionIds = await getOrCreateDailyQuestionIds(userId);
   } catch (err) {
     res.status(502).json({ error: "Could not generate today's quiz. Try again in a moment." });
     return;
@@ -244,7 +253,7 @@ router.post("/quizzes/daily", async (_req, res): Promise<void> => {
   const [recent] = await db
     .select()
     .from(quizzes)
-    .where(eq(quizzes.mode, "daily"))
+    .where(and(eq(quizzes.userId, userId), eq(quizzes.mode, "daily")))
     .orderBy(desc(quizzes.startedAt))
     .limit(1);
   const sameSet =
@@ -270,7 +279,7 @@ router.post("/quizzes/daily", async (_req, res): Promise<void> => {
 
   const [quiz] = await db
     .insert(quizzes)
-    .values({ mode: "daily", questionIds })
+    .values({ userId, mode: "daily", questionIds })
     .returning();
   res.status(201).json({
     id: quiz.id,
@@ -286,11 +295,12 @@ router.post("/quizzes/daily", async (_req, res): Promise<void> => {
 // Pacific calendar day it was taken. The detailed review reuses GET
 // /quizzes/{id} (the existing finished-quiz review screen).
 router.get("/quizzes/daily/history", async (req, res): Promise<void> => {
+  const userId = getOrCreateSessionId(req, res);
   const limit = Math.min(parseInt((req.query.limit as string) ?? "30", 10) || 30, 100);
   const rows = await db
     .select()
     .from(quizzes)
-    .where(and(eq(quizzes.mode, "daily"), eq(quizzes.finished, true)))
+    .where(and(eq(quizzes.userId, userId), eq(quizzes.mode, "daily"), eq(quizzes.finished, true)))
     .orderBy(desc(quizzes.startedAt))
     .limit(limit);
   const ids = rows.map((r) => r.id);
@@ -303,7 +313,7 @@ router.get("/quizzes/daily/history", async (req, res): Promise<void> => {
       ? await db
           .select()
           .from(quizzes)
-          .where(and(eq(quizzes.mode, "practice"), eq(quizzes.finished, true), inArray(quizzes.sourceQuizId, ids)))
+          .where(and(eq(quizzes.userId, userId), eq(quizzes.mode, "practice"), eq(quizzes.finished, true), inArray(quizzes.sourceQuizId, ids)))
           .orderBy(quizzes.startedAt)
       : [];
 
@@ -371,7 +381,8 @@ router.post("/quizzes/:id/practice", async (req, res): Promise<void> => {
     return;
   }
   const { shuffleQuestions = false, shuffleChoices = false } = req.body ?? {};
-  const [src] = await db.select().from(quizzes).where(eq(quizzes.id, id));
+  const userId = getOrCreateSessionId(req, res);
+  const [src] = await db.select().from(quizzes).where(and(eq(quizzes.id, id), eq(quizzes.userId, userId)));
   if (!src) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -410,6 +421,7 @@ router.post("/quizzes/:id/practice", async (req, res): Promise<void> => {
   const [quiz] = await db
     .insert(quizzes)
     .values({
+      userId,
       mode: "practice",
       notebookId: src.notebookId ?? null,
       topicId: src.topicId ?? null,
@@ -434,7 +446,8 @@ router.get("/quizzes/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  const [quiz] = await db.select().from(quizzes).where(eq(quizzes.id, id));
+  const userId = getOrCreateSessionId(req, res);
+  const [quiz] = await db.select().from(quizzes).where(and(eq(quizzes.id, id), eq(quizzes.userId, userId)));
   if (!quiz) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -446,7 +459,7 @@ router.get("/quizzes/:id", async (req, res): Promise<void> => {
   // review can show "original X% → retake Y%".
   let source: { id: number; date: string; score: number | null } | null = null;
   if (quiz.sourceQuizId != null) {
-    const [src] = await db.select().from(quizzes).where(eq(quizzes.id, quiz.sourceQuizId));
+    const [src] = await db.select().from(quizzes).where(and(eq(quizzes.id, quiz.sourceQuizId), eq(quizzes.userId, userId)));
     if (src) source = { id: src.id, date: dateStrPT(src.startedAt), score: src.score };
   }
 
@@ -468,7 +481,8 @@ router.delete("/quizzes/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
-  await db.delete(quizzes).where(eq(quizzes.id, id));
+  const userId = getOrCreateSessionId(req, res);
+  await db.delete(quizzes).where(and(eq(quizzes.id, id), eq(quizzes.userId, userId)));
   res.sendStatus(204);
 });
 
@@ -476,6 +490,15 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {
     res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const userId = getOrCreateSessionId(req, res);
+  const [ownedQuiz] = await db
+    .select({ choiceOrders: quizzes.choiceOrders })
+    .from(quizzes)
+    .where(and(eq(quizzes.id, id), eq(quizzes.userId, userId)));
+  if (!ownedQuiz) {
+    res.status(404).json({ error: "Not found" });
     return;
   }
   const { questionId, selectedIndex, selectedIndices } = req.body ?? {};
@@ -492,8 +515,7 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
   // correctness are always tracked against ORIGINAL choice indices. Translate
   // each displayed position back to its original index using the quiz's stored
   // permutation; identity when the quiz isn't reshuffled.
-  const [quizRow] = await db.select({ choiceOrders: quizzes.choiceOrders }).from(quizzes).where(eq(quizzes.id, id));
-  const rawOrder = quizRow?.choiceOrders?.[String(questionId)];
+  const rawOrder = ownedQuiz.choiceOrders?.[String(questionId)];
   const order = isValidOrder(rawOrder, q.choices.length) ? rawOrder : null;
   const toOriginal = (d: number) => (order && d >= 0 && d < order.length ? order[d] : d);
   // Map an original index back to its displayed position for the feedback echo.
@@ -531,16 +553,17 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
     const [existing] = await db
       .select()
       .from(topicMastery)
-      .where(eq(topicMastery.topicId, q.topicId));
+      .where(and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, q.topicId)));
     if (existing) {
       const attempts = existing.attempts + 1;
       const correctCount = existing.correct + (correct ? 1 : 0);
       await db
         .update(topicMastery)
         .set({ attempts, correct: correctCount, mastery: correctCount / attempts, updatedAt: new Date() })
-        .where(eq(topicMastery.topicId, q.topicId));
+        .where(and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, q.topicId)));
     } else {
       await db.insert(topicMastery).values({
+        userId,
         topicId: q.topicId,
         attempts: 1,
         correct: correct ? 1 : 0,
@@ -555,9 +578,9 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
     const inc = correct ? 1 : 0;
     await db
       .insert(taskMastery)
-      .values({ taskId: q.taskId, attempts: 1, correct: inc, mastery: inc })
+      .values({ userId, taskId: q.taskId, attempts: 1, correct: inc, mastery: inc })
       .onConflictDoUpdate({
-        target: taskMastery.taskId,
+        target: [taskMastery.userId, taskMastery.taskId],
         set: {
           attempts: sql`${taskMastery.attempts} + 1`,
           correct: sql`${taskMastery.correct} + ${inc}`,
@@ -605,6 +628,15 @@ router.post("/quizzes/:id/finish", async (req, res): Promise<void> => {
     res.status(400).json({ error: "invalid id" });
     return;
   }
+  const userId = getOrCreateSessionId(req, res);
+  const [owned] = await db
+    .select({ id: quizzes.id })
+    .from(quizzes)
+    .where(and(eq(quizzes.id, id), eq(quizzes.userId, userId)));
+  if (!owned) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
   const ans = await db.select().from(quizAnswers).where(eq(quizAnswers.quizId, id));
   // Score with BOC-style partial credit: multi-select answers earn fractional
   // credit (never negative), single-select stays all-or-nothing.
@@ -620,13 +652,12 @@ router.post("/quizzes/:id/finish", async (req, res): Promise<void> => {
   const [updated] = await db
     .update(quizzes)
     .set({ finished: true, score, finishedAt: new Date() })
-    .where(eq(quizzes.id, id))
+    .where(and(eq(quizzes.id, id), eq(quizzes.userId, userId)))
     .returning();
 
   // Auto-mark today's quiz plan-items complete (see linkQuizFinishToPlan).
   if (updated) {
-    const sessionId = getOrCreateSessionId(req, res);
-    await linkQuizFinishToPlan(sessionId, todayStr(), updated);
+    await linkQuizFinishToPlan(userId, todayStr(), updated);
   }
 
   res.json({ id, score, total: ans.length, correct: ans.filter((a) => a.correct).length });

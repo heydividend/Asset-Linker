@@ -24,9 +24,9 @@ const TEST_SESSION = `test-carry-${Date.now()}-${Math.random().toString(36).slic
 // clock. We use the exam (last) day as `today` so every study day is in the
 // past and is therefore eligible to be carried forward.
 async function buildPlan(): Promise<{ days: ScheduleDay[]; today: string }> {
-  const sched = await getOrCreateSchedule();
+  const sched = await getOrCreateSchedule(TEST_SESSION);
   const dRows = await db.select().from(domains).orderBy(domains.id);
-  const masteryByDomainId = await getDomainMasteryMap();
+  const masteryByDomainId = await getDomainMasteryMap(TEST_SESSION);
   const days = buildSchedule(
     sched.startDate,
     sched.examDate,

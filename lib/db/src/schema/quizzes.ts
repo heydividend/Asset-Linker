@@ -2,6 +2,9 @@ import { boolean, doublePrecision, integer, jsonb, pgTable, serial, text, timest
 
 export const quizzes = pgTable("quizzes", {
   id: serial("id").primaryKey(),
+  // Owning user (Clerk user id). Nullable for legacy pre-auth rows; new rows set it.
+  // quiz_answers inherit ownership transitively via quizId.
+  userId: text("user_id"),
   mode: text("mode").notNull(),
   notebookId: integer("notebook_id"),
   topicId: integer("topic_id"),

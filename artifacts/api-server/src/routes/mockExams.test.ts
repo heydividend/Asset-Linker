@@ -23,9 +23,9 @@ async function findMockAndNonMockDays(): Promise<{
   mockDate: string;
   nonMockDate: string;
 }> {
-  const sched = await getOrCreateSchedule();
+  const sched = await getOrCreateSchedule(TEST_SESSION);
   const dRows = await db.select().from(domains).orderBy(domains.id);
-  const masteryByDomainId = await getDomainMasteryMap();
+  const masteryByDomainId = await getDomainMasteryMap(TEST_SESSION);
   const days = buildSchedule(
     sched.startDate,
     sched.examDate,
@@ -152,9 +152,9 @@ async function mockDaysOfPlan(): Promise<{
   examDate: string;
   mocks: { date: string; key: string }[];
 }> {
-  const sched = await getOrCreateSchedule();
+  const sched = await getOrCreateSchedule(TEST_SESSION);
   const dRows = await db.select().from(domains).orderBy(domains.id);
-  const masteryByDomainId = await getDomainMasteryMap();
+  const masteryByDomainId = await getDomainMasteryMap(TEST_SESSION);
   const days = buildSchedule(
     sched.startDate,
     sched.examDate,

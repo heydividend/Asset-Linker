@@ -21,10 +21,15 @@ const EP_PREFIX = "https://example.invalid/route/";
 // (anonymous ids are random, so we can't match them by a prefix).
 const touchedSessions = new Set<string>();
 
-// Minimal cookie-jar fetch wrapper so a sequence of requests shares the
-// boc_sid session cookie the routes set, exactly like a browser would.
+// Each client gets its own unique boc_sid id up front. Under the auth model
+// the server no longer mints anonymous sessions, so the cookie is the client's
+// stable identity (the test-auth bypass reads boc_sid as the user id), which
+// keeps each Client isolated from the others exactly like separate users.
+let clientSeq = 0;
 class Client {
-  private cookie: string | null = null;
+  private cookie: string | null = `boc_sid=test-rem-${Date.now()}-${clientSeq++}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
 
   async req(
     method: string,

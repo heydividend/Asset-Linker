@@ -1,14 +1,15 @@
+import { eq } from "drizzle-orm";
 import { db, topicMastery, topics } from "@workspace/db";
 
 /**
  * Current per-domain mastery as a fraction in [0, 1], aggregated from topic
- * mastery (sum of correct / sum of attempts across the domain's topics). A
- * domain with no recorded attempts maps to 0 (untouched/weak). This mirrors the
- * dashboard's domain-mastery computation so the schedule's weakness-first day
- * allocation stays consistent with the readiness the user sees.
+ * mastery (sum of correct / sum of attempts across the domain's topics) for a
+ * single user. A domain with no recorded attempts maps to 0 (untouched/weak).
+ * This mirrors the dashboard's domain-mastery computation so the schedule's
+ * weakness-first day allocation stays consistent with the readiness the user sees.
  */
-export async function getDomainMasteryMap(): Promise<Map<number, number>> {
-  const mastery = await db.select().from(topicMastery);
+export async function getDomainMasteryMap(userId: string): Promise<Map<number, number>> {
+  const mastery = await db.select().from(topicMastery).where(eq(topicMastery.userId, userId));
   const tRows = await db.select().from(topics);
 
   const domainIdByTopic = new Map<number, number>(

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
   db,
   dailyQuizSets,
@@ -98,12 +98,18 @@ async function seed(): Promise<void> {
   const [existing] = await db
     .select()
     .from(dailyQuizSets)
-    .where(eq(dailyQuizSets.date, today));
+    .where(
+      and(eq(dailyQuizSets.userId, TEST_SESSION), eq(dailyQuizSets.date, today)),
+    );
   savedDailyQuestionIds = existing ? existing.questionIds : null;
-  await db.delete(dailyQuizSets).where(eq(dailyQuizSets.date, today));
+  await db
+    .delete(dailyQuizSets)
+    .where(
+      and(eq(dailyQuizSets.userId, TEST_SESSION), eq(dailyQuizSets.date, today)),
+    );
   await db
     .insert(dailyQuizSets)
-    .values({ date: today, questionIds: seededQuestionIds });
+    .values({ userId: TEST_SESSION, date: today, questionIds: seededQuestionIds });
 }
 
 async function cleanup(): Promise<void> {
@@ -137,12 +143,22 @@ async function cleanup(): Promise<void> {
   }
 
   // Restore the original daily set for today.
-  await db.delete(dailyQuizSets).where(eq(dailyQuizSets.date, today));
+  await db
+    .delete(dailyQuizSets)
+    .where(
+      and(eq(dailyQuizSets.userId, TEST_SESSION), eq(dailyQuizSets.date, today)),
+    );
   if (savedDailyQuestionIds) {
     await db
       .insert(dailyQuizSets)
-      .values({ date: today, questionIds: savedDailyQuestionIds })
-      .onConflictDoNothing({ target: dailyQuizSets.date });
+      .values({
+        userId: TEST_SESSION,
+        date: today,
+        questionIds: savedDailyQuestionIds,
+      })
+      .onConflictDoNothing({
+        target: [dailyQuizSets.userId, dailyQuizSets.date],
+      });
   }
 }
 

@@ -152,16 +152,19 @@ Respond ONLY with JSON of the exact shape:
 // Returns the ordered list of question ids that make up today's 50-question
 // daily quiz, generating and caching them on first request of the day. The set
 // is stable for the rest of the (Pacific) day and regenerated the next day.
-export async function getOrCreateDailyQuestionIds(): Promise<number[]> {
+export async function getOrCreateDailyQuestionIds(userId: string): Promise<number[]> {
   const date = todayStrPT();
-  const [existing] = await db.select().from(dailyQuizSets).where(eq(dailyQuizSets.date, date));
+  const [existing] = await db
+    .select()
+    .from(dailyQuizSets)
+    .where(and(eq(dailyQuizSets.userId, userId), eq(dailyQuizSets.date, date)));
   if (existing && existing.questionIds.length > 0) {
     return existing.questionIds;
   }
 
   const domainRows = await db.select().from(domains).orderBy(domains.id);
   if (domainRows.length === 0) return [];
-  const masteryByDomainId = await getDomainMasteryMap();
+  const masteryByDomainId = await getDomainMasteryMap(userId);
   const alloc = allocate(domainRows, masteryByDomainId);
 
   const allTopics = await db.select().from(topics);
@@ -224,9 +227,12 @@ export async function getOrCreateDailyQuestionIds(): Promise<number[]> {
     if (ids.length === 0) return [];
     await db
       .insert(dailyQuizSets)
-      .values({ date, questionIds: ids })
-      .onConflictDoNothing({ target: dailyQuizSets.date });
-    const [row] = await db.select().from(dailyQuizSets).where(eq(dailyQuizSets.date, date));
+      .values({ userId, date, questionIds: ids })
+      .onConflictDoNothing({ target: [dailyQuizSets.userId, dailyQuizSets.date] });
+    const [row] = await db
+      .select()
+      .from(dailyQuizSets)
+      .where(and(eq(dailyQuizSets.userId, userId), eq(dailyQuizSets.date, date)));
     return row?.questionIds ?? ids;
   }
 
@@ -236,8 +242,11 @@ export async function getOrCreateDailyQuestionIds(): Promise<number[]> {
   // Cache the set. If another concurrent request beat us to it, keep theirs.
   await db
     .insert(dailyQuizSets)
-    .values({ date, questionIds: ids })
-    .onConflictDoNothing({ target: dailyQuizSets.date });
-  const [row] = await db.select().from(dailyQuizSets).where(eq(dailyQuizSets.date, date));
+    .values({ userId, date, questionIds: ids })
+    .onConflictDoNothing({ target: [dailyQuizSets.userId, dailyQuizSets.date] });
+  const [row] = await db
+    .select()
+    .from(dailyQuizSets)
+    .where(and(eq(dailyQuizSets.userId, userId), eq(dailyQuizSets.date, date)));
   return row?.questionIds ?? ids;
 }
