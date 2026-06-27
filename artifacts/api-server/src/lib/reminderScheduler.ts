@@ -8,10 +8,24 @@ import {
   weekdayInTz,
 } from "./today";
 import { buildReminderPayload } from "./reminderSummary";
-import { ensureWebPushConfigured, sendPushToSession } from "./webPush";
+import {
+  ensureWebPushConfigured,
+  sendPushToSession,
+  type PushPayload,
+} from "./webPush";
 
 const TICK_INTERVAL_MS = 60 * 1000;
 const DEFAULT_TZ = "America/Los_Angeles";
+
+// Seams that tests can override to exercise the scheduling/dedupe logic
+// without doing real Web Push sends or building a full plan summary. In
+// production these default to the real implementations.
+export interface ReminderTickDeps {
+  now?: string;
+  today?: string;
+  buildPayload?: (sessionId: string) => Promise<PushPayload>;
+  sendPush?: (sessionId: string, payload: PushPayload) => Promise<number>;
+}
 
 // One scheduler pass: find every enabled reminder whose chosen time has
 // arrived (in that session's timezone) and that hasn't been sent yet today,
@@ -20,8 +34,10 @@ const DEFAULT_TZ = "America/Los_Angeles";
 // than exact-minute equality) means a reminder still fires — late — if the
 // server happened to be down at the exact minute. Weekdays the user silenced
 // are skipped entirely.
-export async function runReminderTick(): Promise<number> {
+export async function runReminderTick(deps: ReminderTickDeps = {}): Promise<number> {
   if (!ensureWebPushConfigured()) return 0;
+  const buildPayload = deps.buildPayload ?? buildReminderPayload;
+  const sendPush = deps.sendPush ?? sendPushToSession;
 
   const due = await db
     .select()
@@ -34,8 +50,8 @@ export async function runReminderTick(): Promise<number> {
       pref.timezone && isValidTimeZone(pref.timezone)
         ? pref.timezone
         : DEFAULT_TZ;
-    const today = todayStrInTz(tz);
-    const nowHHmm = nowHHmmInTz(tz);
+    const today = deps.today ?? todayStrInTz(tz);
+    const nowHHmm = deps.now ?? nowHHmmInTz(tz);
     if (pref.lastSentDate === today) continue;
     if (nowHHmm < pref.time) continue;
     // Honor silenced weekdays (0=Sunday … 6=Saturday in the user's timezone).
@@ -48,8 +64,8 @@ export async function runReminderTick(): Promise<number> {
       continue;
     }
     try {
-      const payload = await buildReminderPayload(pref.sessionId);
-      const count = await sendPushToSession(pref.sessionId, payload);
+      const payload = await buildPayload(pref.sessionId);
+      const count = await sendPush(pref.sessionId, payload);
       // Stamp regardless of count so we don't retry every minute for a session
       // whose subscriptions have all expired.
       await db
