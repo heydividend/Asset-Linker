@@ -22,6 +22,8 @@ import aiLearningRouter from "./aiLearning";
 import remindersRouter from "./reminders";
 import reviewSheetsRouter from "./reviewSheets";
 import itemAnalysisRouter from "./itemAnalysis";
+import meRouter from "./me";
+import adminRouter from "./admin";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -54,5 +56,7 @@ router.use(aiLearningRouter);
 router.use(remindersRouter);
 router.use(reviewSheetsRouter);
 router.use(itemAnalysisRouter);
+router.use(meRouter);
+router.use(adminRouter);
 
 export default router;

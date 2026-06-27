@@ -1,7 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { useClerk } from "@clerk/react";
-import { Stethoscope, ChevronLeft, Compass, MapPin, FileText, RotateCcw, HelpCircle, Check, PlayCircle, LogOut } from "lucide-react";
+import { Stethoscope, ChevronLeft, Compass, MapPin, FileText, RotateCcw, HelpCircle, Check, PlayCircle, LogOut, Shield } from "lucide-react";
 import { PAGES } from "@/lib/tour";
+import { useMe } from "@/hooks/use-me";
 import { HelpDialog } from "./HelpDialog";
 import { VoicePicker } from "./VoicePicker";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ export function Sidebar() {
   const { sidebarWidth, setSidebarWidth, toggleSidebar } = useLayoutStore();
   const { startTour, replayWelcomeTour, progress } = useTour();
   const { signOut } = useClerk();
+  const me = useMe();
   const sidebarBasePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   const [tourMenuOpen, setTourMenuOpen] = useState(false);
   const completedSet = new Set(progress.completed);
@@ -66,6 +68,25 @@ export function Sidebar() {
             </Link>
           );
         })}
+        {me.data?.isAdmin && (
+          <Link href="/admin">
+            <Button
+              variant={location === "/admin" ? "secondary" : "ghost"}
+              size="sm"
+              className={cn(
+                "w-full justify-start text-left font-medium min-w-0 h-8 px-2 text-[13px]",
+                location === "/admin"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50",
+              )}
+              title="Admin"
+              data-testid="nav-admin"
+            >
+              <Shield className="h-3.5 w-3.5 mr-2 shrink-0" />
+              <span className="truncate">Admin</span>
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="border-t border-sidebar-border px-1.5 py-2 space-y-0.5">

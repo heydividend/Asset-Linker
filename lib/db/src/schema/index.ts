@@ -24,3 +24,4 @@ export * from "./studyGroup";
 export * from "./readinessSnapshots";
 export * from "./pushSubscriptions";
 export * from "./reminderPrefs";
+export * from "./loginSessions";

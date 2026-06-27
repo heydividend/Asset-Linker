@@ -47,13 +47,8 @@ export default function Landing() {
         </div>
         <div className="flex items-center gap-2">
           <Link href="/sign-in">
-            <Button variant="ghost" size="sm" data-testid="link-sign-in">
+            <Button size="sm" data-testid="link-sign-in">
               Sign in
-            </Button>
-          </Link>
-          <Link href="/sign-up">
-            <Button size="sm" data-testid="link-sign-up">
-              Get started
             </Button>
           </Link>
         </div>
@@ -74,22 +69,15 @@ export default function Landing() {
             One focused workspace for your study plan, quizzes, mock exams,
             mastery tracking, and an AI tutor — all kept private to your account.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/sign-up">
-              <Button size="lg" className="w-full sm:w-auto" data-testid="cta-sign-up">
-                Create your account
-              </Button>
-            </Link>
+          <div className="mt-8 flex flex-col items-center gap-3">
             <Link href="/sign-in">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full sm:w-auto"
-                data-testid="cta-sign-in"
-              >
-                I already have an account
+              <Button size="lg" className="w-full sm:w-auto" data-testid="cta-sign-in">
+                Sign in to your account
               </Button>
             </Link>
+            <p className="text-xs text-muted-foreground">
+              Accounts are provisioned by your program administrator.
+            </p>
           </div>
         </section>
 

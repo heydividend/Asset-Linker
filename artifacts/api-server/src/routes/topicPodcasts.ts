@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { db, audioOverviews, notebooks, notes, topics, domains } from "@workspace/db";
 import { parseId } from "./../lib/parseId";
-import { chatText } from "./../lib/openaiHelpers";
+import { chatText, DEFAULT_MODEL } from "./../lib/openaiHelpers";
 import { textToSpeech } from "@workspace/integrations-openai-ai-server/audio";
 import { logger } from "./../lib/logger";
 
@@ -60,18 +60,21 @@ async function generateTopicPodcastInBackground(opts: {
   const { overviewId, topicName, domainName, voice } = opts;
   try {
     const prompt =
-      `Write a focused, friendly ~5-minute spoken podcast script for an Athletic Training student preparing for the BOC exam. ` +
+      `You are recording an insightful ~5-minute audio podcast episode that TEACHES an Athletic Training student preparing for the BOC exam THROUGH ANALYSIS — not by reading notes aloud. ` +
       `Topic: "${topicName}"${domainName ? ` (domain: ${domainName})` : ""}. ` +
-      `Follow this strict outline so the listener never gets lost: ` +
-      `(1) a 2-sentence intro naming the topic, ` +
-      `(2) walk through EXACTLY 4-6 highest-yield concepts, ONE at a time, in a fixed order — finish each concept completely before moving to the next; do not jump between subtopics or circle back, ` +
-      `(3) for each concept give a clear definition, one clinical pearl, and one concrete example, ` +
-      `(4) close with a 3-bullet recap and a friendly sign-off. ` +
-      `If you pose a question to the listener, answer it directly and correctly in the very next sentence — no rhetorical questions left hanging. ` +
-      `Write ONLY the spoken script — no stage directions, no markdown, no headings.`;
+      `Do NOT recite textbook definitions. Instead, explain the reasoning behind the material: WHY each concept matters clinically and on the exam, the mechanism or logic underneath it, how the ideas connect into one mental model, the common misconceptions, and the exam traps students fall for. Use vivid analogies and concrete clinical scenarios so it sticks. ` +
+      `Keep the listener oriented with a clear through-line: ` +
+      `(1) a short hook plus a 2-sentence intro framing why this topic matters in the clinic and on the exam, ` +
+      `(2) work through 4-6 highest-yield ideas ONE at a time in a logical order — fully finish each before the next; do not jump around or circle back, ` +
+      `(3) for each idea give the "so what": the underlying reasoning, a concrete clinical example, and the mistake to avoid, ` +
+      `(4) explicitly draw the connections between the ideas so they form a coherent model, ` +
+      `(5) close with a punchy 3-point recap and a motivating sign-off. ` +
+      `Speak in a warm, energetic, conversational podcast voice (first person, speaking directly to "you"). If you pose a question, answer it correctly in the very next sentence — no rhetorical questions left hanging. ` +
+      `Write ONLY the spoken words — no stage directions, speaker labels, sound cues, markdown, or headings.`;
     const transcript = await chatText(
       prompt,
-      "You are a clinical educator writing natural spoken audio for a study app.",
+      "You are an expert Athletic Training educator and a skilled podcast host who teaches through sharp analysis, clinical reasoning, and storytelling — never by reading text verbatim.",
+      DEFAULT_MODEL,
     );
     if (!transcript || transcript.trim().length === 0) {
       throw new Error("Transcript generation returned empty text");

@@ -1,10 +1,9 @@
 import { useEffect, useRef } from "react";
-import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
+import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import {
   ClerkProvider,
   SignIn,
-  SignUp,
   Show,
   useAuth,
 } from "@clerk/react";
@@ -40,6 +39,7 @@ import DailyQuizHistory from "@/pages/DailyQuizHistory";
 import ReviewSheetsPage from "@/pages/ReviewSheetsPage";
 import ReviewSheetDetail from "@/pages/ReviewSheetDetail";
 import ItemQualityPage from "@/pages/ItemQualityPage";
+import AdminDashboard from "@/pages/AdminDashboard";
 import CodeBlueGame from "@/pages/CodeBlueGame";
 import SurvivorGame from "@/pages/SurvivorGame";
 import SpotContraindicationGame from "@/pages/SpotContraindicationGame";
@@ -146,28 +146,36 @@ function SignInPage() {
       <SignIn
         routing="path"
         path={`${basePath}/sign-in`}
-        signUpUrl={`${basePath}/sign-up`}
+        // Public self-service sign-up is disabled — accounts are created by an
+        // admin — so hide Clerk's "Don't have an account? Sign up" footer link.
+        appearance={{ elements: { footerAction: "hidden" } }}
       />
     </div>
   );
 }
 
-function SignUpPage() {
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignUp
-        routing="path"
-        path={`${basePath}/sign-up`}
-        signInUrl={`${basePath}/sign-in`}
-      />
-    </div>
-  );
+// Records a login session once when the signed-in app first mounts. The backend
+// upserts by Clerk session id, so this is idempotent within a session.
+function SessionHeartbeat() {
+  const sentRef = useRef(false);
+  useEffect(() => {
+    if (sentRef.current) return;
+    sentRef.current = true;
+    fetch("/api/session/heartbeat", {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {
+      // Heartbeat is best-effort; never block the app on it.
+    });
+  }, []);
+  return null;
 }
 
 function AppRoutes() {
   return (
     <TourProvider>
       <StudyGroupTimeoutNotifier />
+      <SessionHeartbeat />
       <Layout>
         <Switch>
           <Route path="/" component={Dashboard} />
@@ -199,6 +207,7 @@ function AppRoutes() {
           <Route path="/study-group" component={StudyGroupPage} />
           <Route path="/ai-learning" component={AILearningPage} />
           <Route path="/item-quality" component={ItemQualityPage} />
+          <Route path="/admin" component={AdminDashboard} />
           <Route component={NotFound} />
         </Switch>
       </Layout>
@@ -267,7 +276,11 @@ function ClerkProviderWithRoutes() {
           <TooltipProvider>
             <Switch>
               <Route path="/sign-in/*?" component={SignInPage} />
-              <Route path="/sign-up/*?" component={SignUpPage} />
+              {/* Public sign-up is disabled — accounts are admin-created. Any
+                  hit to the old sign-up route is sent to sign-in. */}
+              <Route path="/sign-up/*?">
+                <Redirect to="/sign-in" />
+              </Route>
               <Route component={GatedApp} />
             </Switch>
             <Toaster />
