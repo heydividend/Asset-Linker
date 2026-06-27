@@ -118,7 +118,9 @@ const clerkAppearance = {
       "bg-[hsl(160_40%_30%)] hover:bg-[hsl(160_40%_26%)] text-white font-medium",
     formFieldInput:
       "bg-[hsl(160_15%_97%)] border border-[hsl(160_15%_85%)] text-[hsl(160_20%_16%)]",
-    footerAction: "text-[hsl(160_15%_45%)]",
+    // Public self-service sign-up is disabled (accounts are admin-provisioned),
+    // so hide Clerk's "Don't have an account? Sign up" footer link everywhere.
+    footerAction: "hidden",
     dividerLine: "bg-[hsl(160_15%_90%)]",
     otpCodeFieldInput: "text-[hsl(160_20%_16%)] border-[hsl(160_15%_85%)]",
     main: "gap-5",
@@ -143,13 +145,7 @@ const clerkLocalization = {
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignIn
-        routing="path"
-        path={`${basePath}/sign-in`}
-        // Public self-service sign-up is disabled — accounts are created by an
-        // admin — so hide Clerk's "Don't have an account? Sign up" footer link.
-        appearance={{ elements: { footerAction: "hidden" } }}
-      />
+      <SignIn routing="path" path={`${basePath}/sign-in`} />
     </div>
   );
 }

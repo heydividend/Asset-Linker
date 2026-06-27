@@ -294,3 +294,9 @@
     inset: -1px;
   }
 }
+
+/* Public self-service sign-up is disabled — accounts are admin-provisioned —
+   so always hide Clerk's "Don't have an account? Sign up" footer link. */
+.cl-footerAction {
+  display: none !important;
+}
