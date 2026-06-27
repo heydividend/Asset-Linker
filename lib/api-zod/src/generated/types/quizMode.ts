@@ -13,4 +13,6 @@ export const QuizMode = {
   topic: "topic",
   domain: "domain",
   weakness: "weakness",
+  daily: "daily",
+  practice: "practice",
 } as const;

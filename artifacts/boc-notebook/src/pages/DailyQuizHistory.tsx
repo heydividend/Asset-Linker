@@ -1,9 +1,10 @@
 import { useLocation } from "wouter";
-import { useGetDailyQuizHistory } from "@workspace/api-client-react";
+import { useGetDailyQuizHistory, usePracticeQuizSet } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CalendarCheck, ChevronLeft, History, TrendingUp } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { CalendarCheck, ChevronLeft, History, RotateCcw, TrendingUp } from "lucide-react";
 import { DailyScoreTrend, type DailyScorePoint } from "@/components/DailyScoreTrend";
 
 function formatDate(ymd: string): string {
@@ -29,6 +30,23 @@ function toPct(h: { score: number | null; correctCount: number; totalQuestions: 
 export default function DailyQuizHistory() {
   const [, navigate] = useLocation();
   const { data: history = [], isLoading } = useGetDailyQuizHistory();
+  const practice = usePracticeQuizSet();
+  const { toast } = useToast();
+
+  const onPractice = (quizId: number) => {
+    practice.mutate(
+      { id: quizId },
+      {
+        onSuccess: (quiz) => navigate(`/quiz/${quiz.id}`),
+        onError: (e) =>
+          toast({
+            title: "Couldn't start practice",
+            description: e instanceof Error ? e.message : "Try again in a moment.",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
 
   // History arrives newest-first; the trend reads best oldest → newest.
   const trendPoints: DailyScorePoint[] = [...history].reverse().map((h) => ({
@@ -93,23 +111,39 @@ export default function DailyQuizHistory() {
                 {history.map((h) => {
                   const pct = toPct(h);
                   return (
-                    <button
+                    <div
                       key={h.id}
-                      onClick={() => navigate(`/quiz/${h.id}`)}
-                      className="w-full flex items-center justify-between gap-2 p-3 border rounded-md hover-elevate text-left min-w-0"
+                      className="flex items-center gap-2 p-3 border rounded-md hover-elevate min-w-0"
                       data-testid={`daily-history-${h.id}`}
                     >
-                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                        <CalendarCheck className="h-4 w-4 text-primary shrink-0" />
-                        <span className="font-medium text-sm">{formatDate(h.date)}</span>
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          {h.totalQuestions}q
-                        </Badge>
-                      </div>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {pct}% ({h.correctCount}/{h.totalQuestions})
-                      </span>
-                    </button>
+                      <button
+                        onClick={() => navigate(`/quiz/${h.id}`)}
+                        className="flex-1 flex items-center justify-between gap-2 text-left min-w-0"
+                        data-testid={`daily-history-review-${h.id}`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                          <CalendarCheck className="h-4 w-4 text-primary shrink-0" />
+                          <span className="font-medium text-sm">{formatDate(h.date)}</span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            {h.totalQuestions}q
+                          </Badge>
+                        </div>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {pct}% ({h.correctCount}/{h.totalQuestions})
+                        </span>
+                      </button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs shrink-0"
+                        onClick={() => onPractice(h.id)}
+                        disabled={practice.isPending}
+                        data-testid={`button-practice-set-${h.id}`}
+                        title="Re-take this exact set as a fresh, independently-scored practice run"
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" /> Practice again
+                      </Button>
+                    </div>
                   );
                 })}
               </div>

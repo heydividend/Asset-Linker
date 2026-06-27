@@ -5,11 +5,13 @@ import {
   useGetQuiz,
   useAnswerQuizQuestion,
   useFinishQuiz,
+  usePracticeQuizSet,
   useGetDashboardTopicMastery,
   getGetQuizQueryKey,
   getGetDashboardTopicMasteryQueryKey,
   getGetDashboardSummaryQueryKey,
   getGetFixItStreakQueryKey,
+  getListQuizAttemptsQueryKey,
   type GetQuizQueryResult,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,7 +23,7 @@ import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySparkline";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, ExternalLink, LogOut, Trophy, Users, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, ExternalLink, LogOut, RotateCcw, Trophy, Users, X } from "lucide-react";
 
 function arraysEqualAsSets(a: number[] | null | undefined, b: number[] | null | undefined): boolean {
   if (!a || !b) return false;
@@ -402,6 +404,20 @@ interface FinishedQuizViewProps {
 }
 
 function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) {
+  const [, navigate] = useLocation();
+  const qc = useQueryClient();
+  const practice = usePracticeQuizSet();
+  const onPractice = () => {
+    practice.mutate(
+      { id: quiz.id },
+      {
+        onSuccess: (next) => {
+          qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
+          navigate(`/quiz/${next.id}`);
+        },
+      },
+    );
+  };
   // When the user opens this attempt from a recent-trend popover, the URL
   // carries `?q=<questionId>` so we can scroll to and briefly highlight the
   // exact question they tapped (Task #45).
@@ -593,7 +609,16 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
               </Card>
             );
           })}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={onPractice}
+              disabled={practice.isPending}
+              data-testid="button-practice-set"
+              title="Re-take this exact set as a fresh, independently-scored practice run"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" /> Practice this set again
+            </Button>
             <Link href="/quiz"><Button data-testid="button-new-quiz">New quiz</Button></Link>
           </div>
         </div>

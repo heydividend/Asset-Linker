@@ -735,7 +735,14 @@ export const ListQuizAttemptsQueryParams = zod.object({
 
 export const ListQuizAttemptsResponseItem = zod.object({
   id: zod.number(),
-  mode: zod.enum(["adaptive", "topic", "domain", "weakness"]),
+  mode: zod.enum([
+    "adaptive",
+    "topic",
+    "domain",
+    "weakness",
+    "daily",
+    "practice",
+  ]),
   totalQuestions: zod.number(),
   correctCount: zod.number(),
   finishedAt: zod.coerce.date().nullable(),
@@ -808,7 +815,14 @@ export const GetQuizParams = zod.object({
 
 export const GetQuizResponse = zod.object({
   id: zod.number(),
-  mode: zod.enum(["adaptive", "topic", "domain", "weakness"]),
+  mode: zod.enum([
+    "adaptive",
+    "topic",
+    "domain",
+    "weakness",
+    "daily",
+    "practice",
+  ]),
   notebookId: zod.number().nullish(),
   topicId: zod.number().nullish(),
   domainId: zod.number().nullish(),
@@ -869,7 +883,14 @@ export const FinishQuizParams = zod.object({
 
 export const FinishQuizResponse = zod.object({
   id: zod.number(),
-  mode: zod.enum(["adaptive", "topic", "domain", "weakness"]),
+  mode: zod.enum([
+    "adaptive",
+    "topic",
+    "domain",
+    "weakness",
+    "daily",
+    "practice",
+  ]),
   notebookId: zod.number().nullish(),
   topicId: zod.number().nullish(),
   domainId: zod.number().nullish(),
@@ -896,6 +917,13 @@ export const FinishQuizResponse = zod.object({
   currentIndex: zod.number(),
   finished: zod.boolean(),
   score: zod.number().nullish(),
+});
+
+/**
+ * @summary Re-take an existing quiz's question set as a fresh, independently-scored attempt
+ */
+export const PracticeQuizSetParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 export const ListMockExamsResponseItem = zod.object({
@@ -1280,7 +1308,14 @@ export const GetDashboardSummaryResponse = zod.object({
   recentQuizzes: zod.array(
     zod.object({
       id: zod.number(),
-      mode: zod.enum(["adaptive", "topic", "domain", "weakness"]),
+      mode: zod.enum([
+        "adaptive",
+        "topic",
+        "domain",
+        "weakness",
+        "daily",
+        "practice",
+      ]),
       totalQuestions: zod.number(),
       correctCount: zod.number(),
       finishedAt: zod.coerce.date().nullable(),

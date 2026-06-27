@@ -221,6 +221,53 @@ describe("daily quiz endpoint", () => {
     );
   });
 
+  it("clones a finished daily set into a fresh, independently-scored practice attempt", async () => {
+    // Finish a daily attempt so it has a score and answers.
+    const created = await api("/quizzes/daily", { method: "POST" });
+    assert.ok(created.status === 200 || created.status === 201);
+    const dailyId = created.body.id;
+    createdQuizIds.push(dailyId);
+    const dailyQids = created.body.questions.map((q: any) => q.questionId);
+    await api(`/quizzes/${dailyId}/finish`, { method: "POST" });
+
+    const practice = await api(`/quizzes/${dailyId}/practice`, { method: "POST" });
+    assert.equal(practice.status, 201, "practice should create a new attempt");
+    const practiceId = practice.body.id;
+    createdQuizIds.push(practiceId);
+
+    assert.notEqual(practiceId, dailyId, "practice must be a brand-new attempt");
+    assert.equal(practice.body.mode, "practice", "cloned attempt is a practice run");
+    assert.equal(practice.body.finished, false, "practice starts unfinished");
+    assert.equal(practice.body.currentIndex, 0, "practice starts at the beginning");
+    const practiceQids = practice.body.questions.map((q: any) => q.questionId);
+    assert.deepEqual(
+      practiceQids,
+      dailyQids,
+      "practice reuses the exact same question set in order",
+    );
+    // No answers carried over: review fields are only present once answered.
+    for (const q of practice.body.questions) {
+      assert.equal(q.selectedIndex, undefined, "practice questions start unanswered");
+    }
+
+    // The practice attempt shows up in recent attempts but NOT in daily history.
+    const attempts = await api("/quizzes?limit=50", { method: "GET" });
+    assert.ok(
+      attempts.body.some((a: any) => a.id === practiceId),
+      "practice attempt should appear in recent attempts",
+    );
+    const history = await api("/quizzes/daily/history", { method: "GET" });
+    assert.ok(
+      !history.body.some((h: any) => h.id === practiceId),
+      "practice attempt must not pollute the daily history list",
+    );
+  });
+
+  it("returns 404 when practicing a non-existent quiz", async () => {
+    const res = await api("/quizzes/99999999/practice", { method: "POST" });
+    assert.equal(res.status, 404);
+  });
+
   it("marks quiz:daily complete when a daily attempt is finished", async () => {
     const created = await api("/quizzes/daily", { method: "POST" });
     assert.ok(created.status === 200 || created.status === 201);

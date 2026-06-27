@@ -3860,6 +3860,90 @@ export const useFinishQuiz = <
   return useMutation(getFinishQuizMutationOptions(options));
 };
 
+/**
+ * @summary Re-take an existing quiz's question set as a fresh, independently-scored attempt
+ */
+export const getPracticeQuizSetUrl = (id: number) => {
+  return `/api/quizzes/${id}/practice`;
+};
+
+export const practiceQuizSet = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Quiz> => {
+  return customFetch<Quiz>(getPracticeQuizSetUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getPracticeQuizSetMutationOptions = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof practiceQuizSet>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof practiceQuizSet>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["practiceQuizSet"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof practiceQuizSet>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return practiceQuizSet(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PracticeQuizSetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof practiceQuizSet>>
+>;
+
+export type PracticeQuizSetMutationError = ErrorType<NotFoundResponse>;
+
+/**
+ * @summary Re-take an existing quiz's question set as a fresh, independently-scored attempt
+ */
+export const usePracticeQuizSet = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof practiceQuizSet>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof practiceQuizSet>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getPracticeQuizSetMutationOptions(options));
+};
+
 export const getListMockExamsUrl = () => {
   return `/api/mock-exams`;
 };

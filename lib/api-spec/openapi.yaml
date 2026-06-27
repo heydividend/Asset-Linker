@@ -686,6 +686,20 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Quiz" }
+  /quizzes/{id}/practice:
+    post:
+      operationId: practiceQuizSet
+      tags: [quizzes]
+      summary: Re-take an existing quiz's question set as a fresh, independently-scored attempt
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Quiz" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   # ---- Mock exam ----
   /mock-exams:
@@ -1819,7 +1833,7 @@ components:
       required: [id, mode, totalQuestions, correctCount, finishedAt]
       properties:
         id: { type: integer }
-        mode: { type: string, enum: [adaptive, topic, domain, weakness] }
+        mode: { type: string, enum: [adaptive, topic, domain, weakness, daily, practice] }
         totalQuestions: { type: integer }
         correctCount: { type: integer }
         finishedAt: { type: ["string", "null"], format: date-time }
@@ -1838,7 +1852,7 @@ components:
       required: [id, mode, questions, currentIndex, finished]
       properties:
         id: { type: integer }
-        mode: { type: string, enum: [adaptive, topic, domain, weakness] }
+        mode: { type: string, enum: [adaptive, topic, domain, weakness, daily, practice] }
         notebookId: { type: ["integer", "null"] }
         topicId: { type: ["integer", "null"] }
         domainId: { type: ["integer", "null"] }

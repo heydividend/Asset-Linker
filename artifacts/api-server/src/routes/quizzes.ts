@@ -295,6 +295,46 @@ router.get("/quizzes/daily/history", async (req, res): Promise<void> => {
   );
 });
 
+// Re-take any past quiz's exact 50-question set (e.g. an earlier daily quiz)
+// as a fresh practice run, without regenerating questions. We clone the source
+// attempt's questionIds into a brand-new "practice" attempt that scores
+// independently and shows up in recent attempts. Mode is "practice" (not
+// "daily") so it never gets resumed by the daily endpoint, never appears in the
+// daily history list, and doesn't auto-complete the daily plan item.
+router.post("/quizzes/:id/practice", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const [src] = await db.select().from(quizzes).where(eq(quizzes.id, id));
+  if (!src) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  if (src.questionIds.length === 0) {
+    res.status(400).json({ error: "This quiz has no questions to practice." });
+    return;
+  }
+  const [quiz] = await db
+    .insert(quizzes)
+    .values({
+      mode: "practice",
+      notebookId: src.notebookId ?? null,
+      topicId: src.topicId ?? null,
+      domainId: src.domainId ?? null,
+      questionIds: src.questionIds,
+    })
+    .returning();
+  res.status(201).json({
+    id: quiz.id,
+    mode: quiz.mode,
+    questions: await buildQuizQuestionView(quiz.questionIds, new Map()),
+    currentIndex: 0,
+    finished: false,
+  });
+});
+
 router.get("/quizzes/:id", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {
