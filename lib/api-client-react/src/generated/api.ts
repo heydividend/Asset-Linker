@@ -109,6 +109,7 @@ import type {
   StudyGuideAudioInput,
   StudyGuideInput,
   StudyGuideListItem,
+  StudyGuideManualInput,
   StudyPlan,
   TaskConfidenceInput,
   TaskConfidenceResult,
@@ -2429,6 +2430,93 @@ export const useGenerateStudyGuide = <
   TContext
 > => {
   return useMutation(getGenerateStudyGuideMutationOptions(options));
+};
+
+/**
+ * @summary Save provided Markdown content (e.g. an AI response) as a study guide
+ */
+export const getSaveStudyGuideUrl = (id: number) => {
+  return `/api/notebooks/${id}/study-guides/manual`;
+};
+
+export const saveStudyGuide = async (
+  id: number,
+  studyGuideManualInput: StudyGuideManualInput,
+  options?: RequestInit,
+): Promise<StudyGuide> => {
+  return customFetch<StudyGuide>(getSaveStudyGuideUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(studyGuideManualInput),
+  });
+};
+
+export const getSaveStudyGuideMutationOptions = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveStudyGuide>>,
+    TError,
+    { id: number; data: BodyType<StudyGuideManualInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveStudyGuide>>,
+  TError,
+  { id: number; data: BodyType<StudyGuideManualInput> },
+  TContext
+> => {
+  const mutationKey = ["saveStudyGuide"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveStudyGuide>>,
+    { id: number; data: BodyType<StudyGuideManualInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return saveStudyGuide(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveStudyGuideMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveStudyGuide>>
+>;
+export type SaveStudyGuideMutationBody = BodyType<StudyGuideManualInput>;
+export type SaveStudyGuideMutationError = ErrorType<NotFoundResponse>;
+
+/**
+ * @summary Save provided Markdown content (e.g. an AI response) as a study guide
+ */
+export const useSaveStudyGuide = <
+  TError = ErrorType<NotFoundResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveStudyGuide>>,
+    TError,
+    { id: number; data: BodyType<StudyGuideManualInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveStudyGuide>>,
+  TError,
+  { id: number; data: BodyType<StudyGuideManualInput> },
+  TContext
+> => {
+  return useMutation(getSaveStudyGuideMutationOptions(options));
 };
 
 /**

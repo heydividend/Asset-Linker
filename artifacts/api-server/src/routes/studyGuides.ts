@@ -101,6 +101,36 @@ router.post("/notebooks/:id/study-guides", async (req, res): Promise<void> => {
   res.status(201).json(guide);
 });
 
+// Save arbitrary Markdown content (e.g. an AI Tutor response) directly as a
+// study guide, without AI generation from notes. Used by the "Save to study
+// guide" action on chat responses.
+router.post("/notebooks/:id/study-guides/manual", async (req, res): Promise<void> => {
+  const id = parseId(req);
+  if (id == null) {
+    res.status(400).json({ error: "invalid id" });
+    return;
+  }
+  const [notebook] = await db.select().from(notebooks).where(eq(notebooks.id, id));
+  if (!notebook) {
+    res.status(404).json({ error: "Notebook not found" });
+    return;
+  }
+  const { title, content } = req.body ?? {};
+  if (typeof title !== "string" || title.trim().length === 0) {
+    res.status(400).json({ error: "title is required" });
+    return;
+  }
+  if (typeof content !== "string" || content.trim().length === 0) {
+    res.status(400).json({ error: "content is required" });
+    return;
+  }
+  const [guide] = await db
+    .insert(studyGuides)
+    .values({ notebookId: id, format: "summary", title: title.trim().slice(0, 200), content })
+    .returning();
+  res.status(201).json(guide);
+});
+
 // Auto-check today's study_guide plan item when a guide is opened
 // (notebook-specific first, then the generic "any" fallback). markPlanItemComplete
 // is idempotent, so re-opening a guide (or a later manual mark complete) won't

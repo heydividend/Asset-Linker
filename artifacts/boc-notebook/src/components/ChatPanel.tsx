@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { MarkdownMessage } from "./MarkdownMessage";
 import { CopyMessageButton } from "./CopyMessageButton";
+import { SaveMessageButton } from "./SaveMessageButton";
 import { useTypewriter } from "@/hooks/use-typewriter";
 
 function FollowupChips({ items, onPick }: { items: string[]; onPick: (q: string) => void }) {
@@ -359,10 +360,16 @@ export function ChatPanel() {
                     )}
                   </div>
                   {m.role === "assistant" && m.content && (
-                    <CopyMessageButton
-                      content={m.content}
-                      testId={`button-copy-message-${m.id}`}
-                    />
+                    <div className="flex items-center gap-0.5">
+                      <CopyMessageButton
+                        content={m.content}
+                        testId={`button-copy-message-${m.id}`}
+                      />
+                      <SaveMessageButton
+                        content={m.content}
+                        testId={`button-save-message-${m.id}`}
+                      />
+                    </div>
                   )}
                   {showFollowups && activeConvId && (
                     <FollowupChips

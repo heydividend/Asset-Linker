@@ -585,6 +585,18 @@ export const GenerateStudyGuideBody = zod.object({
 });
 
 /**
+ * @summary Save provided Markdown content (e.g. an AI response) as a study guide
+ */
+export const SaveStudyGuideParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SaveStudyGuideBody = zod.object({
+  title: zod.string().min(1),
+  content: zod.string().min(1).describe("Markdown"),
+});
+
+/**
  * @summary List every study guide across notebooks (with notebook title)
  */
 export const ListAllStudyGuidesQueryParams = zod.object({

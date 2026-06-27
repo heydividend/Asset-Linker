@@ -167,6 +167,7 @@ export * from "./studyGuideInput";
 export * from "./studyGuideInputFormat";
 export * from "./studyGuideListItem";
 export * from "./studyGuideListItemFormat";
+export * from "./studyGuideManualInput";
 export * from "./studyGuidesSummary";
 export * from "./studyPlan";
 export * from "./studyPlanItem";

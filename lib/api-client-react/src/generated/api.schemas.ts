@@ -383,6 +383,16 @@ export interface StudyGuideInput {
   focus?: string;
 }
 
+export interface StudyGuideManualInput {
+  /** @minLength 1 */
+  title: string;
+  /**
+   * Markdown
+   * @minLength 1
+   */
+  content: string;
+}
+
 export type AudioOverviewInputVoice =
   (typeof AudioOverviewInputVoice)[keyof typeof AudioOverviewInputVoice];
 
