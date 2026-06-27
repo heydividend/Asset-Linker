@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, Stethoscope, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LogoMark } from "@/components/Logo";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { NAV_ITEMS } from "@/lib/nav";
@@ -31,7 +32,7 @@ export function MobileTopBar() {
         <SheetContent side="left" className="w-[80vw] max-w-xs p-0 flex flex-col">
           <SheetHeader className="h-12 flex flex-row items-center justify-between px-3 border-b space-y-0">
             <SheetTitle className="text-sm font-semibold flex items-center gap-1.5">
-              <Stethoscope className="h-4 w-4 text-primary" />
+              <LogoMark className="h-5 w-5" decorative />
               BOC Notebook
             </SheetTitle>
             <Button
@@ -74,7 +75,7 @@ export function MobileTopBar() {
         </SheetContent>
       </Sheet>
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
-        <Stethoscope className="h-4 w-4 text-primary shrink-0" />
+        <LogoMark className="h-5 w-5 shrink-0" decorative />
         <span className="font-semibold text-sm truncate">BOC Notebook</span>
       </div>
     </header>

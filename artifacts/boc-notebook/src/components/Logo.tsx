@@ -5,13 +5,20 @@ import { cn } from "@/lib/utils";
  * readiness score climbing toward a passing result. The tile uses the brand
  * green; the glyph inherits the foreground so it stays crisp in light/dark.
  */
-export function LogoMark({ className }: { className?: string }) {
+export function LogoMark({
+  className,
+  decorative = false,
+}: {
+  className?: string;
+  decorative?: boolean;
+}) {
   return (
     <svg
       viewBox="0 0 180 180"
       className={cn("h-8 w-8", className)}
-      role="img"
-      aria-label="BOC Study Notebook"
+      {...(decorative
+        ? { "aria-hidden": true }
+        : { role: "img", "aria-label": "BOC Study Notebook" })}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -40,7 +47,7 @@ export function Logo({
 }) {
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
-      <LogoMark className={markClassName} />
+      <LogoMark className={markClassName} decorative />
       <span className="text-sm font-semibold tracking-tight">
         BOC Study Notebook
       </span>

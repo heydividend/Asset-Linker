@@ -8,3 +8,4 @@
 - [api-server typecheck baseline](api-server-typecheck.md) — api-server `typecheck` is pre-existingly broken (implicit-any + lib/db TS6305); use `pnpm --filter @workspace/api-server test` as the real gate.
 - [Quiz choice reshuffle](quiz-choice-reshuffle.md) — reshuffled retakes store a per-quiz choiceOrders permutation; quizAnswers always hold ORIGINAL indices, translate only at the API boundary.
 - [Clerk admin gating & seeding](clerk-admin-seeding.md) — admin is email-based (ADMIN_EMAILS/DEFAULT_ADMIN); create Clerk users from api-server dir (not root); seed mastery via correct/attempts per domain band.
+- [Testing harness Clerk auth](testing-clerk-auth-harness.md) — in runTest plans force [Clerk Auth] only (never the disabled /sign-in UI) and never wait on the slow Daily Quiz AI generation.
