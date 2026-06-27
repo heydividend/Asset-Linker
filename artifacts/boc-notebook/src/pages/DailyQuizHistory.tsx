@@ -3,7 +3,8 @@ import { useGetDailyQuizHistory } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CalendarCheck, ChevronLeft, History } from "lucide-react";
+import { CalendarCheck, ChevronLeft, History, TrendingUp } from "lucide-react";
+import { DailyScoreTrend, type DailyScorePoint } from "@/components/DailyScoreTrend";
 
 function formatDate(ymd: string): string {
   // ymd is a Pacific YYYY-MM-DD; render it without timezone drift.
@@ -17,9 +18,25 @@ function formatDate(ymd: string): string {
   });
 }
 
+function toPct(h: { score: number | null; correctCount: number; totalQuestions: number }): number {
+  return h.score != null
+    ? Math.round(h.score)
+    : h.totalQuestions > 0
+      ? Math.round((h.correctCount / h.totalQuestions) * 100)
+      : 0;
+}
+
 export default function DailyQuizHistory() {
   const [, navigate] = useLocation();
   const { data: history = [], isLoading } = useGetDailyQuizHistory();
+
+  // History arrives newest-first; the trend reads best oldest → newest.
+  const trendPoints: DailyScorePoint[] = [...history].reverse().map((h) => ({
+    date: h.date,
+    pct: toPct(h),
+    correctCount: h.correctCount,
+    totalQuestions: h.totalQuestions,
+  }));
 
   return (
     <div className="flex flex-col h-full">
@@ -38,7 +55,22 @@ export default function DailyQuizHistory() {
           <History className="h-4 w-4" /> Past daily quizzes
         </h1>
       </header>
-      <div className="flex-1 overflow-y-auto p-4 max-w-3xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-4 max-w-3xl mx-auto w-full space-y-4">
+        {!isLoading && history.length > 0 && (
+          <Card data-testid="card-daily-score-trend">
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" /> Score over time
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Each bar is one day's daily quiz score. Hover a bar for that day's detail.
+              </p>
+            </CardHeader>
+            <CardContent className="p-4 pt-2">
+              <DailyScoreTrend points={trendPoints} testId="daily-score-trend" />
+            </CardContent>
+          </Card>
+        )}
         <Card>
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -59,12 +91,7 @@ export default function DailyQuizHistory() {
             ) : (
               <div className="space-y-2">
                 {history.map((h) => {
-                  const pct =
-                    h.score != null
-                      ? Math.round(h.score)
-                      : h.totalQuestions > 0
-                        ? Math.round((h.correctCount / h.totalQuestions) * 100)
-                        : 0;
+                  const pct = toPct(h);
                   return (
                     <button
                       key={h.id}
