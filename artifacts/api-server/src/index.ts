@@ -5,6 +5,7 @@ import {
   startStudyGroupStaleSweeper,
 } from "./routes/studyGroup";
 import { startReminderScheduler } from "./lib/reminderScheduler";
+import { runProdBootstrap } from "./lib/prodBootstrap";
 
 const rawPort = process.env["PORT"];
 
@@ -48,6 +49,11 @@ async function start(): Promise<void> {
     }
 
     logger.info({ port }, "Server listening");
+
+    // One-time production setup, run after the server is accepting traffic so
+    // Clerk/database latency can never delay readiness. No-ops outside the live
+    // environment and never throws.
+    void runProdBootstrap();
   });
 }
 
