@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { AskAiButton } from "@/components/AskAiButton";
+import { EditScheduleDialog } from "@/components/EditScheduleDialog";
 import { Calendar, CalendarDays, Clock, Flame, GraduationCap, Sparkles, Pencil } from "lucide-react";
 import { useState } from "react";
 import { formatDate } from "@/lib/formatDate";
@@ -135,42 +136,54 @@ export default function SchedulePage() {
         <h1 className="text-base font-semibold flex items-center gap-2">
           <CalendarDays className="h-5 w-5" /> Study Schedule
         </h1>
-        <Dialog
-          open={open}
-          onOpenChange={(v) => {
-            setOpen(v);
-            if (v) {
-              setStart(data.startDate);
-              setExam(data.examDate);
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" data-testid="button-edit-schedule">
-              <Pencil className="h-4 w-4 mr-2" /> Edit dates
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit study window</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Start date</label>
-                <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} data-testid="input-start-date" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Exam date</label>
-                <Input type="date" value={exam} onChange={(e) => setExam(e.target.value)} data-testid="input-exam-date" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button onClick={() => update.mutate({ startDate: start, examDate: exam })} disabled={update.isPending} data-testid="button-save-schedule">
-                Save
+        <div className="flex items-center gap-2">
+          <Dialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (v) {
+                setStart(data.startDate);
+                setExam(data.examDate);
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" data-testid="button-edit-schedule">
+                <Pencil className="h-4 w-4 mr-2" /> Edit dates
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit study window</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Start date</label>
+                  <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} data-testid="input-start-date" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Exam date</label>
+                  <Input type="date" value={exam} onChange={(e) => setExam(e.target.value)} data-testid="input-exam-date" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => update.mutate({ startDate: start, examDate: exam })} disabled={update.isPending} data-testid="button-save-schedule">
+                  Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <EditScheduleDialog
+            startDate={data.startDate}
+            examDate={data.examDate}
+            examName={data.examName}
+            trigger={
+              <Button variant="default" size="sm" data-testid="button-set-plan">
+                <Sparkles className="h-4 w-4 mr-2" /> Set plan
+              </Button>
+            }
+          />
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-w-5xl mx-auto w-full">

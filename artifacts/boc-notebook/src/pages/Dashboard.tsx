@@ -27,6 +27,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReminderSettings } from "@/components/ReminderSettings";
 import { AskAiButton } from "@/components/AskAiButton";
 import { FixItPlanCard } from "@/components/FixItPlanCard";
+import { EditScheduleDialog } from "@/components/EditScheduleDialog";
 import { MasterySparkline, formatRelativeAttempt } from "@/components/MasterySparkline";
 import { ReadinessTrend } from "@/components/ReadinessTrend";
 import { TrendWindowSelector } from "@/components/TrendWindowSelector";
@@ -77,6 +78,7 @@ import {
   AlertTriangle,
   Target,
   Bell,
+  Pencil,
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -838,6 +840,22 @@ export default function Dashboard() {
                   <Progress value={scheduleProgress} className="h-1.5 bg-primary-foreground/20" />
                   <p className="text-[11px] opacity-90 text-right">{scheduleProgress}% through</p>
                 </div>
+                <EditScheduleDialog
+                  startDate={schedule.startDate}
+                  examDate={schedule.examDate}
+                  examName={schedule.examName}
+                  trigger={
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="shrink-0"
+                      data-testid="button-edit-schedule"
+                    >
+                      <Pencil className="h-3.5 w-3.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Set plan</span>
+                    </Button>
+                  }
+                />
                 <Link href="/schedule">
                   <Button
                     size="sm"
