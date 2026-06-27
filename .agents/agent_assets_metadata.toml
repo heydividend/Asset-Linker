@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "LyOft6DwXq-5CwuWl_CqF"
@@ -36,3 +35,9 @@ id = "uRCnqWS_WmaRhwvBseojc"
 uri = "file://artifacts/boc-notebook/src/assets/anatomy/layer-skeleton-back.png"
 type = "image"
 title = "posterior skeleton layer registered"
+
+[[outputs]]
+id = "Pi35Bh-xa5NqApXmAmapf"
+uri = "file://README.md"
+type = "text"
+title = "README.md"
