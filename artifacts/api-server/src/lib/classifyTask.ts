@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db, tasks } from "@workspace/db";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { anthropic } from "@workspace/integrations-anthropic-ai";
 
 export interface ClassifiableQuestion {
   stem: string;
@@ -30,22 +30,22 @@ export async function classifyTaskId(
   const choicesText = (q.choices ?? []).map((c, i) => `${i + 1}. ${c}`).join("\n");
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+    const message = await anthropic.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 8192,
       temperature: 0,
+      system:
+        "You classify Athletic Training BOC exam questions to the single best-fitting task statement from the official BOC Practice Analysis 8th Edition. You are given the candidate tasks for the question's domain. Choose the ONE task code that best matches what the question is testing. Respond with ONLY the 4-digit task code (e.g. 0303). No prose.",
       messages: [
-        {
-          role: "system",
-          content:
-            "You classify Athletic Training BOC exam questions to the single best-fitting task statement from the official BOC Practice Analysis 8th Edition. You are given the candidate tasks for the question's domain. Choose the ONE task code that best matches what the question is testing. Respond with ONLY the 4-digit task code (e.g. 0303). No prose.",
-        },
         {
           role: "user",
           content: `CANDIDATE TASKS:\n${taskList}\n\nQUESTION:\n${q.stem}\n${choicesText ? `\nChoices:\n${choicesText}` : ""}${q.rationale ? `\n\nRationale: ${q.rationale}` : ""}\n\nReturn the single best task code.`,
         },
       ],
     });
-    const raw = completion.choices[0]?.message?.content ?? "";
+    const raw = message.content
+      .map((b) => (b.type === "text" ? b.text : ""))
+      .join("");
     const match = raw.match(/\d{4}/);
     const code = match ? match[0] : null;
     if (code && codeToId.has(code)) return codeToId.get(code)!;

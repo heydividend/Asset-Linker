@@ -1,7 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, asc, desc, eq, notExists } from "drizzle-orm";
 import { db, conversations, messages, notes, notebooks } from "@workspace/db";
-import { openai } from "@workspace/integrations-openai-ai-server";
 import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { parseId } from "../lib/parseId";
 import { getOrCreateSessionId } from "../lib/sessionId";
@@ -26,28 +25,32 @@ const router: IRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 40 * 1024 * 1024 } });
 
 async function extractTextFromImage(file: Express.Multer.File): Promise<string> {
-  // Use OpenAI vision to read the image (study guide pages, screenshots, diagrams).
+  // Use Claude vision to read the image (study guide pages, screenshots, diagrams).
   const b64 = file.buffer.toString("base64");
-  const mime = file.mimetype || "image/png";
-  const dataUrl = `data:${mime};base64,${b64}`;
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const rawMime = file.mimetype || "image/png";
+  const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
+  const mediaType = (allowed as readonly string[]).includes(rawMime)
+    ? (rawMime as (typeof allowed)[number])
+    : "image/png";
+  const message = await anthropic.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 8192,
+    system:
+      "You extract study material from images for an Athletic Training BOC exam student. Output the readable text faithfully (preserve headings, bullet lists, numbered lists). If the image is a diagram or photo with no text, write a concise clinical description of what is shown. Do not add commentary. Do not reformat tables into prose if avoidable.",
     messages: [
-      {
-        role: "system",
-        content:
-          "You extract study material from images for an Athletic Training BOC exam student. Output the readable text faithfully (preserve headings, bullet lists, numbered lists). If the image is a diagram or photo with no text, write a concise clinical description of what is shown. Do not add commentary. Do not reformat tables into prose if avoidable.",
-      },
       {
         role: "user",
         content: [
           { type: "text", text: `Extract all readable study content from this image (file: ${file.originalname}).` },
-          { type: "image_url", image_url: { url: dataUrl } },
-        ] as never,
+          { type: "image", source: { type: "base64", media_type: mediaType, data: b64 } },
+        ],
       },
     ],
   });
-  return completion.choices[0]?.message?.content?.trim() ?? "";
+  return message.content
+    .map((b) => (b.type === "text" ? b.text : ""))
+    .join("")
+    .trim();
 }
 
 async function extractText(file: Express.Multer.File): Promise<string> {
