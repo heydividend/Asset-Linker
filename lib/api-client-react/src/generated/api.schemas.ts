@@ -455,15 +455,6 @@ export const QuizSummaryMode = {
   practice: "practice",
 } as const;
 
-export interface QuizSummary {
-  id: number;
-  mode: QuizSummaryMode;
-  totalQuestions: number;
-  correctCount: number;
-  /** @nullable */
-  finishedAt: string | null;
-}
-
 export interface QuizRetake {
   id: number;
   totalQuestions: number;
@@ -472,6 +463,22 @@ export interface QuizRetake {
   score: number | null;
   /** @nullable */
   finishedAt: string | null;
+}
+
+export interface QuizSummary {
+  id: number;
+  mode: QuizSummaryMode;
+  totalQuestions: number;
+  correctCount: number;
+  /**
+   * Percent score (0-100) of this attempt, if finished.
+   * @nullable
+   */
+  score?: number | null;
+  /** @nullable */
+  finishedAt: string | null;
+  /** Practice re-takes cloned from this attempt's set, oldest → newest. Omitted for retakes themselves. */
+  retakes?: QuizRetake[];
 }
 
 export interface DailyQuizHistoryEntry {

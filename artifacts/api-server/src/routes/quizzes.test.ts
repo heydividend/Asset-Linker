@@ -250,11 +250,18 @@ describe("daily quiz endpoint", () => {
       assert.equal(q.selectedIndex, undefined, "practice questions start unanswered");
     }
 
-    // The practice attempt shows up in recent attempts but NOT in daily history.
+    // The practice attempt is nested under its source in recent attempts (not a
+    // top-level row) and NOT in daily history.
     const attempts = await api("/quizzes?limit=50", { method: "GET" });
     assert.ok(
-      attempts.body.some((a: any) => a.id === practiceId),
-      "practice attempt should appear in recent attempts",
+      !attempts.body.some((a: any) => a.id === practiceId),
+      "retake should not appear as its own top-level recent attempt",
+    );
+    const source = attempts.body.find((a: any) => a.id === dailyId);
+    assert.ok(source, "the source attempt appears in recent attempts");
+    assert.ok(
+      (source.retakes ?? []).some((rt: any) => rt.id === practiceId),
+      "practice attempt is grouped under its source's retakes",
     );
     const history = await api("/quizzes/daily/history", { method: "GET" });
     assert.ok(

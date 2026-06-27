@@ -1841,7 +1841,12 @@ components:
         mode: { type: string, enum: [adaptive, topic, domain, weakness, daily, practice] }
         totalQuestions: { type: integer }
         correctCount: { type: integer }
+        score: { type: ["number", "null"], description: "Percent score (0-100) of this attempt, if finished." }
         finishedAt: { type: ["string", "null"], format: date-time }
+        retakes:
+          type: array
+          description: "Practice re-takes cloned from this attempt's set, oldest → newest. Omitted for retakes themselves."
+          items: { $ref: "#/components/schemas/QuizRetake" }
     DailyQuizHistoryEntry:
       type: object
       required: [id, date, totalQuestions, correctCount, score, finishedAt, retakes]

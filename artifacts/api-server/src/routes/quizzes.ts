@@ -100,20 +100,52 @@ router.get("/questions", async (req, res): Promise<void> => {
 
 router.get("/quizzes", async (req, res): Promise<void> => {
   const limit = Math.min(parseInt((req.query.limit as string) ?? "20", 10) || 20, 100);
-  const rows = await db.select().from(quizzes).orderBy(desc(quizzes.startedAt)).limit(limit);
+  // Only original attempts are top-level; practice re-takes (sourceQuizId set)
+  // are nested under the attempt they were cloned from, mirroring the daily
+  // history treatment so any mode (adaptive/topic/domain/weakness/daily) shows
+  // original → retake deltas instead of a flat row per attempt.
+  const rows = await db
+    .select()
+    .from(quizzes)
+    .where(sql`${quizzes.sourceQuizId} IS NULL`)
+    .orderBy(desc(quizzes.startedAt))
+    .limit(limit);
   const ids = rows.map((r) => r.id);
+
+  // Re-takes cloned from any of these attempts, oldest → newest per source.
+  // Unfinished re-takes are included too so they remain resumable from the list.
+  const retakeRows =
+    ids.length > 0
+      ? await db
+          .select()
+          .from(quizzes)
+          .where(and(eq(quizzes.mode, "practice"), inArray(quizzes.sourceQuizId, ids)))
+          .orderBy(quizzes.startedAt)
+      : [];
+
+  // One correct-count query covering both the originals and their re-takes.
+  const allIds = [...ids, ...retakeRows.map((r) => r.id)];
   const correctByQuiz = new Map<number, number>();
-  if (ids.length > 0) {
+  if (allIds.length > 0) {
     const counts = await db
       .select({
         quizId: quizAnswers.quizId,
         correct: sql<number>`sum(case when ${quizAnswers.correct} then 1 else 0 end)`.as("correct"),
       })
       .from(quizAnswers)
-      .where(inArray(quizAnswers.quizId, ids))
+      .where(inArray(quizAnswers.quizId, allIds))
       .groupBy(quizAnswers.quizId);
     for (const c of counts) correctByQuiz.set(c.quizId, Number(c.correct) || 0);
   }
+
+  const retakesBySource = new Map<number, typeof retakeRows>();
+  for (const rt of retakeRows) {
+    const key = rt.sourceQuizId as number;
+    const list = retakesBySource.get(key) ?? [];
+    list.push(rt);
+    retakesBySource.set(key, list);
+  }
+
   res.json(
     rows.map((r) => ({
       id: r.id,
@@ -125,6 +157,13 @@ router.get("/quizzes", async (req, res): Promise<void> => {
       score: r.score,
       startedAt: r.startedAt,
       finishedAt: r.finishedAt,
+      retakes: (retakesBySource.get(r.id) ?? []).map((rt) => ({
+        id: rt.id,
+        totalQuestions: rt.questionIds.length,
+        correctCount: correctByQuiz.get(rt.id) ?? 0,
+        score: rt.score,
+        finishedAt: rt.finishedAt,
+      })),
     })),
   );
 });

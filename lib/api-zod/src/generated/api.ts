@@ -745,7 +745,25 @@ export const ListQuizAttemptsResponseItem = zod.object({
   ]),
   totalQuestions: zod.number(),
   correctCount: zod.number(),
+  score: zod
+    .number()
+    .nullish()
+    .describe("Percent score (0-100) of this attempt, if finished."),
   finishedAt: zod.coerce.date().nullable(),
+  retakes: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        totalQuestions: zod.number(),
+        correctCount: zod.number(),
+        score: zod.number().nullable(),
+        finishedAt: zod.coerce.date().nullable(),
+      }),
+    )
+    .optional()
+    .describe(
+      "Practice re-takes cloned from this attempt's set, oldest → newest. Omitted for retakes themselves.",
+    ),
 });
 export const ListQuizAttemptsResponse = zod.array(ListQuizAttemptsResponseItem);
 
@@ -1388,7 +1406,25 @@ export const GetDashboardSummaryResponse = zod.object({
       ]),
       totalQuestions: zod.number(),
       correctCount: zod.number(),
+      score: zod
+        .number()
+        .nullish()
+        .describe("Percent score (0-100) of this attempt, if finished."),
       finishedAt: zod.coerce.date().nullable(),
+      retakes: zod
+        .array(
+          zod.object({
+            id: zod.number(),
+            totalQuestions: zod.number(),
+            correctCount: zod.number(),
+            score: zod.number().nullable(),
+            finishedAt: zod.coerce.date().nullable(),
+          }),
+        )
+        .optional()
+        .describe(
+          "Practice re-takes cloned from this attempt's set, oldest → newest. Omitted for retakes themselves.",
+        ),
     }),
   ),
   weakTopics: zod.array(
