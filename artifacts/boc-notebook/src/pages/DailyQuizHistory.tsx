@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarCheck, ChevronLeft, History, RotateCcw, TrendingUp } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarCheck, ChevronLeft, History, Minus, RotateCcw, TrendingUp } from "lucide-react";
 import { DailyScoreTrend, type DailyScorePoint } from "@/components/DailyScoreTrend";
 
 function formatDate(ymd: string): string {
@@ -25,6 +25,26 @@ function toPct(h: { score: number | null; correctCount: number; totalQuestions: 
     : h.totalQuestions > 0
       ? Math.round((h.correctCount / h.totalQuestions) * 100)
       : 0;
+}
+
+function DeltaBadge({ delta }: { delta: number }) {
+  if (delta === 0) {
+    return (
+      <span className="text-[11px] text-muted-foreground inline-flex items-center gap-0.5">
+        <Minus className="h-3 w-3" /> 0
+      </span>
+    );
+  }
+  const up = delta > 0;
+  return (
+    <span
+      className={`text-[11px] font-medium inline-flex items-center gap-0.5 ${up ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}
+    >
+      {up ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+      {up ? "+" : ""}
+      {delta}
+    </span>
+  );
 }
 
 export default function DailyQuizHistory() {
@@ -110,39 +130,79 @@ export default function DailyQuizHistory() {
               <div className="space-y-2">
                 {history.map((h) => {
                   const pct = toPct(h);
+                  const retakes = h.retakes ?? [];
                   return (
                     <div
                       key={h.id}
-                      className="flex items-center gap-2 p-3 border rounded-md hover-elevate min-w-0"
+                      className="p-3 border rounded-md min-w-0 space-y-2"
                       data-testid={`daily-history-${h.id}`}
                     >
-                      <button
-                        onClick={() => navigate(`/quiz/${h.id}`)}
-                        className="flex-1 flex items-center justify-between gap-2 text-left min-w-0"
-                        data-testid={`daily-history-review-${h.id}`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                          <CalendarCheck className="h-4 w-4 text-primary shrink-0" />
-                          <span className="font-medium text-sm">{formatDate(h.date)}</span>
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            {h.totalQuestions}q
-                          </Badge>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <button
+                          onClick={() => navigate(`/quiz/${h.id}`)}
+                          className="flex-1 flex items-center justify-between gap-2 text-left min-w-0 hover-elevate rounded-md -m-1 p-1"
+                          data-testid={`daily-history-review-${h.id}`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                            <CalendarCheck className="h-4 w-4 text-primary shrink-0" />
+                            <span className="font-medium text-sm">{formatDate(h.date)}</span>
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              {h.totalQuestions}q
+                            </Badge>
+                            {retakes.length > 0 && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] px-1.5 py-0"
+                                data-testid={`daily-history-retake-count-${h.id}`}
+                              >
+                                {retakes.length} retake{retakes.length === 1 ? "" : "s"}
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {pct}% ({h.correctCount}/{h.totalQuestions})
+                          </span>
+                        </button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs shrink-0"
+                          onClick={() => onPractice(h.id)}
+                          disabled={practice.isPending}
+                          data-testid={`button-practice-set-${h.id}`}
+                          title="Re-take this exact set as a fresh, independently-scored practice run"
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" /> Practice again
+                        </Button>
+                      </div>
+                      {retakes.length > 0 && (
+                        <div
+                          className="pl-6 space-y-1 border-l ml-2"
+                          data-testid={`daily-history-retakes-${h.id}`}
+                        >
+                          {retakes.map((rt, i) => {
+                            const rtPct = toPct(rt);
+                            return (
+                              <button
+                                key={rt.id}
+                                onClick={() => navigate(`/quiz/${rt.id}`)}
+                                className="w-full flex items-center justify-between gap-2 text-left text-xs hover-elevate rounded-md p-1.5"
+                                data-testid={`daily-history-retake-${rt.id}`}
+                              >
+                                <span className="text-muted-foreground">
+                                  Retake {i + 1} <span className="opacity-70">· original {pct}% → {rtPct}%</span>
+                                </span>
+                                <span className="flex items-center gap-2 shrink-0">
+                                  <span className="text-muted-foreground">
+                                    ({rt.correctCount}/{rt.totalQuestions})
+                                  </span>
+                                  <DeltaBadge delta={rtPct - pct} />
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {pct}% ({h.correctCount}/{h.totalQuestions})
-                        </span>
-                      </button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs shrink-0"
-                        onClick={() => onPractice(h.id)}
-                        disabled={practice.isPending}
-                        data-testid={`button-practice-set-${h.id}`}
-                        title="Re-take this exact set as a fresh, independently-scored practice run"
-                      >
-                        <RotateCcw className="h-3 w-3 mr-1" /> Practice again
-                      </Button>
+                      )}
                     </div>
                   );
                 })}

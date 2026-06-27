@@ -804,6 +804,17 @@ export const GetDailyQuizHistoryResponseItem = zod.object({
   correctCount: zod.number(),
   score: zod.number().nullable(),
   finishedAt: zod.coerce.date().nullable(),
+  retakes: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        totalQuestions: zod.number(),
+        correctCount: zod.number(),
+        score: zod.number().nullable(),
+        finishedAt: zod.coerce.date().nullable(),
+      }),
+    )
+    .describe("Finished practice re-takes of this set, oldest → newest."),
 });
 export const GetDailyQuizHistoryResponse = zod.array(
   GetDailyQuizHistoryResponseItem,
@@ -849,6 +860,27 @@ export const GetQuizResponse = zod.object({
   currentIndex: zod.number(),
   finished: zod.boolean(),
   score: zod.number().nullish(),
+  sourceQuizId: zod
+    .number()
+    .nullish()
+    .describe(
+      "For a practice retake, the original quiz this set was cloned from.",
+    ),
+  source: zod
+    .union([
+      zod.null(),
+      zod.object({
+        id: zod.number(),
+        date: zod
+          .string()
+          .describe("Pacific calendar day the original was taken (YYYY-MM-DD)"),
+        score: zod.number().nullable(),
+      }),
+    ])
+    .optional()
+    .describe(
+      "The original attempt this retake was cloned from, for side-by-side scoring.",
+    ),
 });
 
 export const DeleteQuizParams = zod.object({
@@ -917,6 +949,27 @@ export const FinishQuizResponse = zod.object({
   currentIndex: zod.number(),
   finished: zod.boolean(),
   score: zod.number().nullish(),
+  sourceQuizId: zod
+    .number()
+    .nullish()
+    .describe(
+      "For a practice retake, the original quiz this set was cloned from.",
+    ),
+  source: zod
+    .union([
+      zod.null(),
+      zod.object({
+        id: zod.number(),
+        date: zod
+          .string()
+          .describe("Pacific calendar day the original was taken (YYYY-MM-DD)"),
+        score: zod.number().nullable(),
+      }),
+    ])
+    .optional()
+    .describe(
+      "The original attempt this retake was cloned from, for side-by-side scoring.",
+    ),
 });
 
 /**

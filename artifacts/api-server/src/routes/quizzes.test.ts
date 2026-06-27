@@ -263,6 +263,73 @@ describe("daily quiz endpoint", () => {
     );
   });
 
+  it("links retakes to their source set and exposes side-by-side scores", async () => {
+    // Original daily attempt: answer everything WRONG (correctIndex is 0).
+    const daily = await api("/quizzes/daily", { method: "POST" });
+    assert.ok(daily.status === 200 || daily.status === 201);
+    const dailyId = daily.body.id;
+    createdQuizIds.push(dailyId);
+    const qids: number[] = daily.body.questions.map((q: any) => q.questionId);
+    for (const questionId of qids) {
+      await api(`/quizzes/${dailyId}/answer`, {
+        method: "POST",
+        body: JSON.stringify({ questionId, selectedIndex: 1 }),
+      });
+    }
+    const dailyFinish = await api(`/quizzes/${dailyId}/finish`, { method: "POST" });
+    assert.equal(Math.round(dailyFinish.body.score), 0, "original scored 0%");
+
+    // Retake the same set, this time answering everything CORRECT.
+    const retake = await api(`/quizzes/${dailyId}/practice`, { method: "POST" });
+    const retakeId = retake.body.id;
+    createdQuizIds.push(retakeId);
+    for (const questionId of qids) {
+      await api(`/quizzes/${retakeId}/answer`, {
+        method: "POST",
+        body: JSON.stringify({ questionId, selectedIndex: 0 }),
+      });
+    }
+    const retakeFinish = await api(`/quizzes/${retakeId}/finish`, { method: "POST" });
+    assert.equal(Math.round(retakeFinish.body.score), 100, "retake scored 100%");
+
+    // GET the retake exposes the original attempt for side-by-side scoring.
+    const got = await api(`/quizzes/${retakeId}`, { method: "GET" });
+    assert.equal(got.body.sourceQuizId, dailyId, "retake remembers its source");
+    assert.ok(got.body.source, "retake carries the source summary");
+    assert.equal(got.body.source.id, dailyId);
+    assert.equal(Math.round(got.body.source.score), 0, "source score is the original 0%");
+
+    // A retake of the retake still attributes back to the ROOT daily set.
+    const retake2 = await api(`/quizzes/${retakeId}/practice`, { method: "POST" });
+    const retake2Id = retake2.body.id;
+    createdQuizIds.push(retake2Id);
+    for (const questionId of qids) {
+      await api(`/quizzes/${retake2Id}/answer`, {
+        method: "POST",
+        body: JSON.stringify({ questionId, selectedIndex: 0 }),
+      });
+    }
+    await api(`/quizzes/${retake2Id}/finish`, { method: "POST" });
+    const got2 = await api(`/quizzes/${retake2Id}`, { method: "GET" });
+    assert.equal(got2.body.sourceQuizId, dailyId, "nested retake still points at the root");
+
+    // The daily history row lists both retakes in order under the original day.
+    const history = await api("/quizzes/daily/history", { method: "GET" });
+    const row = history.body.find((h: any) => h.id === dailyId);
+    assert.ok(row, "the original daily attempt appears in history");
+    assert.equal(row.retakes.length, 2, "both finished retakes are listed");
+    assert.deepEqual(
+      row.retakes.map((r: any) => r.id),
+      [retakeId, retake2Id],
+      "retakes are listed oldest → newest",
+    );
+    assert.equal(Math.round(row.retakes[0].score), 100, "first retake score surfaced");
+    assert.ok(
+      !history.body.some((h: any) => h.id === retakeId || h.id === retake2Id),
+      "retakes never appear as their own daily history rows",
+    );
+  });
+
   it("returns 404 when practicing a non-existent quiz", async () => {
     const res = await api("/quizzes/99999999/practice", { method: "POST" });
     assert.equal(res.status, 404);

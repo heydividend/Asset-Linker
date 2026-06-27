@@ -23,7 +23,7 @@ import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySparkline";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, ExternalLink, LogOut, RotateCcw, Trophy, Users, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, ExternalLink, LogOut, Minus, RotateCcw, Trophy, Users, X } from "lucide-react";
 
 function arraysEqualAsSets(a: number[] | null | undefined, b: number[] | null | undefined): boolean {
   if (!a || !b) return false;
@@ -485,6 +485,32 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
               <p className="opacity-90 mt-1">{correct} of {total} correct</p>
             </CardContent>
           </Card>
+          {quiz.source && quiz.source.score != null && (() => {
+            const origPct = Math.round(quiz.source.score);
+            const delta = pct - origPct;
+            const up = delta > 0;
+            const flat = delta === 0;
+            return (
+              <Card data-testid="card-retake-comparison">
+                <CardContent className="p-4 flex items-center justify-center gap-3 text-sm flex-wrap">
+                  <span className="text-muted-foreground">
+                    Original <span className="font-semibold text-foreground">{origPct}%</span>
+                  </span>
+                  <span className="text-muted-foreground">→</span>
+                  <span className="text-muted-foreground">
+                    This retake <span className="font-semibold text-foreground">{pct}%</span>
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-0.5 font-medium ${flat ? "text-muted-foreground" : up ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}
+                    data-testid="text-retake-delta"
+                  >
+                    {flat ? <Minus className="h-3.5 w-3.5" /> : up ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+                    {up ? "+" : ""}{delta} pts
+                  </span>
+                </CardContent>
+              </Card>
+            );
+          })()}
           {quiz.questions.map((qq, i) => {
             const isCorrect = isQuestionCorrect(qq);
             const credit = questionCredit(qq);

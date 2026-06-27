@@ -6,6 +6,11 @@ export const quizzes = pgTable("quizzes", {
   notebookId: integer("notebook_id"),
   topicId: integer("topic_id"),
   domainId: integer("domain_id"),
+  // For a "practice" retake: the original quiz this set was cloned from.
+  // Always points at the ROOT source (an earlier daily/quiz attempt), so every
+  // retake of the same set shares one sourceQuizId regardless of which attempt
+  // the user re-took. Null for original (non-cloned) attempts.
+  sourceQuizId: integer("source_quiz_id"),
   questionIds: jsonb("question_ids").$type<number[]>().notNull(),
   currentIndex: integer("current_index").notNull().default(0),
   finished: boolean("finished").notNull().default(false),

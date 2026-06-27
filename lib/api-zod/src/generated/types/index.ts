@@ -111,6 +111,8 @@ export * from "./quizInputMode";
 export * from "./quizInputSourceKind";
 export * from "./quizMode";
 export * from "./quizQuestion";
+export * from "./quizRetake";
+export * from "./quizSource";
 export * from "./quizSummary";
 export * from "./quizSummaryMode";
 export * from "./readinessHistoryPoint";

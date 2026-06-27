@@ -1839,10 +1839,23 @@ components:
         finishedAt: { type: ["string", "null"], format: date-time }
     DailyQuizHistoryEntry:
       type: object
-      required: [id, date, totalQuestions, correctCount, score, finishedAt]
+      required: [id, date, totalQuestions, correctCount, score, finishedAt, retakes]
       properties:
         id: { type: integer }
         date: { type: string, description: "Pacific calendar day the attempt was taken (YYYY-MM-DD)" }
+        totalQuestions: { type: integer }
+        correctCount: { type: integer }
+        score: { type: ["number", "null"] }
+        finishedAt: { type: ["string", "null"], format: date-time }
+        retakes:
+          type: array
+          description: "Finished practice re-takes of this set, oldest → newest."
+          items: { $ref: "#/components/schemas/QuizRetake" }
+    QuizRetake:
+      type: object
+      required: [id, totalQuestions, correctCount, score, finishedAt]
+      properties:
+        id: { type: integer }
         totalQuestions: { type: integer }
         correctCount: { type: integer }
         score: { type: ["number", "null"] }
@@ -1861,6 +1874,21 @@ components:
           items: { $ref: "#/components/schemas/QuizQuestion" }
         currentIndex: { type: integer }
         finished: { type: boolean }
+        score: { type: ["number", "null"] }
+        sourceQuizId:
+          type: ["integer", "null"]
+          description: "For a practice retake, the original quiz this set was cloned from."
+        source:
+          description: "The original attempt this retake was cloned from, for side-by-side scoring."
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/QuizSource"
+    QuizSource:
+      type: object
+      required: [id, date, score]
+      properties:
+        id: { type: integer }
+        date: { type: string, description: "Pacific calendar day the original was taken (YYYY-MM-DD)" }
         score: { type: ["number", "null"] }
     QuizQuestion:
       type: object

@@ -464,6 +464,16 @@ export interface QuizSummary {
   finishedAt: string | null;
 }
 
+export interface QuizRetake {
+  id: number;
+  totalQuestions: number;
+  correctCount: number;
+  /** @nullable */
+  score: number | null;
+  /** @nullable */
+  finishedAt: string | null;
+}
+
 export interface DailyQuizHistoryEntry {
   id: number;
   /** Pacific calendar day the attempt was taken (YYYY-MM-DD) */
@@ -474,6 +484,8 @@ export interface DailyQuizHistoryEntry {
   score: number | null;
   /** @nullable */
   finishedAt: string | null;
+  /** Finished practice re-takes of this set, oldest → newest. */
+  retakes: QuizRetake[];
 }
 
 export type QuizMode = (typeof QuizMode)[keyof typeof QuizMode];
@@ -514,6 +526,14 @@ export interface QuizQuestion {
   imageUrl?: string | null;
 }
 
+export interface QuizSource {
+  id: number;
+  /** Pacific calendar day the original was taken (YYYY-MM-DD) */
+  date: string;
+  /** @nullable */
+  score: number | null;
+}
+
 export interface Quiz {
   id: number;
   mode: QuizMode;
@@ -528,6 +548,13 @@ export interface Quiz {
   finished: boolean;
   /** @nullable */
   score?: number | null;
+  /**
+   * For a practice retake, the original quiz this set was cloned from.
+   * @nullable
+   */
+  sourceQuizId?: number | null;
+  /** The original attempt this retake was cloned from, for side-by-side scoring. */
+  source?: null | QuizSource;
 }
 
 export interface QuestionBankEntry {

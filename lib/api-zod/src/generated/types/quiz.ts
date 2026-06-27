@@ -7,6 +7,7 @@
  */
 import type { QuizMode } from "./quizMode";
 import type { QuizQuestion } from "./quizQuestion";
+import type { QuizSource } from "./quizSource";
 
 export interface Quiz {
   id: number;
@@ -22,4 +23,11 @@ export interface Quiz {
   finished: boolean;
   /** @nullable */
   score?: number | null;
+  /**
+   * For a practice retake, the original quiz this set was cloned from.
+   * @nullable
+   */
+  sourceQuizId?: number | null;
+  /** The original attempt this retake was cloned from, for side-by-side scoring. */
+  source?: null | QuizSource;
 }

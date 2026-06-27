@@ -271,18 +271,42 @@ router.get("/quizzes/daily/history", async (req, res): Promise<void> => {
     .orderBy(desc(quizzes.startedAt))
     .limit(limit);
   const ids = rows.map((r) => r.id);
+
+  // Finished "practice" retakes cloned from any of these daily sets. They share
+  // the original daily attempt's id via sourceQuizId, so we can group each
+  // retake under the day it re-tested. Listed oldest → newest per source.
+  const retakeRows =
+    ids.length > 0
+      ? await db
+          .select()
+          .from(quizzes)
+          .where(and(eq(quizzes.mode, "practice"), eq(quizzes.finished, true), inArray(quizzes.sourceQuizId, ids)))
+          .orderBy(quizzes.startedAt)
+      : [];
+
+  // One correct-count query covering both the daily attempts and their retakes.
+  const allIds = [...ids, ...retakeRows.map((r) => r.id)];
   const correctByQuiz = new Map<number, number>();
-  if (ids.length > 0) {
+  if (allIds.length > 0) {
     const counts = await db
       .select({
         quizId: quizAnswers.quizId,
         correct: sql<number>`sum(case when ${quizAnswers.correct} then 1 else 0 end)`.as("correct"),
       })
       .from(quizAnswers)
-      .where(inArray(quizAnswers.quizId, ids))
+      .where(inArray(quizAnswers.quizId, allIds))
       .groupBy(quizAnswers.quizId);
     for (const c of counts) correctByQuiz.set(c.quizId, Number(c.correct) || 0);
   }
+
+  const retakesBySource = new Map<number, typeof retakeRows>();
+  for (const rt of retakeRows) {
+    const key = rt.sourceQuizId as number;
+    const list = retakesBySource.get(key) ?? [];
+    list.push(rt);
+    retakesBySource.set(key, list);
+  }
+
   res.json(
     rows.map((r) => ({
       id: r.id,
@@ -291,6 +315,13 @@ router.get("/quizzes/daily/history", async (req, res): Promise<void> => {
       correctCount: correctByQuiz.get(r.id) ?? 0,
       score: r.score,
       finishedAt: r.finishedAt,
+      retakes: (retakesBySource.get(r.id) ?? []).map((rt) => ({
+        id: rt.id,
+        totalQuestions: rt.questionIds.length,
+        correctCount: correctByQuiz.get(rt.id) ?? 0,
+        score: rt.score,
+        finishedAt: rt.finishedAt,
+      })),
     })),
   );
 });
@@ -316,6 +347,9 @@ router.post("/quizzes/:id/practice", async (req, res): Promise<void> => {
     res.status(400).json({ error: "This quiz has no questions to practice." });
     return;
   }
+  // Attribute every retake to the ROOT source attempt so multiple retakes of
+  // the same set share one sourceQuizId (even when re-taking a retake).
+  const rootSourceId = src.sourceQuizId ?? src.id;
   const [quiz] = await db
     .insert(quizzes)
     .values({
@@ -323,6 +357,7 @@ router.post("/quizzes/:id/practice", async (req, res): Promise<void> => {
       notebookId: src.notebookId ?? null,
       topicId: src.topicId ?? null,
       domainId: src.domainId ?? null,
+      sourceQuizId: rootSourceId,
       questionIds: src.questionIds,
     })
     .returning();
@@ -348,6 +383,15 @@ router.get("/quizzes/:id", async (req, res): Promise<void> => {
   }
   const ans = await db.select().from(quizAnswers).where(eq(quizAnswers.quizId, id));
   const ansMap = new Map(ans.map((a) => [a.questionId, { selectedIndex: a.selectedIndex, selectedIndices: a.selectedIndices, correct: a.correct }]));
+
+  // For a retake, surface the original set's date and score so the finished
+  // review can show "original X% → retake Y%".
+  let source: { id: number; date: string; score: number | null } | null = null;
+  if (quiz.sourceQuizId != null) {
+    const [src] = await db.select().from(quizzes).where(eq(quizzes.id, quiz.sourceQuizId));
+    if (src) source = { id: src.id, date: dateStrPT(src.startedAt), score: src.score };
+  }
+
   res.json({
     id: quiz.id,
     mode: quiz.mode,
@@ -355,6 +399,8 @@ router.get("/quizzes/:id", async (req, res): Promise<void> => {
     currentIndex: quiz.currentIndex,
     finished: quiz.finished,
     score: quiz.score,
+    sourceQuizId: quiz.sourceQuizId ?? null,
+    source,
   });
 });
 

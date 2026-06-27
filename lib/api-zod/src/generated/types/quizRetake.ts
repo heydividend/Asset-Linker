@@ -5,18 +5,13 @@
  * BOC Study Notebook API
  * OpenAPI spec version: 0.1.0
  */
-import type { QuizRetake } from "./quizRetake";
 
-export interface DailyQuizHistoryEntry {
+export interface QuizRetake {
   id: number;
-  /** Pacific calendar day the attempt was taken (YYYY-MM-DD) */
-  date: string;
   totalQuestions: number;
   correctCount: number;
   /** @nullable */
   score: number | null;
   /** @nullable */
   finishedAt: Date | null;
-  /** Finished practice re-takes of this set, oldest → newest. */
-  retakes: QuizRetake[];
 }
