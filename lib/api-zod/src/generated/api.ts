@@ -979,6 +979,23 @@ export const PracticeQuizSetParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const PracticeQuizSetBody = zod
+  .object({
+    shuffleQuestions: zod
+      .boolean()
+      .optional()
+      .describe("Randomize the order the questions are presented in."),
+    shuffleChoices: zod
+      .boolean()
+      .optional()
+      .describe(
+        "Randomize each question's answer-choice order. Scoring is unaffected.",
+      ),
+  })
+  .describe(
+    "Options for re-taking a quiz's question set. Both default to false (an exact replay in the original order).",
+  );
+
 export const ListMockExamsResponseItem = zod.object({
   id: zod.number(),
   totalQuestions: zod.number(),

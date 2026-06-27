@@ -74,6 +74,7 @@ import type {
   OpenaiMessageInput,
   PlanCompletionInput,
   PlanCompletions,
+  PracticeQuizInput,
   PushSubscriptionInput,
   PushUnsubscribeInput,
   QuestionBankEntry,
@@ -3869,11 +3870,14 @@ export const getPracticeQuizSetUrl = (id: number) => {
 
 export const practiceQuizSet = async (
   id: number,
+  practiceQuizInput?: PracticeQuizInput,
   options?: RequestInit,
 ): Promise<Quiz> => {
   return customFetch<Quiz>(getPracticeQuizSetUrl(id), {
     ...options,
     method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(practiceQuizInput),
   });
 };
 
@@ -3884,14 +3888,14 @@ export const getPracticeQuizSetMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof practiceQuizSet>>,
     TError,
-    { id: number },
+    { id: number; data: BodyType<PracticeQuizInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof practiceQuizSet>>,
   TError,
-  { id: number },
+  { id: number; data: BodyType<PracticeQuizInput> },
   TContext
 > => {
   const mutationKey = ["practiceQuizSet"];
@@ -3905,11 +3909,11 @@ export const getPracticeQuizSetMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof practiceQuizSet>>,
-    { id: number }
+    { id: number; data: BodyType<PracticeQuizInput> }
   > = (props) => {
-    const { id } = props ?? {};
+    const { id, data } = props ?? {};
 
-    return practiceQuizSet(id, requestOptions);
+    return practiceQuizSet(id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -3918,7 +3922,7 @@ export const getPracticeQuizSetMutationOptions = <
 export type PracticeQuizSetMutationResult = NonNullable<
   Awaited<ReturnType<typeof practiceQuizSet>>
 >;
-
+export type PracticeQuizSetMutationBody = BodyType<PracticeQuizInput>;
 export type PracticeQuizSetMutationError = ErrorType<NotFoundResponse>;
 
 /**
@@ -3931,14 +3935,14 @@ export const usePracticeQuizSet = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof practiceQuizSet>>,
     TError,
-    { id: number },
+    { id: number; data: BodyType<PracticeQuizInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof practiceQuizSet>>,
   TError,
-  { id: number },
+  { id: number; data: BodyType<PracticeQuizInput> },
   TContext
 > => {
   return useMutation(getPracticeQuizSetMutationOptions(options));

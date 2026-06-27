@@ -10,7 +10,24 @@ import { getOrCreateDailyQuestionIds } from "../lib/dailyQuiz";
 
 const router: IRouter = Router();
 
-async function buildQuizQuestionView(qids: number[], answers: Map<number, { selectedIndex: number; selectedIndices: number[] | null; correct: boolean }>) {
+// A valid choice permutation for a question is a full rearrangement of
+// [0..n-1] (every original index appears exactly once). We validate before
+// applying so a malformed/stale order can never drop or duplicate choices.
+function isValidOrder(order: unknown, choiceCount: number): order is number[] {
+  if (!Array.isArray(order) || order.length !== choiceCount) return false;
+  const seen = new Set<number>();
+  for (const v of order) {
+    if (typeof v !== "number" || v < 0 || v >= choiceCount || seen.has(v)) return false;
+    seen.add(v);
+  }
+  return true;
+}
+
+async function buildQuizQuestionView(
+  qids: number[],
+  answers: Map<number, { selectedIndex: number; selectedIndices: number[] | null; correct: boolean }>,
+  choiceOrders?: Record<string, number[]> | null,
+) {
   if (qids.length === 0) return [];
   const rows = await db.select().from(questions).where(inArray(questions.id, qids));
   const byId = new Map(rows.map((r) => [r.id, r]));
@@ -19,12 +36,18 @@ async function buildQuizQuestionView(qids: number[], answers: Map<number, { sele
       const q = byId.get(qid);
       if (!q) return null;
       const ans = answers.get(qid);
+      // displayedPosition -> originalChoiceIndex. Identity when no (valid) order.
+      const rawOrder = choiceOrders?.[String(qid)];
+      const order = isValidOrder(rawOrder, q.choices.length) ? rawOrder : null;
+      // Map an ORIGINAL choice index to the position it is shown at.
+      const toDisplayed = (o: number) => (order ? order.indexOf(o) : o);
+      const choices = order ? order.map((o) => q.choices[o]) : q.choices;
       return {
         id: qid,
         questionId: qid,
         stem: q.stem,
         imageUrl: q.imageUrl ?? null,
-        choices: q.choices,
+        choices,
         topicId: q.topicId,
         domainId: q.domainId,
         sourceKind: q.sourceKind,
@@ -32,10 +55,10 @@ async function buildQuizQuestionView(qids: number[], answers: Map<number, { sele
         multiSelect: q.multiSelect,
         ...(ans
           ? {
-              selectedIndex: ans.selectedIndex,
-              selectedIndices: ans.selectedIndices ?? undefined,
-              correctIndex: q.correctIndex,
-              correctIndices: q.correctIndices ?? undefined,
+              selectedIndex: toDisplayed(ans.selectedIndex),
+              selectedIndices: ans.selectedIndices ? ans.selectedIndices.map(toDisplayed) : undefined,
+              correctIndex: q.correctIndex != null ? toDisplayed(q.correctIndex) : q.correctIndex,
+              correctIndices: q.correctIndices ? q.correctIndices.map(toDisplayed) : undefined,
               rationale: q.rationale,
               sourceUrl: q.sourceUrl,
             }
@@ -238,7 +261,7 @@ router.post("/quizzes/daily", async (_req, res): Promise<void> => {
     res.status(200).json({
       id: recent.id,
       mode: recent.mode,
-      questions: await buildQuizQuestionView(recent.questionIds, ansMap),
+      questions: await buildQuizQuestionView(recent.questionIds, ansMap, recent.choiceOrders),
       currentIndex: recent.currentIndex,
       finished: recent.finished,
     });
@@ -332,12 +355,22 @@ router.get("/quizzes/daily/history", async (req, res): Promise<void> => {
 // independently and shows up in recent attempts. Mode is "practice" (not
 // "daily") so it never gets resumed by the daily endpoint, never appears in the
 // daily history list, and doesn't auto-complete the daily plan item.
+function shuffled<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 router.post("/quizzes/:id/practice", async (req, res): Promise<void> => {
   const id = parseId(req);
   if (id == null) {
     res.status(400).json({ error: "invalid id" });
     return;
   }
+  const { shuffleQuestions = false, shuffleChoices = false } = req.body ?? {};
   const [src] = await db.select().from(quizzes).where(eq(quizzes.id, id));
   if (!src) {
     res.status(404).json({ error: "Not found" });
@@ -350,6 +383,30 @@ router.post("/quizzes/:id/practice", async (req, res): Promise<void> => {
   // Attribute every retake to the ROOT source attempt so multiple retakes of
   // the same set share one sourceQuizId (even when re-taking a retake).
   const rootSourceId = src.sourceQuizId ?? src.id;
+
+  // Re-take the same questions, optionally in a randomized order so answer
+  // positions can't be memorized from the original run.
+  const questionIds = shuffleQuestions === true ? shuffled(src.questionIds) : src.questionIds;
+
+  // Optionally randomize each question's choice order. We store a permutation
+  // per question (displayedPosition -> originalChoiceIndex). quizAnswers always
+  // record ORIGINAL indices, so scoring is unchanged; only the rendered order
+  // differs. Single-choice questions (<2 options) are left untouched.
+  let choiceOrders: Record<string, number[]> | null = null;
+  if (shuffleChoices === true) {
+    const qrows = await db
+      .select({ id: questions.id, choices: questions.choices })
+      .from(questions)
+      .where(inArray(questions.id, questionIds));
+    const built: Record<string, number[]> = {};
+    for (const q of qrows) {
+      const n = q.choices.length;
+      if (n < 2) continue;
+      built[String(q.id)] = shuffled(Array.from({ length: n }, (_, i) => i));
+    }
+    if (Object.keys(built).length > 0) choiceOrders = built;
+  }
+
   const [quiz] = await db
     .insert(quizzes)
     .values({
@@ -358,13 +415,14 @@ router.post("/quizzes/:id/practice", async (req, res): Promise<void> => {
       topicId: src.topicId ?? null,
       domainId: src.domainId ?? null,
       sourceQuizId: rootSourceId,
-      questionIds: src.questionIds,
+      questionIds,
+      choiceOrders,
     })
     .returning();
   res.status(201).json({
     id: quiz.id,
     mode: quiz.mode,
-    questions: await buildQuizQuestionView(quiz.questionIds, new Map()),
+    questions: await buildQuizQuestionView(quiz.questionIds, new Map(), quiz.choiceOrders),
     currentIndex: 0,
     finished: false,
   });
@@ -395,7 +453,7 @@ router.get("/quizzes/:id", async (req, res): Promise<void> => {
   res.json({
     id: quiz.id,
     mode: quiz.mode,
-    questions: await buildQuizQuestionView(quiz.questionIds, ansMap),
+    questions: await buildQuizQuestionView(quiz.questionIds, ansMap, quiz.choiceOrders),
     currentIndex: quiz.currentIndex,
     finished: quiz.finished,
     score: quiz.score,
@@ -430,6 +488,17 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Question not found" });
     return;
   }
+  // For reshuffled retakes the client picks DISPLAYED positions, but answers and
+  // correctness are always tracked against ORIGINAL choice indices. Translate
+  // each displayed position back to its original index using the quiz's stored
+  // permutation; identity when the quiz isn't reshuffled.
+  const [quizRow] = await db.select({ choiceOrders: quizzes.choiceOrders }).from(quizzes).where(eq(quizzes.id, id));
+  const rawOrder = quizRow?.choiceOrders?.[String(questionId)];
+  const order = isValidOrder(rawOrder, q.choices.length) ? rawOrder : null;
+  const toOriginal = (d: number) => (order && d >= 0 && d < order.length ? order[d] : d);
+  // Map an original index back to its displayed position for the feedback echo.
+  const toDisplayed = (o: number) => (order ? order.indexOf(o) : o);
+
   let correct: boolean;
   let storedIndex: number;
   let storedIndices: number[] | null = null;
@@ -438,7 +507,9 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
       res.status(400).json({ error: "selectedIndices array required for multi-select question" });
       return;
     }
-    const cleaned = selectedIndices.filter((n: unknown): n is number => typeof n === "number");
+    const cleaned = selectedIndices
+      .filter((n: unknown): n is number => typeof n === "number")
+      .map(toOriginal);
     storedIndices = cleaned;
     storedIndex = cleaned[0] ?? -1;
     correct = arraysEqualAsSets(cleaned, q.correctIndices);
@@ -447,8 +518,8 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
       res.status(400).json({ error: "selectedIndex required" });
       return;
     }
-    storedIndex = selectedIndex;
-    correct = selectedIndex === q.correctIndex;
+    storedIndex = toOriginal(selectedIndex);
+    correct = storedIndex === q.correctIndex;
   }
   await db.insert(quizAnswers).values({ quizId: id, questionId, selectedIndex: storedIndex, selectedIndices: storedIndices, correct });
   await db
@@ -498,8 +569,8 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
 
   res.json({
     correct,
-    correctIndex: q.correctIndex,
-    correctIndices: q.correctIndices ?? undefined,
+    correctIndex: q.correctIndex != null ? toDisplayed(q.correctIndex) : q.correctIndex,
+    correctIndices: q.correctIndices ? q.correctIndices.map(toDisplayed) : undefined,
     multiSelect: q.multiSelect,
     rationale: q.rationale,
     sourceUrl: q.sourceUrl,

@@ -611,6 +611,16 @@ export interface QuizInput {
   pendingReviewOnly?: boolean;
 }
 
+/**
+ * Options for re-taking a quiz's question set. Both default to false (an exact replay in the original order).
+ */
+export interface PracticeQuizInput {
+  /** Randomize the order the questions are presented in. */
+  shuffleQuestions?: boolean;
+  /** Randomize each question's answer-choice order. Scoring is unaffected. */
+  shuffleChoices?: boolean;
+}
+
 export interface QuizAnswerInput {
   selectedIndices?: number[];
   questionId: number;

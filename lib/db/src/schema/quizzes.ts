@@ -12,6 +12,12 @@ export const quizzes = pgTable("quizzes", {
   // the user re-took. Null for original (non-cloned) attempts.
   sourceQuizId: integer("source_quiz_id"),
   questionIds: jsonb("question_ids").$type<number[]>().notNull(),
+  // Optional per-question choice permutation for reshuffled retakes. Maps a
+  // questionId to an array where displayedPosition -> originalChoiceIndex (e.g.
+  // [2,0,3,1] means the first shown choice is the question's original choice 2).
+  // Absent/null means choices render in their natural order. quizAnswers always
+  // store ORIGINAL choice indices, so scoring is unaffected by the permutation.
+  choiceOrders: jsonb("choice_orders").$type<Record<string, number[]> | null>(),
   currentIndex: integer("current_index").notNull().default(0),
   finished: boolean("finished").notNull().default(false),
   score: doublePrecision("score"),

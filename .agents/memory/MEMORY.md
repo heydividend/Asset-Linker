@@ -6,3 +6,4 @@
 - [Readiness trend hover](readiness-trend-hover.md) — today's readiness_snapshot is upserted live on dashboard load, so seed/assert hover values on historical days, not today.
 - [api-server HTTP route tests](api-server-http-tests.md) — import ./app (no side effects) + app.listen(0) + fetch for route tests; live DB drift → `pnpm --filter @workspace/db push`.
 - [api-server typecheck baseline](api-server-typecheck.md) — api-server `typecheck` is pre-existingly broken (implicit-any + lib/db TS6305); use `pnpm --filter @workspace/api-server test` as the real gate.
+- [Quiz choice reshuffle](quiz-choice-reshuffle.md) — reshuffled retakes store a per-quiz choiceOrders permutation; quizAnswers always hold ORIGINAL indices, translate only at the API boundary.

@@ -335,6 +335,83 @@ describe("daily quiz endpoint", () => {
     assert.equal(res.status, 404);
   });
 
+  it("reshuffles a practice retake (question + choice order) and still scores correctly", async () => {
+    // Start from today's known daily set, then re-take it reshuffled.
+    const created = await api("/quizzes/daily", { method: "POST" });
+    assert.ok(created.status === 200 || created.status === 201);
+    const dailyId = created.body.id;
+    createdQuizIds.push(dailyId);
+    const dailyQids: number[] = created.body.questions.map((q: any) => q.questionId);
+
+    const practice = await api(`/quizzes/${dailyId}/practice`, {
+      method: "POST",
+      body: JSON.stringify({ shuffleQuestions: true, shuffleChoices: true }),
+    });
+    assert.equal(practice.status, 201, "reshuffled practice should be created");
+    const practiceId = practice.body.id;
+    createdQuizIds.push(practiceId);
+
+    const practiceQs: any[] = practice.body.questions;
+    const practiceQids = practiceQs.map((q) => q.questionId);
+
+    // Same questions (as a set) — never dropped or duplicated.
+    assert.deepEqual(
+      [...practiceQids].sort((a, b) => a - b),
+      [...dailyQids].sort((a, b) => a - b),
+      "reshuffled retake must contain the exact same questions",
+    );
+
+    // Every question still offers the full, complete set of choices.
+    for (const q of practiceQs) {
+      assert.deepEqual(
+        [...q.choices].sort(),
+        ["a", "b", "c", "d"],
+        "each reshuffled question keeps all of its original choices",
+      );
+    }
+
+    // Answer every question by picking the DISPLAYED position of the correct
+    // choice text ("a" is the seeded correct answer at original index 0). Even
+    // though the visible order is randomized, scoring must translate the pick
+    // back to the original index and count it correct.
+    for (const q of practiceQs) {
+      const displayedCorrect = q.choices.indexOf("a");
+      assert.ok(displayedCorrect >= 0, "correct choice text should be present");
+      const ans = await api(`/quizzes/${practiceId}/answer`, {
+        method: "POST",
+        body: JSON.stringify({ questionId: q.questionId, selectedIndex: displayedCorrect }),
+      });
+      assert.equal(ans.status, 200);
+      assert.equal(ans.body.correct, true, "picking the correct choice must score correct");
+      assert.equal(
+        ans.body.correctIndex,
+        displayedCorrect,
+        "feedback echoes the correct choice at its DISPLAYED position",
+      );
+    }
+
+    const finished = await api(`/quizzes/${practiceId}/finish`, { method: "POST" });
+    assert.equal(finished.status, 200);
+    assert.equal(finished.body.score, 100, "all-correct reshuffled retake scores 100%");
+  });
+
+  it("defaults to an exact, un-reshuffled replay when no options are passed", async () => {
+    const created = await api("/quizzes/daily", { method: "POST" });
+    assert.ok(created.status === 200 || created.status === 201);
+    const dailyId = created.body.id;
+    createdQuizIds.push(dailyId);
+    const dailyQids = created.body.questions.map((q: any) => q.questionId);
+
+    const practice = await api(`/quizzes/${dailyId}/practice`, { method: "POST" });
+    assert.equal(practice.status, 201);
+    createdQuizIds.push(practice.body.id);
+    const practiceQids = practice.body.questions.map((q: any) => q.questionId);
+    assert.deepEqual(practiceQids, dailyQids, "default practice preserves the exact order");
+    for (const q of practice.body.questions) {
+      assert.deepEqual(q.choices, ["a", "b", "c", "d"], "default practice keeps natural choice order");
+    }
+  });
+
   it("marks quiz:daily complete when a daily attempt is finished", async () => {
     const created = await api("/quizzes/daily", { method: "POST" });
     assert.ok(created.status === 200 || created.status === 201);

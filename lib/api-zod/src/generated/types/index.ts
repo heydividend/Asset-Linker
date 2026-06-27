@@ -99,6 +99,7 @@ export * from "./openaiMessage";
 export * from "./openaiMessageInput";
 export * from "./planCompletionInput";
 export * from "./planCompletions";
+export * from "./practiceQuizInput";
 export * from "./pushSubscriptionInput";
 export * from "./pushSubscriptionInputKeys";
 export * from "./pushUnsubscribeInput";

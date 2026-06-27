@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useGetDailyQuizHistory, usePracticeQuizSet } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowDown, ArrowUp, CalendarCheck, ChevronLeft, History, Minus, RotateCcw, TrendingUp } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarCheck, ChevronLeft, History, Minus, RotateCcw, Shuffle, TrendingUp } from "lucide-react";
 import { DailyScoreTrend, type DailyScorePoint } from "@/components/DailyScoreTrend";
 
 function formatDate(ymd: string): string {
@@ -47,17 +51,22 @@ function DeltaBadge({ delta }: { delta: number }) {
   );
 }
 
-export default function DailyQuizHistory() {
+function PracticeAgainButton({ quizId }: { quizId: number }) {
   const [, navigate] = useLocation();
-  const { data: history = [], isLoading } = useGetDailyQuizHistory();
   const practice = usePracticeQuizSet();
   const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [shuffleQuestions, setShuffleQuestions] = useState(false);
+  const [shuffleChoices, setShuffleChoices] = useState(false);
 
-  const onPractice = (quizId: number) => {
+  const onStart = () => {
     practice.mutate(
-      { id: quizId },
+      { id: quizId, data: { shuffleQuestions, shuffleChoices } },
       {
-        onSuccess: (quiz) => navigate(`/quiz/${quiz.id}`),
+        onSuccess: (quiz) => {
+          setOpen(false);
+          navigate(`/quiz/${quiz.id}`);
+        },
         onError: (e) =>
           toast({
             title: "Couldn't start practice",
@@ -67,6 +76,71 @@ export default function DailyQuizHistory() {
       },
     );
   };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs shrink-0"
+          disabled={practice.isPending}
+          data-testid={`button-practice-set-${quizId}`}
+          title="Re-take this exact set as a fresh, independently-scored practice run"
+        >
+          <RotateCcw className="h-3 w-3 mr-1" /> Practice again
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 space-y-3">
+        <div className="space-y-1">
+          <p className="text-sm font-medium flex items-center gap-1.5">
+            <Shuffle className="h-3.5 w-3.5 text-primary" /> Reshuffle this retake
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Same questions, harder to game by memorizing answer positions.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={`shuffle-q-${quizId}`}
+              checked={shuffleQuestions}
+              onCheckedChange={(v) => setShuffleQuestions(v === true)}
+              data-testid={`checkbox-shuffle-questions-${quizId}`}
+            />
+            <Label htmlFor={`shuffle-q-${quizId}`} className="text-xs font-normal cursor-pointer">
+              Shuffle question order
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={`shuffle-c-${quizId}`}
+              checked={shuffleChoices}
+              onCheckedChange={(v) => setShuffleChoices(v === true)}
+              data-testid={`checkbox-shuffle-choices-${quizId}`}
+            />
+            <Label htmlFor={`shuffle-c-${quizId}`} className="text-xs font-normal cursor-pointer">
+              Shuffle answer choices
+            </Label>
+          </div>
+        </div>
+        <Button
+          size="sm"
+          className="w-full h-7 text-xs"
+          onClick={onStart}
+          disabled={practice.isPending}
+          data-testid={`button-start-practice-${quizId}`}
+        >
+          {shuffleQuestions || shuffleChoices ? "Start reshuffled retake" : "Start practice"}
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+export default function DailyQuizHistory() {
+  const [, navigate] = useLocation();
+  const { data: history = [], isLoading } = useGetDailyQuizHistory();
 
   // History arrives newest-first; the trend reads best oldest → newest.
   const trendPoints: DailyScorePoint[] = [...history].reverse().map((h) => ({
@@ -163,17 +237,7 @@ export default function DailyQuizHistory() {
                             {pct}% ({h.correctCount}/{h.totalQuestions})
                           </span>
                         </button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs shrink-0"
-                          onClick={() => onPractice(h.id)}
-                          disabled={practice.isPending}
-                          data-testid={`button-practice-set-${h.id}`}
-                          title="Re-take this exact set as a fresh, independently-scored practice run"
-                        >
-                          <RotateCcw className="h-3 w-3 mr-1" /> Practice again
-                        </Button>
+                        <PracticeAgainButton quizId={h.id} />
                       </div>
                       {retakes.length > 0 && (
                         <div

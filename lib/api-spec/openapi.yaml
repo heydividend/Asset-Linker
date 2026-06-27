@@ -693,6 +693,11 @@ paths:
       summary: Re-take an existing quiz's question set as a fresh, independently-scored attempt
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PracticeQuizInput" }
       responses:
         "201":
           description: Created
@@ -1947,6 +1952,16 @@ components:
         pendingReviewOnly:
           type: boolean
           description: "Only include questions still flagged pendingReview (admin/review surface)."
+    PracticeQuizInput:
+      type: object
+      description: "Options for re-taking a quiz's question set. Both default to false (an exact replay in the original order)."
+      properties:
+        shuffleQuestions:
+          type: boolean
+          description: "Randomize the order the questions are presented in."
+        shuffleChoices:
+          type: boolean
+          description: "Randomize each question's answer-choice order. Scoring is unaffected."
     QuizAnswerInput:
       type: object
       required: [questionId]

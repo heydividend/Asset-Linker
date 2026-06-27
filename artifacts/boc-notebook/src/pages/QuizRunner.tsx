@@ -18,12 +18,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AskAiButton } from "@/components/AskAiButton";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySparkline";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, ExternalLink, LogOut, Minus, RotateCcw, Trophy, Users, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, ExternalLink, LogOut, Minus, RotateCcw, Shuffle, Trophy, Users, X } from "lucide-react";
 
 function arraysEqualAsSets(a: number[] | null | undefined, b: number[] | null | undefined): boolean {
   if (!a || !b) return false;
@@ -407,11 +410,15 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const practice = usePracticeQuizSet();
+  const [practiceOpen, setPracticeOpen] = useState(false);
+  const [shuffleQuestions, setShuffleQuestions] = useState(false);
+  const [shuffleChoices, setShuffleChoices] = useState(false);
   const onPractice = () => {
     practice.mutate(
-      { id: quiz.id },
+      { id: quiz.id, data: { shuffleQuestions, shuffleChoices } },
       {
         onSuccess: (next) => {
+          setPracticeOpen(false);
           qc.invalidateQueries({ queryKey: getListQuizAttemptsQueryKey() });
           navigate(`/quiz/${next.id}`);
         },
@@ -636,15 +643,61 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
             );
           })}
           <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={onPractice}
-              disabled={practice.isPending}
-              data-testid="button-practice-set"
-              title="Re-take this exact set as a fresh, independently-scored practice run"
-            >
-              <RotateCcw className="h-4 w-4 mr-2" /> Practice this set again
-            </Button>
+            <Popover open={practiceOpen} onOpenChange={setPracticeOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={practice.isPending}
+                  data-testid="button-practice-set"
+                  title="Re-take this exact set as a fresh, independently-scored practice run"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" /> Practice this set again
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64 space-y-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium flex items-center gap-1.5">
+                    <Shuffle className="h-3.5 w-3.5 text-primary" /> Reshuffle this retake
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Same questions, harder to game by memorizing answer positions.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="shuffle-questions"
+                      checked={shuffleQuestions}
+                      onCheckedChange={(v) => setShuffleQuestions(v === true)}
+                      data-testid="checkbox-shuffle-questions"
+                    />
+                    <Label htmlFor="shuffle-questions" className="text-xs font-normal cursor-pointer">
+                      Shuffle question order
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="shuffle-choices"
+                      checked={shuffleChoices}
+                      onCheckedChange={(v) => setShuffleChoices(v === true)}
+                      data-testid="checkbox-shuffle-choices"
+                    />
+                    <Label htmlFor="shuffle-choices" className="text-xs font-normal cursor-pointer">
+                      Shuffle answer choices
+                    </Label>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full h-7 text-xs"
+                  onClick={onPractice}
+                  disabled={practice.isPending}
+                  data-testid="button-start-practice"
+                >
+                  {shuffleQuestions || shuffleChoices ? "Start reshuffled retake" : "Start practice"}
+                </Button>
+              </PopoverContent>
+            </Popover>
             <Link href="/quiz"><Button data-testid="button-new-quiz">New quiz</Button></Link>
           </div>
         </div>
