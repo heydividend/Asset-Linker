@@ -36,7 +36,7 @@ function formatAttemptDate(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
   const date = formatDate(d);
-  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
   return `${date} · ${time}`;
 }
 
