@@ -4,7 +4,7 @@ description: How admin access is decided, and how to programmatically create Cle
 ---
 
 # Admin gating
-- Admin status is email-based, not a Clerk role/flag. `api-server/src/lib/admin.ts` reads `ADMIN_EMAILS` (comma-separated, case-insensitive) and falls back to `DEFAULT_ADMIN` (mhuddleston@heydividend.com) when unset, so the dashboard is never locked out.
+- Admin status is email-based, not a Clerk role/flag. `api-server/src/lib/admin.ts` reads `ADMIN_EMAILS` (comma-separated, case-insensitive) and falls back to a hardcoded `DEFAULT_ADMIN` constant when unset, so the dashboard is never locked out. (See that file for the current owner email — not duplicated here.)
 - `requireAdmin` depends on `req.userId` set by `requireAuth`; `routes/index.ts` mounts the admin/me routers AFTER the global `requireAuth`, so ordering is what keeps `/admin/*`, `/me`, `/session/heartbeat` authenticated. Don't move those mounts above `requireAuth`.
 - To make someone admin in prod, set `ADMIN_EMAILS` (don't rely only on the default).
 
