@@ -58,7 +58,7 @@ export default function NotebookDetail() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideForm, setGuideForm] = useState({ format: "outline" as "outline" | "summary" | "qa" | "mindmap", focus: "" });
   const [audioOpen, setAudioOpen] = useState(false);
-  const [audioForm, setAudioForm] = useState({ voice: "nova" as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer", focus: "" });
+  const [audioForm, setAudioForm] = useState({ voice: "echo" as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer", focus: "" });
   const [sourcesCollapsed, setSourcesCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("boc:notebook-sources-collapsed") === "1";
@@ -404,7 +404,7 @@ export default function NotebookDetail() {
                       <Select value={audioForm.voice} onValueChange={(v) => setAudioForm({ ...audioForm, voice: v as typeof audioForm.voice })}>
                         <SelectTrigger data-testid="select-audio-voice"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {["nova", "alloy", "echo", "fable", "onyx", "shimmer"].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                          {["echo", "alloy", "fable", "onyx", "nova", "shimmer"].map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>

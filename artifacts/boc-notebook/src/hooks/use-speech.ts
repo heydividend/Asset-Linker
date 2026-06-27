@@ -45,7 +45,7 @@ let currentUrl: string | null = null;
 let currentVoice: TtsVoice =
   (typeof window !== "undefined" &&
     (localStorage.getItem(VOICE_KEY) as TtsVoice | null)) ||
-  "nova";
+  "echo";
 
 // Playlist state (singleton, like the audio element)
 let playlist: PlaylistState | null = null;

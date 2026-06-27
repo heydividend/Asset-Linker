@@ -9,7 +9,7 @@ import { logger } from "./../lib/logger";
 type TtsVoice = "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer";
 const VALID_VOICES: TtsVoice[] = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
 const normalizeVoice = (v: unknown): TtsVoice =>
-  typeof v === "string" && (VALID_VOICES as string[]).includes(v) ? (v as TtsVoice) : "nova";
+  typeof v === "string" && (VALID_VOICES as string[]).includes(v) ? (v as TtsVoice) : "echo";
 
 const TOPIC_PODCAST_NOTEBOOK_TITLE = "Topic Podcasts";
 

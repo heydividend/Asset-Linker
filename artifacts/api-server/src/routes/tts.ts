@@ -42,7 +42,7 @@ router.post("/tts", async (req, res): Promise<void> => {
   const v: Voice =
     typeof voice === "string" && (VALID_VOICES as readonly string[]).includes(voice)
       ? (voice as Voice)
-      : "nova";
+      : "echo";
   const key = `${v}::${trimmed}`;
   const cached = cacheGet(key);
   if (cached) {
