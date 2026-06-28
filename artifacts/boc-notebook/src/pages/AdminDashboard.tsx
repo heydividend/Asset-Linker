@@ -31,7 +31,14 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
-import { ShieldAlert, UserPlus, KeyRound, Trash2, BarChart3 } from "lucide-react";
+import {
+  ShieldAlert,
+  UserPlus,
+  KeyRound,
+  Trash2,
+  BarChart3,
+  Activity as ActivityIcon,
+} from "lucide-react";
 
 type AdminUser = {
   id: string;
@@ -57,6 +64,24 @@ type LoginSession = {
   userAgent: string | null;
   startedAt: string;
   lastSeenAt: string;
+};
+
+type ActivityEvent = {
+  id: string;
+  type: "quiz" | "mock" | "daily" | "tutor" | "game";
+  userId: string;
+  email?: string | null;
+  title: string;
+  detail: string | null;
+  at: string;
+};
+
+const ACTIVITY_LABELS: Record<ActivityEvent["type"], string> = {
+  quiz: "Quiz",
+  mock: "Mock exam",
+  daily: "Daily quiz",
+  tutor: "AI tutor",
+  game: "Game",
 };
 
 type DomainProgress = {
@@ -219,6 +244,15 @@ function ProgressDialog({
       }).then((r) => r.json()),
   });
 
+  const activityQuery = useQuery<{ activity: ActivityEvent[] }>({
+    queryKey: [`/api/admin/users/${user.id}/activity`],
+    queryFn: () =>
+      fetch(`/api/admin/users/${user.id}/activity`, {
+        credentials: "include",
+      }).then((r) => r.json()),
+  });
+  const activity = activityQuery.data?.activity ?? [];
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
@@ -272,6 +306,40 @@ function ProgressDialog({
                   <div className="text-[11px] text-muted-foreground">{d.band}</div>
                 </div>
               ))}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-semibold">Activity timeline</div>
+              {activityQuery.isLoading ? (
+                <p className="text-xs text-muted-foreground">Loading activity…</p>
+              ) : activity.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No activity yet.</p>
+              ) : (
+                <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                  {activity.map((e) => (
+                    <div
+                      key={e.id}
+                      className="flex items-start justify-between gap-3 rounded-md border p-2 text-xs"
+                      data-testid={`user-activity-${e.id}`}
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{ACTIVITY_LABELS[e.type]}</Badge>
+                          <span className="font-medium">{e.title}</span>
+                        </div>
+                        {e.detail && (
+                          <div className="mt-0.5 truncate text-muted-foreground">
+                            {e.detail}
+                          </div>
+                        )}
+                      </div>
+                      <div className="whitespace-nowrap text-muted-foreground">
+                        {fmtDate(e.at)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -377,6 +445,15 @@ export default function AdminDashboard() {
     enabled: me.data?.isAdmin === true,
   });
 
+  const activityQuery = useQuery<{ activity: ActivityEvent[] }>({
+    queryKey: ["/api/admin/activity"],
+    queryFn: () =>
+      fetch("/api/admin/activity", { credentials: "include" }).then((r) =>
+        r.json(),
+      ),
+    enabled: me.data?.isAdmin === true,
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/admin/users/${id}`, {
@@ -417,6 +494,7 @@ export default function AdminDashboard() {
 
   const users = usersQuery.data?.users ?? [];
   const sessions = sessionsQuery.data?.sessions ?? [];
+  const activity = activityQuery.data?.activity ?? [];
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
@@ -431,6 +509,9 @@ export default function AdminDashboard() {
         <TabsList>
           <TabsTrigger value="users" data-testid="tab-users">
             Users
+          </TabsTrigger>
+          <TabsTrigger value="activity" data-testid="tab-activity">
+            Activity
           </TabsTrigger>
           <TabsTrigger value="sessions" data-testid="tab-sessions">
             Login Sessions
@@ -535,6 +616,62 @@ export default function AdminDashboard() {
                         className="text-center text-sm text-muted-foreground"
                       >
                         {usersQuery.isLoading ? "Loading…" : "No users yet."}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ActivityIcon className="h-4 w-4" /> Recent activity ({activity.length})
+              </CardTitle>
+              <CardDescription>
+                Quizzes, mock exams, daily quizzes, AI tutor chats, and games
+                across all users.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Detail</TableHead>
+                    <TableHead>When</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activity.map((e) => (
+                    <TableRow key={e.id} data-testid={`row-activity-${e.id}`}>
+                      <TableCell className="font-medium">
+                        {e.email ?? e.userId}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{ACTIVITY_LABELS[e.type]}</Badge>
+                      </TableCell>
+                      <TableCell>{e.title}</TableCell>
+                      <TableCell className="max-w-[220px] truncate text-muted-foreground">
+                        {e.detail ?? "—"}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                        {fmtDate(e.at)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {activity.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center text-sm text-muted-foreground"
+                      >
+                        {activityQuery.isLoading ? "Loading…" : "No activity yet."}
                       </TableCell>
                     </TableRow>
                   )}

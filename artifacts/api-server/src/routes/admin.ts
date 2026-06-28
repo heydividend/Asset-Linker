@@ -11,6 +11,9 @@ import {
   mockExams,
   readinessSnapshots,
   loginSessions,
+  conversations,
+  gameSessions,
+  dailyQuizSets,
 } from "@workspace/db";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { isAdminEmail } from "../lib/admin";
@@ -243,6 +246,179 @@ router.get("/admin/users/:id/progress", async (req, res): Promise<void> => {
     trend: trend.slice().reverse(),
     sessions,
   });
+});
+
+type ActivityEvent = {
+  id: string;
+  type: "quiz" | "mock" | "daily" | "tutor" | "game";
+  userId: string;
+  email?: string | null;
+  title: string;
+  detail: string | null;
+  at: string;
+};
+
+function toISO(value: Date | string | null): string | null {
+  if (value == null) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function quizModeLabel(mode: string): string {
+  const map: Record<string, string> = {
+    practice: "practice quiz",
+    daily: "daily quiz",
+    review: "review quiz",
+    topic: "topic quiz",
+    domain: "domain quiz",
+    warmup: "warm-up quiz",
+    custom: "custom quiz",
+  };
+  return map[mode] ?? `${mode} quiz`;
+}
+
+// Build a chronological activity feed from the user-scoped tables. When
+// `userId` is null the feed spans all users; otherwise it is scoped to one.
+async function buildActivity(
+  userId: string | null,
+  perTypeLimit: number,
+): Promise<ActivityEvent[]> {
+  const events: ActivityEvent[] = [];
+
+  const qs = await db
+    .select()
+    .from(quizzes)
+    .where(
+      userId
+        ? and(eq(quizzes.finished, true), eq(quizzes.userId, userId))
+        : eq(quizzes.finished, true),
+    )
+    .orderBy(desc(quizzes.finishedAt))
+    .limit(perTypeLimit);
+  for (const q of qs) {
+    const at = toISO(q.finishedAt);
+    if (!q.userId || !at) continue;
+    events.push({
+      id: `quiz-${q.id}`,
+      type: "quiz",
+      userId: q.userId,
+      title: `Completed a ${quizModeLabel(q.mode)}`,
+      detail: q.score != null ? `${Math.round(q.score)}%` : null,
+      at,
+    });
+  }
+
+  const ms = await db
+    .select()
+    .from(mockExams)
+    .where(
+      userId
+        ? and(eq(mockExams.submitted, true), eq(mockExams.userId, userId))
+        : eq(mockExams.submitted, true),
+    )
+    .orderBy(desc(mockExams.submittedAt))
+    .limit(perTypeLimit);
+  for (const m of ms) {
+    const at = toISO(m.submittedAt);
+    if (!m.userId || !at) continue;
+    events.push({
+      id: `mock-${m.id}`,
+      type: "mock",
+      userId: m.userId,
+      title: "Submitted a mock exam",
+      detail: m.scorePercent != null ? `${Math.round(m.scorePercent)}%` : null,
+      at,
+    });
+  }
+
+  const ds = await db
+    .select()
+    .from(dailyQuizSets)
+    .where(userId ? eq(dailyQuizSets.userId, userId) : undefined)
+    .orderBy(desc(dailyQuizSets.createdAt))
+    .limit(perTypeLimit);
+  for (const d of ds) {
+    const at = toISO(d.createdAt);
+    if (!d.userId || !at) continue;
+    events.push({
+      id: `daily-${d.id}`,
+      type: "daily",
+      userId: d.userId,
+      title: "Started the daily quiz",
+      detail: d.date,
+      at,
+    });
+  }
+
+  const cs = await db
+    .select()
+    .from(conversations)
+    .where(userId ? eq(conversations.userId, userId) : undefined)
+    .orderBy(desc(conversations.createdAt))
+    .limit(perTypeLimit);
+  for (const c of cs) {
+    const at = toISO(c.createdAt);
+    if (!c.userId || !at) continue;
+    events.push({
+      id: `tutor-${c.id}`,
+      type: "tutor",
+      userId: c.userId,
+      title: "Started an AI tutor chat",
+      detail: c.title || null,
+      at,
+    });
+  }
+
+  const gs = await db
+    .select()
+    .from(gameSessions)
+    .where(userId ? eq(gameSessions.sessionId, userId) : undefined)
+    .orderBy(desc(gameSessions.completedAt))
+    .limit(perTypeLimit);
+  for (const g of gs) {
+    const at = toISO(g.completedAt);
+    if (!g.sessionId || !at) continue;
+    events.push({
+      id: `game-${g.id}`,
+      type: "game",
+      userId: g.sessionId,
+      title: `Played ${g.gameId}`,
+      detail: `Score ${g.score}`,
+      at,
+    });
+  }
+
+  events.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  return events;
+}
+
+// GET /admin/activity — global, chronological activity feed across all users.
+const GLOBAL_ACTIVITY_LIMIT = 200;
+router.get("/admin/activity", async (_req, res): Promise<void> => {
+  // Per-type fetch limit must equal the global return limit: the global top-N
+  // can contain at most N events of any single type, so fetching the N most
+  // recent of each type guarantees the merged top-N is the true global top-N.
+  const events = await buildActivity(null, GLOBAL_ACTIVITY_LIMIT);
+
+  // Resolve userId -> email for display.
+  const list = await clerkClient.users.getUserList({ limit: 200 });
+  const data = (list as unknown as { data: ClerkUserLite[] }).data ?? [];
+  const emailByUser = new Map<string, string | null>(
+    data.map((u) => [u.id, primaryEmail(u)]),
+  );
+
+  const activity = events.slice(0, GLOBAL_ACTIVITY_LIMIT).map((e) => ({
+    ...e,
+    email: emailByUser.get(e.userId) ?? null,
+  }));
+  res.json({ activity });
+});
+
+// GET /admin/users/:id/activity — full activity timeline for one user.
+router.get("/admin/users/:id/activity", async (req, res): Promise<void> => {
+  const { id } = req.params;
+  const activity = await buildActivity(id, 100);
+  res.json({ activity });
 });
 
 // GET /admin/sessions — recent login sessions across all users.

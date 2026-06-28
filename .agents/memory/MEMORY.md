@@ -11,4 +11,5 @@
 - [Daily quiz regenerate ordering](daily-quiz-regenerate.md) — regenerate must clear cache → generate → THEN delete today's in-progress attempt (never delete-first; AI gen can fail); scope deletion to today's single resumable attempt.
 - [Prod data rescue bootstrap](prod-data-rescue-bootstrap.md) — sk_live-gated boot task creates accounts + re-keys owner-less rows; needs SEED_*_PW set BEFORE republish or it no-ops.
 - [Testing harness Clerk auth](testing-clerk-auth-harness.md) — in runTest plans force [Clerk Auth] only (never the disabled /sign-in UI) and never wait on the slow Daily Quiz AI generation.
+- [Admin activity feed](activity-feed-attribution.md) — feed = quizzes/mocks/daily/tutor/games (notes have no userId, excluded); per-type fetch limit MUST equal global return limit or recent events get clipped.
 - [API spec codegen workflow](api-spec-codegen.md) — add endpoint = Express route + openapi.yaml (operationId→hook) then `pnpm --filter @workspace/api-spec run codegen`; orval hooks don't auto-invalidate queries.
