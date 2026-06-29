@@ -41,3 +41,9 @@ id = "Pi35Bh-xa5NqApXmAmapf"
 uri = "file://README.md"
 type = "text"
 title = "README.md"
+
+[[outputs]]
+id = "_OjzFS6caHZJuNtJ4D8oe"
+uri = "file://artifacts/boc-notebook/docs/sidebar-collapse.md"
+type = "text"
+title = "Sidebar Collapse — How It Works"
