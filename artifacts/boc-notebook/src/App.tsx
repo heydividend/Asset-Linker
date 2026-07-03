@@ -40,6 +40,7 @@ import ReviewSheetsPage from "@/pages/ReviewSheetsPage";
 import ReviewSheetDetail from "@/pages/ReviewSheetDetail";
 import ItemQualityPage from "@/pages/ItemQualityPage";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AdminUserDetail from "@/pages/AdminUserDetail";
 import CodeBlueGame from "@/pages/CodeBlueGame";
 import SurvivorGame from "@/pages/SurvivorGame";
 import SpotContraindicationGame from "@/pages/SpotContraindicationGame";
@@ -204,6 +205,7 @@ function AppRoutes() {
           <Route path="/ai-learning" component={AILearningPage} />
           <Route path="/item-quality" component={ItemQualityPage} />
           <Route path="/admin" component={AdminDashboard} />
+          <Route path="/admin/users/:id" component={AdminUserDetail} />
           <Route component={NotFound} />
         </Switch>
       </Layout>

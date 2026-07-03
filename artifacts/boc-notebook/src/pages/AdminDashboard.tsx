@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -21,6 +22,11 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDateTime } from "@/lib/formatDate";
+import {
+  SessionStatusBadge,
+  sessionDuration,
+  SESSION_DURATION_HINT,
+} from "@/components/SessionStatus";
 import {
   Dialog,
   DialogContent,
@@ -64,6 +70,9 @@ type LoginSession = {
   userAgent: string | null;
   startedAt: string;
   lastSeenAt: string;
+  // true = still signed in (per Clerk), false = logged out/expired,
+  // null = status unknown (Clerk lookup failed).
+  active: boolean | null;
 };
 
 type ActivityEvent = {
@@ -547,7 +556,14 @@ export default function AdminDashboard() {
                   {users.map((u) => (
                     <TableRow key={u.id} data-testid={`row-user-${u.id}`}>
                       <TableCell>
-                        <div className="font-medium">{u.email ?? "—"}</div>
+                        <Link
+                          href={`/admin/users/${u.id}`}
+                          className="font-medium hover:underline"
+                          data-testid={`link-user-${u.id}`}
+                          title="View user details & daily schedule"
+                        >
+                          {u.email ?? "—"}
+                        </Link>
                         {(u.firstName || u.lastName) && (
                           <div className="text-xs text-muted-foreground">
                             {[u.firstName, u.lastName].filter(Boolean).join(" ")}
@@ -693,6 +709,8 @@ export default function AdminDashboard() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead title={SESSION_DURATION_HINT}>Duration</TableHead>
                     <TableHead>Started</TableHead>
                     <TableHead>Last seen</TableHead>
                     <TableHead>Device</TableHead>
@@ -703,6 +721,12 @@ export default function AdminDashboard() {
                     <TableRow key={s.id} data-testid={`row-session-${s.id}`}>
                       <TableCell className="font-medium">
                         {s.email ?? s.userId}
+                      </TableCell>
+                      <TableCell data-testid={`session-status-${s.id}`}>
+                        <SessionStatusBadge active={s.active} />
+                      </TableCell>
+                      <TableCell className="text-xs tabular-nums" data-testid={`session-duration-${s.id}`}>
+                        {sessionDuration(s)}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {fmtDate(s.startedAt)}
@@ -718,7 +742,7 @@ export default function AdminDashboard() {
                   {sessions.length === 0 && (
                     <TableRow>
                       <TableCell
-                        colSpan={4}
+                        colSpan={6}
                         className="text-center text-sm text-muted-foreground"
                       >
                         {sessionsQuery.isLoading ? "Loading…" : "No sessions yet."}

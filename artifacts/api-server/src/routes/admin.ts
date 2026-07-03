@@ -18,6 +18,9 @@ import {
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { isAdminEmail } from "../lib/admin";
 import { domainBand, toScaledScore } from "../lib/scaledScore";
+import { getOrCreateSchedule } from "../lib/planSchedule";
+import { buildTodayItems } from "./plan";
+import { PASS as MOCK_PASS_PERCENT } from "./mockExams";
 
 const router: IRouter = Router();
 
@@ -168,6 +171,80 @@ router.delete("/admin/users/:id", async (req, res): Promise<void> => {
   }
 });
 
+// Clerk is the authority on whether a session is still signed in (we only
+// record a one-shot heartbeat locally). Returns the set of currently-active
+// Clerk session ids (optionally scoped to one user), or null when the lookup
+// fails so callers can degrade to "unknown" instead of guessing.
+async function getActiveClerkSessionIds(
+  userId?: string,
+): Promise<Set<string> | null> {
+  const PAGE = 100;
+  const MAX_PAGES = 10; // safety cap: up to 1000 active sessions
+  try {
+    const ids = new Set<string>();
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const list = await clerkClient.sessions.getSessionList({
+        ...(userId ? { userId } : {}),
+        status: "active",
+        limit: PAGE,
+        offset: page * PAGE,
+      });
+      const data =
+        (list as unknown as { data: Array<{ id: string }> }).data ?? [];
+      for (const s of data) ids.add(s.id);
+      if (data.length < PAGE) break;
+    }
+    return ids;
+  } catch {
+    return null;
+  }
+}
+
+// GET /admin/users/:id — basic profile info for one user.
+router.get("/admin/users/:id", async (req, res): Promise<void> => {
+  const { id } = req.params;
+  try {
+    const u = (await clerkClient.users.getUser(id)) as unknown as ClerkUserLite;
+    const email = primaryEmail(u);
+    res.json({
+      id: u.id,
+      email,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      banned: u.banned,
+      isAdmin: isAdminEmail(email),
+      createdAt: u.createdAt,
+      lastSignInAt: u.lastSignInAt,
+    });
+  } catch {
+    res.status(404).json({ error: "User not found" });
+  }
+});
+
+// GET /admin/users/:id/plan — the user's daily study plan, exactly as they
+// see it on their own dashboard (same builder, same completion state).
+router.get("/admin/users/:id/plan", async (req, res): Promise<void> => {
+  const { id } = req.params;
+  // Verify the user exists before getOrCreateSchedule, which would otherwise
+  // create an orphan schedule row for an invalid id.
+  try {
+    await clerkClient.users.getUser(id);
+  } catch {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const sched = await getOrCreateSchedule(id);
+  const today = await buildTodayItems(id);
+  res.json({
+    schedule: {
+      startDate: sched.startDate,
+      examDate: sched.examDate,
+      examName: sched.examName,
+    },
+    today,
+  });
+});
+
 // GET /admin/users/:id/progress — detailed study progress for one user.
 router.get("/admin/users/:id/progress", async (req, res): Promise<void> => {
   const { id } = req.params;
@@ -235,6 +312,7 @@ router.get("/admin/users/:id/progress", async (req, res): Promise<void> => {
     .where(eq(loginSessions.userId, id))
     .orderBy(desc(loginSessions.lastSeenAt))
     .limit(20);
+  const activeIds = await getActiveClerkSessionIds(id);
 
   res.json({
     answered,
@@ -242,9 +320,15 @@ router.get("/admin/users/:id/progress", async (req, res): Promise<void> => {
     readiness: trend[0]?.score ?? null,
     domainMastery,
     recentQuizzes,
-    recentMocks,
+    recentMocks: recentMocks.map((m) => ({
+      ...m,
+      passed: m.scorePercent == null ? null : m.scorePercent >= MOCK_PASS_PERCENT,
+    })),
     trend: trend.slice().reverse(),
-    sessions,
+    sessions: sessions.map((s) => ({
+      ...s,
+      active: activeIds ? activeIds.has(s.clerkSessionId) : null,
+    })),
   });
 });
 
@@ -428,7 +512,13 @@ router.get("/admin/sessions", async (_req, res): Promise<void> => {
     .from(loginSessions)
     .orderBy(desc(loginSessions.lastSeenAt))
     .limit(200);
-  res.json({ sessions });
+  const activeIds = await getActiveClerkSessionIds();
+  res.json({
+    sessions: sessions.map((s) => ({
+      ...s,
+      active: activeIds ? activeIds.has(s.clerkSessionId) : null,
+    })),
+  });
 });
 
 export default router;

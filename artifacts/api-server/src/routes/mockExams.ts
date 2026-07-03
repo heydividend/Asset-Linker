@@ -8,7 +8,7 @@ import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
 import { mockPlanItemKeyForDay, earliestUncompletedPastMockKey } from "../lib/planSchedule";
 
 const router: IRouter = Router();
-const PASS = 75;
+export const PASS = 75;
 
 // Link a submitted mock to the matching day's plan item. When `date` is a
 // scheduled simulated-exam day, auto-check that day's `mock_exam:<date>` plan
