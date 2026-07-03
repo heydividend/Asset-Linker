@@ -210,6 +210,27 @@ function accuracy(correct: number, answered: number): string {
   return `${Math.round((correct / answered) * 100)}% (${correct}/${answered})`;
 }
 
+// Formats a minute count as "45m" / "3h 20m".
+function fmtMinutes(mins: number): string {
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+// Sum of estimated minutes across COMPLETED items. Plan items only carry an
+// estimated duration (the app doesn't track actual time), so totals are
+// estimates of study time based on finished tasks.
+function completedMinutes(items: Array<{ completed: boolean; estMinutes?: number }>): number {
+  return items.reduce(
+    (sum, it) => sum + (it.completed ? (it.estMinutes ?? 0) : 0),
+    0,
+  );
+}
+
+const TIME_SPENT_HINT =
+  "Estimated: sum of the expected durations of the tasks this user completed. Actual time is not tracked.";
+
 export default function AdminUserDetail() {
   const params = useParams();
   const userId = params.id ?? "";
@@ -289,6 +310,15 @@ export default function AdminUserDetail() {
   const today = plan?.today;
   const progress = progressQuery.data;
   const activity = activityQuery.data?.activity ?? [];
+
+  // Estimated total study time: completed items across all history days plus
+  // today's completed items.
+  const historyDays = historyQuery.data?.days ?? [];
+  const historyMinutes = historyDays.reduce(
+    (sum, d) => sum + completedMinutes(d.items),
+    0,
+  );
+  const totalMinutes = historyMinutes + completedMinutes(today?.items ?? []);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
@@ -505,12 +535,28 @@ export default function AdminUserDetail() {
 
       <Card data-testid="card-plan-history">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <History className="h-4 w-4" />
-            Plan History
-          </CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <History className="h-4 w-4" />
+              Plan History
+            </CardTitle>
+            {totalMinutes > 0 && (
+              <Badge
+                variant="outline"
+                className="gap-1 font-normal"
+                title={TIME_SPENT_HINT}
+                data-testid="badge-total-time-spent"
+              >
+                <Clock className="h-3 w-3" />
+                Total time spent: ~{fmtMinutes(totalMinutes)}
+              </Badge>
+            )}
+          </div>
           <CardDescription>
             Previous days of this user's study plan, most recent first
+            {totalMinutes > 0 && (
+              <> · time totals are estimates from completed tasks</>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -524,6 +570,7 @@ export default function AdminUserDetail() {
             <div className="space-y-2">
               {historyQuery.data.days.slice(0, historyLimit).map((day) => {
                 const open = openDay === day.date;
+                const dayMinutes = completedMinutes(day.items);
                 return (
                   <div
                     key={day.date}
@@ -555,6 +602,15 @@ export default function AdminUserDetail() {
                         </span>
                       )}
                       <span className="ml-auto flex items-center gap-2">
+                        {dayMinutes > 0 && (
+                          <span
+                            className="flex items-center gap-1 text-xs tabular-nums text-muted-foreground"
+                            title={TIME_SPENT_HINT}
+                            data-testid={`history-day-minutes-${day.date}`}
+                          >
+                            <Clock className="h-3 w-3" /> ~{fmtMinutes(dayMinutes)}
+                          </span>
+                        )}
                         {day.mandatoryCount > 0 ? (
                           day.dayComplete ? (
                             <Badge className="gap-1 border-emerald-500/30 bg-emerald-500/15 text-emerald-700">
@@ -639,6 +695,20 @@ export default function AdminUserDetail() {
                                       Not done
                                     </Badge>
                                   )}
+                                  {typeof item.estMinutes === "number" &&
+                                    item.estMinutes > 0 && (
+                                      <span
+                                        className="flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground"
+                                        title={
+                                          item.completed
+                                            ? TIME_SPENT_HINT
+                                            : "Planned duration of this task."
+                                        }
+                                      >
+                                        <Clock className="h-3 w-3" /> ~
+                                        {fmtMinutes(item.estMinutes)}
+                                      </span>
+                                    )}
                                 </div>
                               </div>
                             </div>
