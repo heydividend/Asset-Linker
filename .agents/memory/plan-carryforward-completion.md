@@ -30,3 +30,19 @@ make-up never double-count.
 
 **How to apply:** when adding logic that satisfies overdue items, compute the
 *overdue item's* key and call `markPlanItemComplete`; don't invent a new key.
+
+# Reconstructing per-day history for recurring keys
+
+Recurring keys (`quiz:daily`, `flashcards:due`) appear on MANY schedule days,
+so "key ever completed ≤ today" must never be used to decide whether a
+*specific past day* was done — one completion would mark every day complete.
+
+**Rule:** attribute each completion row to exactly one scheduled occurrence:
+exact-date match wins first; otherwise it clears the earliest still-unmatched
+occurrence ≤ the completion date (late carry-forward). Occurrence lists must
+span the FULL schedule (incl. today/future) so today's recurring completion
+isn't misread as a late catch-up of an old miss. Pure matcher + tests live in
+the api-server plan-history lib.
+
+**Why:** first history implementation used ever-completed and failed review —
+recurring items inflated dayComplete for all past days.

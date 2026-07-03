@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, lte, sql } from "drizzle-orm";
 import { clerkClient } from "@clerk/express";
 import {
   db,
@@ -14,12 +14,16 @@ import {
   conversations,
   gameSessions,
   dailyQuizSets,
+  planCompletions,
 } from "@workspace/db";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { isAdminEmail } from "../lib/admin";
 import { domainBand, toScaledScore } from "../lib/scaledScore";
 import { getOrCreateSchedule } from "../lib/planSchedule";
-import { buildTodayItems } from "./plan";
+import { buildSchedule, todayStr } from "../lib/scheduleBuilder";
+import { getDomainMasteryMap } from "../lib/domainMastery";
+import { buildTodayItems, decorateItems } from "./plan";
+import { matchCompletionsToOccurrences } from "../lib/planHistory";
 import { PASS as MOCK_PASS_PERCENT } from "./mockExams";
 
 const router: IRouter = Router();
@@ -244,6 +248,114 @@ router.get("/admin/users/:id/plan", async (req, res): Promise<void> => {
     today,
   });
 });
+
+// Cap on how many past days the history endpoint returns.
+const PLAN_HISTORY_MAX_DAYS = 60;
+
+// GET /admin/users/:id/plan/history — the user's daily plans for previous
+// days (most recent first), rebuilt with the same schedule builder the user's
+// own plan uses. Completions are attributed to exactly one scheduled
+// occurrence per key via matchCompletionsToOccurrences (exact-day match wins;
+// otherwise the earliest missed occurrence is cleared late), so recurring
+// items like quiz:daily never mark multiple days complete. completedOn after
+// the day's date means the item was finished late via carry-forward.
+router.get(
+  "/admin/users/:id/plan/history",
+  async (req, res): Promise<void> => {
+    const { id } = req.params;
+    // Verify the user exists before getOrCreateSchedule, which would
+    // otherwise create an orphan schedule row for an invalid id.
+    try {
+      await clerkClient.users.getUser(id);
+    } catch {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    const sched = await getOrCreateSchedule(id);
+    const dRows = await db.select().from(domains).orderBy(domains.id);
+    const masteryByDomainId = await getDomainMasteryMap(id);
+    const days = buildSchedule(
+      sched.startDate,
+      sched.examDate,
+      dRows,
+      masteryByDomainId,
+    );
+    const today = todayStr();
+
+    const rows = await db
+      .select({ date: planCompletions.date, itemKey: planCompletions.itemKey })
+      .from(planCompletions)
+      .where(
+        and(
+          eq(planCompletions.sessionId, id),
+          lte(planCompletions.date, today),
+        ),
+      );
+
+    // Recurring keys (e.g. quiz:daily) appear on many days, so each completion
+    // must be attributed to exactly ONE scheduled occurrence — see
+    // matchCompletionsToOccurrences. Occurrences span the FULL schedule
+    // (including today/future) so completing today's recurring item is
+    // consumed by today rather than misread as a late catch-up of an old day.
+    const occDatesByKey = new Map<string, string[]>();
+    for (const day of days) {
+      for (const it of decorateItems(day.items)) {
+        const arr = occDatesByKey.get(it.key) ?? [];
+        arr.push(day.date);
+        occDatesByKey.set(it.key, arr);
+      }
+    }
+    const compDatesByKey = new Map<string, string[]>();
+    for (const r of rows) {
+      const arr = compDatesByKey.get(r.itemKey) ?? [];
+      arr.push(r.date);
+      compDatesByKey.set(r.itemKey, arr);
+    }
+    // key -> (occurrence date -> completion date that satisfied it)
+    const matchedByKey = new Map<string, Map<string, string>>();
+    for (const [key, occDates] of occDatesByKey) {
+      matchedByKey.set(
+        key,
+        matchCompletionsToOccurrences(occDates, compDatesByKey.get(key) ?? []),
+      );
+    }
+
+    const pastDays = days
+      .filter((d) => d.date < today)
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, PLAN_HISTORY_MAX_DAYS)
+      .map((day) => {
+        const items = decorateItems(day.items).map((it) => {
+          const completedOn =
+            matchedByKey.get(it.key)?.get(day.date) ?? null;
+          return {
+            ...it,
+            completed: completedOn != null,
+            // Date the item was ticked off; after day.date means it was
+            // finished late via carry-forward.
+            completedOn,
+          };
+        });
+        const mandatory = items.filter((it) => it.mandatory);
+        const completedMandatory = mandatory.filter((it) => it.completed);
+        return {
+          date: day.date,
+          daysToExam: day.daysToExam,
+          phase: day.phase,
+          title: day.title,
+          items,
+          mandatoryCount: mandatory.length,
+          completedMandatoryCount: completedMandatory.length,
+          completedCount: items.filter((it) => it.completed).length,
+          dayComplete:
+            mandatory.length > 0 &&
+            completedMandatory.length === mandatory.length,
+        };
+      });
+
+    res.json({ today, days: pastDays });
+  },
+);
 
 // GET /admin/users/:id/progress — detailed study progress for one user.
 router.get("/admin/users/:id/progress", async (req, res): Promise<void> => {

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -46,6 +47,8 @@ import {
   GraduationCap,
   Users,
   Coffee,
+  ChevronDown,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 
@@ -88,6 +91,29 @@ type PlanToday = {
 type UserPlan = {
   schedule: { startDate: string; examDate: string; examName: string };
   today: PlanToday;
+};
+
+type HistoryItem = PlanItem & {
+  // Date the item was first ticked off (may be later than the day it was
+  // scheduled, if it was finished via carry-forward), or null if never done.
+  completedOn: string | null;
+};
+
+type PlanHistoryDay = {
+  date: string;
+  daysToExam?: number;
+  phase?: string;
+  title?: string;
+  items: HistoryItem[];
+  mandatoryCount: number;
+  completedMandatoryCount: number;
+  completedCount: number;
+  dayComplete: boolean;
+};
+
+type PlanHistory = {
+  today: string;
+  days: PlanHistoryDay[];
 };
 
 type DomainProgress = {
@@ -188,6 +214,10 @@ export default function AdminUserDetail() {
   const params = useParams();
   const userId = params.id ?? "";
   const me = useMe();
+  // Which history day is expanded (date string), if any.
+  const [openDay, setOpenDay] = useState<string | null>(null);
+  // How many history days are shown before "Show all" is pressed.
+  const [historyLimit, setHistoryLimit] = useState(7);
 
   const infoQuery = useQuery<AdminUserInfo>({
     queryKey: [`/api/admin/users/${userId}`],
@@ -211,6 +241,15 @@ export default function AdminUserDetail() {
     queryKey: [`/api/admin/users/${userId}/progress`],
     queryFn: () =>
       fetch(`/api/admin/users/${userId}/progress`, {
+        credentials: "include",
+      }).then((r) => r.json()),
+    enabled: me.data?.isAdmin === true && !!userId,
+  });
+
+  const historyQuery = useQuery<PlanHistory>({
+    queryKey: [`/api/admin/users/${userId}/plan/history`],
+    queryFn: () =>
+      fetch(`/api/admin/users/${userId}/plan/history`, {
         credentials: "include",
       }).then((r) => r.json()),
     enabled: me.data?.isAdmin === true && !!userId,
@@ -459,6 +498,173 @@ export default function AdminUserDetail() {
           ) : (
             <p className="py-6 text-center text-sm text-muted-foreground">
               No study tasks planned for today.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card data-testid="card-plan-history">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <History className="h-4 w-4" />
+            Plan History
+          </CardTitle>
+          <CardDescription>
+            Previous days of this user's study plan, most recent first
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {historyQuery.isLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : historyQuery.data?.days?.length ? (
+            <div className="space-y-2">
+              {historyQuery.data.days.slice(0, historyLimit).map((day) => {
+                const open = openDay === day.date;
+                return (
+                  <div
+                    key={day.date}
+                    className="rounded-lg border"
+                    data-testid={`history-day-${day.date}`}
+                  >
+                    <button
+                      type="button"
+                      className="flex w-full flex-wrap items-center gap-2 p-3 text-left"
+                      onClick={() => setOpenDay(open ? null : day.date)}
+                      data-testid={`history-day-toggle-${day.date}`}
+                    >
+                      {open ? (
+                        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="text-sm font-medium">
+                        {formatDate(day.date)}
+                      </span>
+                      {day.phase && (
+                        <Badge variant="outline" className="px-1.5 py-0 text-[10px] uppercase tracking-wider">
+                          {PHASE_LABELS[day.phase] ?? day.phase}
+                        </Badge>
+                      )}
+                      {day.title && (
+                        <span className="hidden truncate text-xs text-muted-foreground sm:inline">
+                          {day.title}
+                        </span>
+                      )}
+                      <span className="ml-auto flex items-center gap-2">
+                        {day.mandatoryCount > 0 ? (
+                          day.dayComplete ? (
+                            <Badge className="gap-1 border-emerald-500/30 bg-emerald-500/15 text-emerald-700">
+                              <CheckCircle2 className="h-3 w-3" /> Complete
+                            </Badge>
+                          ) : (
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                              {day.completedMandatoryCount} of {day.mandatoryCount}{" "}
+                              required done
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            Rest day
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                    {open && (
+                      <div className="space-y-2 border-t p-3">
+                        {day.items.map((item) => {
+                          const meta =
+                            PLAN_KIND_META[item.kind] ?? PLAN_KIND_META.review;
+                          const KindIcon = meta.icon;
+                          const doneLate =
+                            item.completed &&
+                            item.completedOn != null &&
+                            item.completedOn > day.date;
+                          const missed = !item.completed && item.kind !== "rest";
+                          return (
+                            <div
+                              key={item.key}
+                              className="flex min-w-0 items-start gap-2"
+                              data-testid={`history-item-${day.date}-${item.key}`}
+                            >
+                              <span
+                                className={`mt-0.5 shrink-0 ${
+                                  item.completed
+                                    ? "text-emerald-600"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {item.completed ? (
+                                  <CheckCircle2 className="h-4 w-4" />
+                                ) : (
+                                  <Circle className="h-4 w-4" />
+                                )}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Badge
+                                    variant="outline"
+                                    className={`gap-1 px-1.5 py-0 text-[10px] uppercase tracking-wider ${meta.tone}`}
+                                  >
+                                    <KindIcon className="h-3 w-3" />
+                                    {meta.label}
+                                  </Badge>
+                                  {item.mandatory && (
+                                    <Badge className="border-primary/30 bg-primary/10 px-1.5 py-0 text-[10px] uppercase tracking-wider text-primary">
+                                      Required
+                                    </Badge>
+                                  )}
+                                  <span
+                                    className={`text-sm ${
+                                      item.completed
+                                        ? "text-muted-foreground line-through"
+                                        : ""
+                                    }`}
+                                  >
+                                    {item.title}
+                                  </span>
+                                  {doneLate && (
+                                    <Badge
+                                      className="gap-1 border-amber-500/30 bg-amber-500/15 px-1.5 py-0 text-[10px] uppercase tracking-wider text-amber-700"
+                                      title={`Completed on ${formatDate(item.completedOn!)}`}
+                                    >
+                                      <History className="h-3 w-3" /> Done late
+                                    </Badge>
+                                  )}
+                                  {missed && (
+                                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px] uppercase tracking-wider">
+                                      Not done
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {historyQuery.data.days.length > historyLimit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setHistoryLimit(historyQuery.data!.days.length)}
+                  data-testid="button-show-all-history"
+                >
+                  Show all {historyQuery.data.days.length} days
+                </Button>
+              )}
+            </div>
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No previous days yet — the plan started{" "}
+              {plan ? formatDate(plan.schedule.startDate) : "recently"}.
             </p>
           )}
         </CardContent>
