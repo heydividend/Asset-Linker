@@ -7,7 +7,7 @@
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
-    "test": "ALLOW_TEST_AUTH=1 node --import tsx --test src/lib/scoring.test.ts src/lib/planHistory.test.ts src/lib/scaledScore.test.ts src/lib/itemAnalysis.test.ts src/lib/scheduleBuilder.test.ts src/routes/studyGroup.test.ts src/routes/mockExams.test.ts src/routes/planCarryForward.test.ts src/routes/quizzes.test.ts src/routes/reviewSheets.test.ts src/routes/planAutoCompletion.test.ts src/lib/reminderScheduler.test.ts src/lib/webPush.test.ts src/routes/reminders.test.ts",
+    "test": "ALLOW_TEST_AUTH=1 node --import tsx --test src/lib/scoring.test.ts src/lib/planHistory.test.ts src/lib/scaledScore.test.ts src/lib/itemAnalysis.test.ts src/lib/scheduleBuilder.test.ts src/routes/studyGroup.test.ts src/routes/mockExams.test.ts src/routes/planCarryForward.test.ts src/routes/quizzes.test.ts src/routes/quizzes.scoring.test.ts src/routes/reviewSheets.test.ts src/routes/planAutoCompletion.test.ts src/lib/reminderScheduler.test.ts src/lib/webPush.test.ts src/routes/reminders.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
