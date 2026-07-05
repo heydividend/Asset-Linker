@@ -1,0 +1,1609 @@
+[
+  {
+    "file": "2026-07-05_11-02-52.png",
+    "category": "quiz_question",
+    "question_type": "fill_in",
+    "domain": "sports medicine / athletic training (anatomy - leg alignment terminology)",
+    "stem": "Terminology \u2013 Leg Alignment \u2013 Fill in the Blanks\n\nFill in the blanks with the correct terminology.\n\n____: Patella is more superior than normal while standing.\n____: Patella is more inferior than normal while standing.\n____: Patella is situated more medial than normal, also known as knock-knees.\n____ Patella is situated more lateral than normal, also known as bow-legs.\n____: Knees are hyperextended when standing",
+    "options": [],
+    "correct_answer": null,
+    "notes": "Blank/unanswered state of the fill-in exercise. 'MODULE PROGRESS 0% Complete' shown. Has a 'Check' button. Five text-entry blanks. Correct answers are revealed in the graded companion screenshot 2026-07-05_11-03-44.png (Patella alta, Patella baja, Genu valgum, Genu varum, Genu recurvatum)."
+  },
+  {
+    "file": "2026-07-05_11-03-44.png",
+    "category": "quiz_question",
+    "question_type": "fill_in",
+    "domain": "sports medicine / athletic training (anatomy - leg alignment terminology)",
+    "stem": "Terminology \u2013 Leg Alignment \u2013 Fill in the Blanks\n\nFill in the blanks with the correct terminology.\n\n____: Patella is more superior than normal while standing.\n____: Patella is more inferior than normal while standing.\n____: Patella is situated more medial than normal, also known as knock-knees.\n____ Patella is situated more lateral than normal, also known as bow-legs.\n____: Knees are hyperextended when standing",
+    "options": [
+      "Patella alta (Patella is more superior than normal while standing)",
+      "Patella baja (Patella is more inferior than normal while standing)",
+      "Genu valgum (Patella is situated more medial than normal, also known as knock-knees)",
+      "Genu varum (Patella is situated more lateral than normal, also known as bow-legs)",
+      "Genu recurvatum (Knees are hyperextended when standing)"
+    ],
+    "correct_answer": "Patella alta; Patella baja; Genu valgum; Genu varum; Genu recurvatum",
+    "notes": "Graded/answer-key state of the same exercise as 2026-07-05_11-02-52.png. The learner's submitted answers 'knee' are marked wrong (red X, strikethrough) for all 5 blanks; the correct answers are shown highlighted in green dashed boxes. Score 0/5, 'Retry' button shown. Correct answers extracted verbatim from the green highlights."
+  },
+  {
+    "file": "2026-07-05_11-07-00.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "sports medicine / athletic training (genitourinary conditions)",
+    "stem": "One of your female patients presents with dysuria, a sense of urgency to urinate, decreased urine volume, nocturia, low back pain, and pyuria. What do you suspect this patient has?",
+    "options": [
+      "Pyoperitonitis",
+      "Dermatitis",
+      "Prostatitis",
+      "Vaginitis",
+      "Cystitis"
+    ],
+    "correct_answer": null,
+    "notes": "No option selected/highlighted."
+  },
+  {
+    "file": "2026-07-05_11-07-13.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "sports medicine / athletic training (respiratory / abbreviations)",
+    "stem": "What diagnosis does EIA stands for?",
+    "options": [
+      "Exercise-induced arrhythmia",
+      "Exercise-induced asthma",
+      "Exercise-induced allergy",
+      "Exercise-induced aneurysm",
+      "Exercise-induced angina"
+    ],
+    "correct_answer": null,
+    "notes": "No option selected/highlighted. Stem grammar 'stands' is verbatim from image."
+  },
+  {
+    "file": "2026-07-05_11-07-24.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "sports medicine / athletic training (organizational / administration)",
+    "stem": "What is a type of organizational culture characterized by consensus, teamwork, and participatory decision making?",
+    "options": [
+      "Transformational",
+      "Personalistic",
+      "Formulistic",
+      "Organizational",
+      "Collegial"
+    ],
+    "correct_answer": null,
+    "notes": "No option selected/highlighted."
+  },
+  {
+    "file": "2026-07-05_11-07-36.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "sports medicine / athletic training (travel / general medical conditions)",
+    "stem": "When crossing multiple time zones, what can be done to help combat jet lag?",
+    "options": [
+      "Consume copious amounts of caffeine only when traveling east",
+      "Adjust all schedules to the local time once you arrive",
+      "Consume copious amounts of caffeine only when traveling west",
+      "Make no changes to your schedules"
+    ],
+    "correct_answer": null,
+    "notes": "No option selected/highlighted. Four options."
+  },
+  {
+    "file": "2026-07-05_11-07-47.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "sports medicine / athletic training (ophthalmology / general medical conditions)",
+    "stem": "What is Myopia?",
+    "options": [
+      "Blindness in one eye",
+      "Complete blindness",
+      "Farsightedness",
+      "Nearsightedness"
+    ],
+    "correct_answer": null,
+    "notes": "No option selected/highlighted. Four options."
+  },
+  {
+    "file": "2026-07-05_11-08-00.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "sports medicine / athletic training (facility design / administration)",
+    "stem": "What is not an error when planning the design of a sports medicine facility?",
+    "options": [
+      "Concentrating on function rather than style",
+      "The use of wood for the main flooring material",
+      "Having the adaptive access on the other side of the building",
+      "Non-ground fault interrupter receptacles places within the hydrotherapy area",
+      "Having only one entrance and exit"
+    ],
+    "correct_answer": null,
+    "notes": "Negatively-phrased stem ('what is not an error'). No option selected/highlighted. Option 4 phrasing 'receptacles places' is verbatim from image."
+  },
+  {
+    "file": "2026-07-05_11-08-22.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "sports medicine / athletic training (neurology / pathology)",
+    "stem": "Cerebral Palsy is diagnosed by skeletal muscle biopsy.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": "Practice exam question 7 of 49. Top of screenshot shows a question navigator grid (1-49) with questions 1-6 marked answered (green dots) and question 7 currently active; legend shows 'Review' (orange) and 'Answered' (green) markers, plus 'Review Question' and 'Practice Exam Summary' buttons. No answer selected."
+  },
+  {
+    "file": "2026-07-05_11-08-52.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_multi",
+    "domain": "sports medicine / athletic training (therapeutic modalities)",
+    "stem": "What are contraindications for iontophoresis?",
+    "options": [
+      "Analgesia",
+      "Inflammation",
+      "Ischemia",
+      "Medication Sensitivity",
+      "Open Lesions",
+      "Arterial Disease"
+    ],
+    "correct_answer": null,
+    "notes": "Option selectors are square checkboxes (select-all-that-apply / multi-select), not radio buttons. Six options. No option selected/highlighted."
+  },
+  {
+    "file": "2026-07-05_11-09-06.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "sports medicine / athletic training (CPR / anatomy - pulse assessment)",
+    "stem": "During CPR, it is most convenient and efficient to monitor the athlete's circulation by palpating the carotid artery. Where is the carotid pulse located?",
+    "options": [
+      "In the groove between the larynx and the sternocleidomastoid muscle",
+      "Between the mastoid process and pharynx",
+      "At the base of the neck superior to the manubrium",
+      "2 inches below the base of the earlobe on the side of the neck",
+      "Antecubital fossa of the elbow"
+    ],
+    "correct_answer": null,
+    "notes": "No option selected/highlighted. Five options."
+  },
+  {
+    "file": "2026-07-05_11-09-22.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "sports medicine / athletic training (therapeutic modalities - massage)",
+    "stem": "Which are contraindications to massage?\n\nI. Inflammation\nII. Pregnancy\nIII. Hemorrhage\nIV. Infection\nV. Phlebitis",
+    "options": [
+      "I, II, III, IV",
+      "I, III, IV, V",
+      "II, III, IV",
+      "II, III, IV, V",
+      "All of the above"
+    ],
+    "correct_answer": null,
+    "notes": "Roman-numeral combination-style question with a stem list (I-V) and single-select answer choices. No option selected/highlighted."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-09-33.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / sports medicine",
+    "stem": "To prevent the possibility of an acute compartment syndrome, the athletic trainer should advise his or her field hockey players to wear what piece of equipment?",
+    "options": [
+      "Thigh Pads",
+      "Mouthguards",
+      "Helmets",
+      "Gloves",
+      "Shin Guards"
+    ],
+    "correct_answer": null,
+    "notes": "Radio-button single-select style."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-09-44.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / therapeutic modalities & equipment",
+    "stem": "When fitting an athlete for crutches, what angle should the elbow be bent to?",
+    "options": [
+      "90 degrees",
+      "10 degrees",
+      "45 degrees",
+      "0 degrees",
+      "30 degrees"
+    ],
+    "correct_answer": null,
+    "notes": "Radio-button single-select style."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-10-02.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / protective equipment standards",
+    "stem": "Which organization certifies facemasks that are used in ice hockey helmets?",
+    "options": [
+      "CSA",
+      "HECC",
+      "NOCSAE",
+      "ASTM",
+      "NCAA"
+    ],
+    "correct_answer": null,
+    "notes": "Radio-button single-select style."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-10-16.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / general medical conditions",
+    "stem": "If a patient has purulent discharge in the eye, what do you believe their diagnosis is?",
+    "options": [
+      "Bacterial conjunctivitis",
+      "Corneal abrasion",
+      "Macular degeneration"
+    ],
+    "correct_answer": null,
+    "notes": "Only three options visible; list may be cut off at bottom of screenshot."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-10-26.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_multi",
+    "domain": "Athletic training / general medical conditions & first aid",
+    "stem": "An athlete comes to the athletic training facility with a tick embedded in his lower leg. What should the athletic trainer instruct the athlete to do? Select all that apply.",
+    "options": [
+      "Keep the area clean and free of other debris",
+      "Pull the tick off with tweezers",
+      "Cover the tick with mineral oil",
+      "Put fingernail polish remover onto its body",
+      "All of the above"
+    ],
+    "correct_answer": null,
+    "notes": "Explicitly 'Select all that apply' (multi-select)."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-11-07.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic training / psychology of injury",
+    "stem": "When a patient is injured and there is an abrupt withdrawal from training, this can lead to a condition known as sudden exercise abstinence syndrome.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": "True/False statement."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-11-18.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / general medical conditions & first aid",
+    "stem": "A patient comes to the athletic training facility with a tick embedded in his lower leg. What should the athletic trainer instruct the patient not to do?",
+    "options": [
+      "Keep the area clean and free of other debris",
+      "Pull the tick off with tweezers",
+      "Cover the tick with mineral oil",
+      "Put fingernail polish remover onto its body",
+      "All of the above"
+    ],
+    "correct_answer": null,
+    "notes": "Negatively-phrased ('not to do') counterpart to image 11-10-26; radio-button single-select style."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-11-31.png",
+    "category": "quiz_question",
+    "question_type": "scenario",
+    "domain": "Athletic training / organization & administration (legal/medical privacy)",
+    "stem": "During a pre-participation examination, an athlete reveals that they had surgery during the summer that may affect their sports participation status. The athletic trainer contacts the surgeon to learn the details of the surgery, but is denied access to the athlete's records. What federal legislation is responsible for protecting the athletes medical information?",
+    "options": [
+      "Americans with Disabilities Act",
+      "Family Educational Rights and Privacy Act",
+      "Health Insurance Portability and Accountability Act",
+      "Title IX, Education Amendments of 1972"
+    ],
+    "correct_answer": null,
+    "notes": "Scenario-based single-select; four options visible."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-11-58.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / emergency care & CPR/AED",
+    "stem": "What is an AED used for?",
+    "options": [
+      "To provide immobilization of the lumbar spine and pelvis after a spinal injury",
+      "To treat arrhythmias of the heart",
+      "To treat hypovolemic shock",
+      "To assess the athlete's level of consciousness after a head injury",
+      "To defibrillate the heart when an unconscious victim has no pulse"
+    ],
+    "correct_answer": null,
+    "notes": "Radio-button single-select style."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-12-10.png",
+    "category": "quiz_question",
+    "question_type": "scenario",
+    "domain": "Athletic training / organization & administration (employment law)",
+    "stem": "You are in the position to hire an assistant athletic trainer. You have a specific person in mind, but your athletic director implies he is not comfortable with this person's gender. Which level of the law mandates the hiring and firing of employees?",
+    "options": [
+      "State",
+      "Local",
+      "City",
+      "District",
+      "Federal"
+    ],
+    "correct_answer": null,
+    "notes": "Scenario-based single-select."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-13-17.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / protective equipment standards",
+    "stem": "Which organization certifies football helmets to make sure they are able to withstand repeated blows of high mass and low velocity?",
+    "options": [
+      "FDA",
+      "NSA",
+      "NATA",
+      "NFL",
+      "NOCSAE"
+    ],
+    "correct_answer": null,
+    "notes": "Radio-button single-select style."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-13-35.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_multi",
+    "domain": "Athletic training / documentation & administration",
+    "stem": "Which two pieces of documentation should be used to record this information?",
+    "options": [
+      "SOAP notes",
+      "Focus charting",
+      "Charting by exception",
+      "Computerized information systems",
+      "WOTS UP",
+      "HOPS",
+      "CPT",
+      "ICD-10",
+      "HCFA 1500",
+      "UB-92 (HCFA 1450) claim form",
+      "UCR fee",
+      "Mission statement",
+      "Needs assessment",
+      "Market analysis",
+      "Cost-benefit analysis",
+      "Computer resources needs assessment"
+    ],
+    "correct_answer": null,
+    "notes": "'Which two pieces' indicates multi-select (choose 2). Question references prior context ('this information') not shown in the screenshot. Back and Next navigation buttons present at bottom."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-13-47.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic training / Sports medicine (evidence-based practice)",
+    "stem": "Using a cookbook approach for clinical practice that ignores clinician experience or the circumstances of a specific patient is acceptable as long you utilize the same treatment on all patients of similar injuries.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-13-57.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Nutrition / Physiology (acid-base balance)",
+    "stem": "True or False: A very low-carb diet can cause extremely high blood pH levels.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-14-08.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / Sports medicine (protective equipment)",
+    "stem": "A flak jacket is a piece of equipment designed to protect the athlete after sustaining what type of injury?",
+    "options": [
+      "Scapular injury",
+      "Hip pointer injury",
+      "Abdominal injury",
+      "Rib injury",
+      "Clavicle injury"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-16-35.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic training / Sports medicine (concussion management)",
+    "stem": "A patient should be referred to a physician after a concussion when there is a loss of consciousness on the field, amnesia lasting longer than 15 minutes, deterioration of neurologic function, unequal, dilated, or unreactive pupils, irregularity in respirations, and/or vomiting.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-16-54.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / Sports medicine (hand/finger injuries)",
+    "stem": "Upon visual inspection, an athletic trainer observes an athlete's fifth digit in extension at the MCP and DIP joints and flexion at the PIP joint. Which injury has this athlete sustained?",
+    "options": [
+      "Boutonniere deformity",
+      "Carpal tunnel syndrome",
+      "Cubital tunnel syndrome",
+      "Dupuytren's contracture"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-17-14.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / Sports medicine (insurance & administration)",
+    "stem": "Which completed form is used in order for an athletic trainer to gain the quickest reimbursement from an insurance company?",
+    "options": [
+      "HCFA-1500 form",
+      "CPT 1-A form",
+      "UCR form",
+      "An incident report form",
+      "None of the above"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-18-44.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / Sports medicine (environmental / cold injuries)",
+    "stem": "Deep frostbite is considered a medical emergency. What is the proper course of treatment for a patient that has frostbite?",
+    "options": [
+      "Gradual rewarming of the body part with warm water.",
+      "Firm, sustained pressure of the hand on the affected body part.",
+      "Rapid rewarming of the affected body part with warm water.",
+      "Quick friction in order to increase local circulation",
+      "None of the above"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-34-01.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic training / Sports medicine (pharmacology / emergency care)",
+    "stem": "One of your patients has been stung by a bee and is showing signs of anaphylaxis. Which medication would be appropriate to administer to stop the reaction?",
+    "options": [
+      "Epinephrine",
+      "Heparin",
+      "An antitussive",
+      "A histamine-2 blocker",
+      "None of the above"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-34-26.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_multi",
+    "domain": "Athletic training / Sports medicine (medical conditions - appendicitis)",
+    "stem": "An 18-year-old baseball player has been diagnosed with acute appendicitis. Upon evaluation, what signs and symptoms might he be complaining of?",
+    "options": [
+      "Cyanosis",
+      "Dyspnea",
+      "Deviated trachea",
+      "Absent bowel sounds",
+      "Referred pain\u2014right scapula/shoulder, substernal area",
+      "Jaundice",
+      "Diarrhea",
+      "Low-grade fever (99\u00b0F to 100\u00b0F)",
+      "Abdominal rigidity/cramping",
+      "Rebound pain",
+      "Kehr's sign",
+      "Nausea/vomiting",
+      "Constipation",
+      "Hematuria",
+      "Gastrointestinal bleeding",
+      "Tachypnea",
+      "Coffee-ground emesis",
+      "Increased white blood cell count",
+      "Metabolic acidosis",
+      "Respiratory alkalosis",
+      "Anorexia"
+    ],
+    "correct_answer": null,
+    "notes": "Checkbox (multi-select) question with 21 options; list continues below with Back/Next nav buttons partially visible. A 'Schools' UI tab overlaps the top of the stem."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-34-45.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Nutrition (vitamin toxicity)",
+    "stem": "A copious dose of the following vitamin is potentially very dangerous?",
+    "options": [
+      "Vitamin A",
+      "Vitamin B6",
+      "Vitamin C",
+      "Vitamin B12"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-45-47.png",
+    "category": "quiz_question",
+    "question_type": "scenario",
+    "domain": "Athletic training / Sports medicine (acute fracture management)",
+    "stem": "A 15-year-old lacrosse player gets checked during a game and receives a hard blow to his forearm. You run onto the field, and when you begin your secondary survey, you notice he is in severe pain and is grabbing at his arm. You see that there is a gross deformity of the proximal/dorsal aspect of the forearm. He complains he cannot rotate his forearm.\n\nThe athlete is in obvious discomfort. After your initial assessment, what do you do next?",
+    "options": [
+      "Splint the upper arm and forearm to support and protect the extremity",
+      "Give the athlete a sling to wear",
+      "Strap the athlete's arm to his side",
+      "Give the athlete Naprosyn for pain",
+      "Give the athlete Percocet for pain"
+    ],
+    "correct_answer": null,
+    "notes": "Single-select scenario question."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-47-32.png",
+    "category": "quiz_question",
+    "question_type": "scenario",
+    "domain": "Athletic training / Sports medicine (knee special tests / ACL)",
+    "stem": "You are covering a women's basketball game at your school, when you see one of your athletes go up for a rebound and land awkwardly on her right leg. She falls to the court in obvious pain so you run onto the court to tend to the athlete.\n\nYou do your preliminary evaluation and escort her to the athletic training facility, which is next to the basketball court. You suspect she has torn her ACL. Which of the following special tests is used to test the integrity of the ACL?",
+    "options": [
+      "McMurray's test",
+      "Apley's test",
+      "Lachman's test",
+      "Varus stress test",
+      "Posterior drawer test"
+    ],
+    "correct_answer": null,
+    "notes": "Single-select scenario question."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-48-20.png",
+    "category": "quiz_question",
+    "question_type": "scenario",
+    "domain": "Athletic Training / Sports Medicine (general medical conditions / wound care)",
+    "stem": "One of your softball players is a Type 1 diabetic. You are preparing for an all-day softball tournament, and your athlete reports to you that her blood glucose level is 90 mg/dL.\n\nThe athlete notices a blister is forming on the back of her right heel. What do you do next?",
+    "options": [
+      "Inspect the area and make sure it is properly cared for to avoid any complications",
+      "Wash it with an alcohol-based solution to dry it out",
+      "Have the athlete change shoes and wear white socks",
+      "Pad the area with a \u201cdoughnut\u201d",
+      "Tell the athlete to suck it up and put an adhesive bandage on it"
+    ],
+    "correct_answer": null,
+    "notes": "Multiple-choice single-select. Fifth option partially cut off at bottom of screenshot but fully legible. No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-48-54.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine (medical billing/coding terminology)",
+    "stem": "The codes that were established by the AMA for health care providers to receive third-party reimbursement are CPT codes. What does CPT stand for?",
+    "options": [
+      "Current Procedural Treatments",
+      "Current Provider Terminology",
+      "Consensus Procedural Treatments",
+      "Current Provider Treatments",
+      "Current Procedural Terminology"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-49-37.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine (exercise physiology / muscle mechanics)",
+    "stem": "What type of muscular contraction by the quadriceps help decelerate the body during running descending hills?",
+    "options": [
+      "Positive",
+      "Concentric",
+      "Isokinetic",
+      "Isometric",
+      "Eccentric"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-49-55.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine (emergency care / spine & head injury management)",
+    "stem": "Under which conditions should an athletic helmet be removed after an injury?",
+    "options": [
+      "If the athlete requests it be removed",
+      "If, after a reasonable period of time, the facemask cannot be removed to gain access to the airway",
+      "The chief EMT requests that it be removed",
+      "If the helmet causes immobilization of the head or jaw",
+      "The helmet should never be removed"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-55-54.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic Training / Sports Medicine (psychology of injury / burnout)",
+    "stem": "Emotional instability, depression, a reduced sense of accomplishment, and a lack of interest in activity or sport are all potential signs of a patient suffering from burnout.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-56-11.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine (facility administration / financing)",
+    "stem": "Which methods for funding public sector sports medicine facilities utilizes an institution\u2019s assets in cash and investments that are not normally used for operational purposes?",
+    "options": [
+      "Capital campaign",
+      "Tax-exempt bonds",
+      "An endowment",
+      "Commercial loans",
+      "Unrestricted loans"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-57-45.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_multi",
+    "domain": "Athletic Training / Sports Medicine (diagnostic testing / cardiovascular evaluation)",
+    "stem": "Which four tests will you recommend along with your evaluation?",
+    "options": [
+      "Echocardiography",
+      "Electrocardiogram",
+      "Ultrasonography",
+      "Nuclear scanning",
+      "Cardiac catheterization",
+      "CT scans",
+      "MRI",
+      "Cardiac stress testing",
+      "Venography",
+      "Arterial Doppler"
+    ],
+    "correct_answer": null,
+    "notes": "Multi-select (checkbox squares, 'four tests'). Back and Next navigation buttons visible. There may be an additional option cut off below Arterial Doppler at the very bottom of the screenshot. No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-58-45.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine (neurology / motor control)",
+    "stem": "Balance and coordination are critical for athletic performance.\n\nWhat is the feedback from the muscles, as to what they are doing during a particular activity, known as?\n\nWhat is the area of the brain that assists in controlling movement?",
+    "options": [
+      "Proprioception, brain stem",
+      "Muscle perception, medulla",
+      "Kinesthesia, cortex",
+      "Proprioception, cerebellum",
+      "Kinesthesia, cerebrum"
+    ],
+    "correct_answer": null,
+    "notes": "Two-part question answered by a single paired-term choice. No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_11-59-08.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine (acute injury treatment / therapeutic modalities)",
+    "stem": "What is an appropriate treatment for an acute quadriceps contusion?",
+    "options": [
+      "Light massage",
+      "Pulsed ultrasound",
+      "Ice massage followed by gentle stretch",
+      "Ice pack with compression wrap with the knee in flexion",
+      "Heat pack and massage"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-00-27.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_multi",
+    "domain": "Athletic Training / Sports Medicine (rehabilitation / assistive device use - cane)",
+    "stem": "Which instructions or techniques are correct for the use of a cane?",
+    "options": [
+      "Cane Height is adjusted so elbow is flexed 20-30 degrees",
+      "Cane height is adjusted to the ASIS",
+      "Cane is held in the contralateral hand",
+      "Cane is held in ipsilateral hand",
+      "Cane moves forward with the involved extremity",
+      "Cane moves forward with the uninvolved extremity"
+    ],
+    "correct_answer": null,
+    "notes": "Multi-select (checkbox squares; 'Which instructions... are correct' implies multiple). No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-00-52.png",
+    "category": "quiz_question",
+    "question_type": "scenario",
+    "domain": "Athletic Training / Sports Medicine (post-operative rehabilitation / knee)",
+    "stem": "An athlete is 5 days post-op from a partial meniscectomy. What exercise is not appropriate to perform at this time?",
+    "options": [
+      "Achilles stretching",
+      "Four quadrant straight leg raises",
+      "Stationary bicycling with minimal/no resistance",
+      "Eccentric quadriceps strengthening",
+      "Hip flexor strengthening"
+    ],
+    "correct_answer": null,
+    "notes": "Single-select, negative-worded ('not appropriate'). No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-02-03.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine (pharmacology / OTC medication dosing)",
+    "stem": "What is the normal dosage for one tablet of Aspirin?",
+    "options": [
+      "200 mg",
+      "400 mg",
+      "500 mg",
+      "375 mg",
+      "325 mg"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-02-27.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic Training / Physiology (endocrine)",
+    "stem": "The basal metabolic rate is increased in individuals with hyperthyroidism.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": "No category label visible in this crop. No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-05-13.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Therapeutic Modalities",
+    "stem": "Which modality should be utilized if the desired therapeutic effect is decreased pain, edema and inflammation?",
+    "options": [
+      "Moist heat packs",
+      "Ultrasound",
+      "Diathermy",
+      "Fluidotherapy",
+      "Ice packs"
+    ],
+    "correct_answer": null,
+    "notes": "Fifth option 'Ice packs' partially cut off at bottom. No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-05-30.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic Training / Acute Injury (compartment syndrome)",
+    "stem": "Anterior compartment syndrome may be addressed without consequence up to 72 hours after the initial injury.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-09-29.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Emergency Care (Domain III)",
+    "stem": "Category: Domain III\nWhat is considered a medical emergency?",
+    "options": [
+      "Acute compartment syndrome",
+      "Navicular fracture",
+      "Bulimia",
+      "Mitral valve prolapse",
+      "Cellulitis"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-09-51.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Prevention & Health Promotion (Domain I - tobacco use)",
+    "stem": "Category: Domain I\nYou are aware of the general use of smokeless tobacco among your high school baseball players and decide to develop a seminar for the coaches and players to discourage it. What are common effects of chronic chewing tobacco use?\n\nI. Leukoplakia\nII. Mouth and throat cancer\nIII. Increased aggression\nIV. Bad breath\nV. Mood swings\nVI. Gynecomastia",
+    "options": [
+      "I, II, IV",
+      "III, V, VI",
+      "I, II, III",
+      "II, III, IV",
+      "II, III, IV, V"
+    ],
+    "correct_answer": null,
+    "notes": "Roman-numeral matching-style stem answered via combination options. Back/Next buttons visible at bottom. No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-10-11.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Prevention & Health Promotion (Domain I - heat illness)",
+    "stem": "Category: Domain I\nWhich type of athlete is most susceptible to heatstroke, therefore, must be carefully educated regarding the importance of adequate fluid intake during activity in hot, humid weather?",
+    "options": [
+      "Basketball Guard",
+      "Wrestler",
+      "Female gymnast",
+      "Swimmer",
+      "Defensive lineman in football"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-10-33.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Therapeutic Exercise & Rehab (Domain IV)",
+    "stem": "Category: Domain IV\nWhich is not an example of an isotonic device?",
+    "options": [
+      "Free Weights",
+      "A total gym",
+      "A squat rack",
+      "Wall pulleys",
+      "A wall"
+    ],
+    "correct_answer": null,
+    "notes": "Negatively-phrased ('not') question. No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-10-51.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Emergency Care (Domain III - impaled object)",
+    "stem": "Category: Domain III\nAn athlete is brought into the athletic training facility with a 2.5-inch nail embedded in his foot. What is not an appropriate treatment for this injury?",
+    "options": [
+      "Immediately remove the nail",
+      "Keep the athlete calm",
+      "Pack the nail and foot as they are in a large dressing to help control the bleeding and stabilize the object",
+      "Transport the athlete to the hospital with the nail still embedded in the foot",
+      "Verify that the athlete's tetanus shot is current"
+    ],
+    "correct_answer": null,
+    "notes": "Negatively-phrased ('not appropriate') question. No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-11-12.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic Training / Physiology (endocrine, Domain II)",
+    "stem": "Category: Domain II\nThe basal metabolic rate is increased in individuals with hyperthyroidism.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": "Same question as 12-02-27 but with 'Category: Domain II' header visible. No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-11-39.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Clinical Evaluation & Diagnosis (Domain II)",
+    "stem": "Category: Domain II\nWhat parameter is less essential to check while evaluating the neurovascular status of an injured limb?",
+    "options": [
+      "Sensation",
+      "The pulse distal to the injury",
+      "Motor functions",
+      "Joint range of motion",
+      "Atrophic changes"
+    ],
+    "correct_answer": null,
+    "notes": "No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-14-04.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Therapeutic Modalities (Domain IV - TENS/electrotherapy)",
+    "stem": "Category: Domain IV\nConventional TENS use what frequency in the pulses per second range with what phase duration in \u00b5seconds?",
+    "options": [
+      "50 to 100; 250",
+      "50 to 100; 2 to 50",
+      "2 to 3; >150",
+      ">100; 20 to 30",
+      "< 10; 50"
+    ],
+    "correct_answer": "50 to 100; 2 to 50",
+    "notes": "Second option shows a filled radio button indicating it is the selected answer."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-14-18.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Clinical Evaluation & Diagnosis (Domain III - facial injury)",
+    "stem": "Category: Domain III\nAn athlete collides with a teammate during an ice hockey game and sustains a blow to the jaw with a hockey stick. He is holding his lower face with his hands and is in intense pain. What are not appropriate measures when the athletic trainer is evaluating the athlete to determine he has a fractured jaw?",
+    "options": [
+      "Have the athlete bite and observe for a malocclusion",
+      "Palpate the jaw for a hematoma",
+      "Ask the athlete to open and close his mouth noting asymmetry with movement",
+      "Palpate for jaw deformity when it is at rest, open, and closed",
+      "See if the athlete can retract his jaw and observe for difficulty with movement"
+    ],
+    "correct_answer": null,
+    "notes": "Negatively-phrased ('not appropriate') question. No selection indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-14-48.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_multi",
+    "domain": "Athletic Training / Sports Medicine (Domain V - Administration/Documentation)",
+    "stem": "Category: Domain V\nWhat documents are essential for the treatment of participants who are minors?",
+    "options": [
+      "Current medical progress notes from a licensed physician",
+      "Current physical examination results from a licensed physician",
+      "Permission/consent for medical treatment from a parent of guardian",
+      "Written assumption of risk signed by parent or guardian"
+    ],
+    "correct_answer": null,
+    "notes": "Options rendered as radio-style circles but stem implies multiple essential documents; only 4 options fully visible (list may continue below fold). Verbatim typo preserved: 'parent of guardian'."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-15-06.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine - Pharmacology (Domain II)",
+    "stem": "Category: Domain II\nWhat is not an antihistamine drug?",
+    "options": [
+      "Dimetapp",
+      "Ultram",
+      "Benadryl",
+      "Claritin",
+      "Allegra"
+    ],
+    "correct_answer": null,
+    "notes": null
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-15-20.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine - Anatomy/Physiology (Domain I)",
+    "stem": "Category: Domain I\nWhere do primitive stem cells mature into red or white blood cells and platelets?",
+    "options": [
+      "Liver",
+      "Spleen",
+      "Gallbladder",
+      "Bone marrow",
+      "Epididymis"
+    ],
+    "correct_answer": null,
+    "notes": null
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-15-53.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_multi",
+    "domain": "Athletic Training / Sports Medicine - Clinical Evaluation/Diagnosis (Domain II)",
+    "stem": "Category: Domain II\nA 40-year-old male presents with a history of a chronic, productive cough lasting for more than three months over the past two to three years. He appears short of breath and does not tolerate moderately long periods of exercise. He is a smoker.\n\nWhich two diagnoses do you believe he might be suffering from?",
+    "options": [
+      "Emphysema",
+      "Chronic bronchitis",
+      "Asthma",
+      "Rhinosinusitis",
+      "Viral pneumonia",
+      "Cystic fibrosis",
+      "Pneumothorax",
+      "Pleurisy",
+      "Viral upper respiratory tract infection"
+    ],
+    "correct_answer": null,
+    "notes": "Scenario/select-two question; checkbox-style options. Back/Next buttons partially visible at bottom."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-16-14.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic Training / Sports Medicine - Prevention/Rehab (Domain I)",
+    "stem": "Category: Domain I\nWhen performing an interval throwing program, the progression of throwing distances of 45 feet, 60 feet, 90 feet, 120 feet, 150 feet, and 180 feet are appropriate provided there is no increased pain or soreness the next day.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": null
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-16-33.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine - Rehabilitation (Domain IV)",
+    "stem": "Category: Domain IV\nWhen rehabilitating a patient who has undergone an ACL reconstruction, which muscle groups must be strengthened to support the graft?",
+    "options": [
+      "Triceps Surae",
+      "Hip Adductors",
+      "Quadriceps",
+      "Gluteals",
+      "Hamstrings"
+    ],
+    "correct_answer": null,
+    "notes": null
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-17-19.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine - Nutrition (Domain I)",
+    "stem": "Category: Domain I\nYour female athlete is showing signs of low bone mass. How much calcium should she consume per day?",
+    "options": [
+      "500 to 700 mg",
+      "750 mg",
+      "1000 mg",
+      "1200 mg",
+      "1500 mg"
+    ],
+    "correct_answer": null,
+    "notes": null
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-17-50.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine - Clinical Evaluation (Domain II)",
+    "stem": "Category: Domain II\nWhat organ is effected if the athlete presents with jaundice?",
+    "options": [
+      "Spleen",
+      "Pancreas",
+      "Gallbladder",
+      "Kidney",
+      "Liver"
+    ],
+    "correct_answer": null,
+    "notes": "Verbatim typo preserved: 'effected'."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-18-15.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine - Clinical Evaluation/Diagnosis (Domain II)",
+    "stem": "Category: Domain II\nIf a patient has purulent discharge in the eye, what do you believe their diagnosis is?",
+    "options": [
+      "Bacterial conjunctivitis",
+      "Corneal abrasion",
+      "Macular degeneration"
+    ],
+    "correct_answer": null,
+    "notes": "Only 3 options visible; list may continue below the fold (screenshot cut off)."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-18-47.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine - Acute Care (Domain III)",
+    "stem": "Category: Domain III\nWhat diagnosis does EIA stands for?",
+    "options": [
+      "Exercise-induced arrhythmia",
+      "Exercise-induced asthma",
+      "Exercise-induced allergy",
+      "Exercise-induced aneurysm",
+      "Exercise-induced angina"
+    ],
+    "correct_answer": null,
+    "notes": "Blue Back/Next buttons partially visible at top. Verbatim grammar preserved: 'does EIA stands for'."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-19-08.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine - Acute Care/Emergency (Domain III)",
+    "stem": "Category: Domain III\nAn athlete comes to the athletic trainer holding a tooth that has just been knocked out of his mouth. What are the proper steps for the athletic trainer to take to allow for a successful reimplantation?",
+    "options": [
+      "Try to put it back in place and use a topical ointment for pain",
+      "Put the tooth in a jar of water and tell the athlete to store it in a refrigerator until he can see a dentist",
+      "There is nothing the athletic trainer can do because the tooth is dead",
+      "Place the tooth in a cloth soaked with saline or water and get the athlete to a dentist within 30 minutes.",
+      "None of the above"
+    ],
+    "correct_answer": null,
+    "notes": null
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-19-34.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine - Protective Equipment (Domain IV)",
+    "stem": "Category: Domain IV\nA flak jacket is a piece of equipment designed to protect the athlete after sustaining what type of injury?",
+    "options": [
+      "Scapular injury",
+      "Hip pointer injury",
+      "Abdominal injury",
+      "Rib injury",
+      "Clavicle injury"
+    ],
+    "correct_answer": null,
+    "notes": "Blue Back/Next buttons partially visible at top."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-19-49.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Therapeutic Modalities (Domain IV)",
+    "stem": "Category: Domain IV\nWhat is one of the most serious adverse reactions during iontophoresis treatment?",
+    "options": [
+      "Galvanic Burns",
+      "Anaphylactic Shock",
+      "Dermatitis",
+      "Histamine Reaction",
+      "None of the above"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected/indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-20-08.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_multi",
+    "domain": "Athletic Training / Acute Care & Injury Assessment (Domain III)",
+    "stem": "Category: Domain III\nA 19-year-old basketball player was hit in the right eye during a rebound. He complains of pain, diplopia, and photophobia\n\nUpon inspection, the athletic trainer notes the following:\n\u2013 Subconjunctival redness\n\u2013 Orbital erythema\n\u2013 Unequal pupils\n\u2013 Swelling over the zygomatic arch and inferior orbit\n\u2013 Partial contact lens is seen in the eye\n\u2013 Excessive tearing\n\nBased on observation of the athlete's eye, what treatments should the athletic trainer complete at this time?",
+    "options": [
+      "Apply an ice compress to the athlete's eye",
+      "Evaluate visual acuity with Snellen eye chart",
+      "Perform a fluorescein dye stain",
+      "Place the athlete in a recumbent position",
+      "Place the athlete in a supine position with elevated legs",
+      "Refer the athlete to physician/emergency room"
+    ],
+    "correct_answer": null,
+    "notes": "Checkbox-style options (square) suggesting multi-select. Scenario-based. Back/Next navigation buttons present. One list item ('Orbital erythema') was partially obscured by a UI overlay but is legible."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-20-33.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic Training / Anatomy & Pathology (Domain I)",
+    "stem": "Category: Domain I\nFibroids of the uterus always develop into cancer.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected/indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-20-51.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Anatomy & Kinesiology (Domain I)",
+    "stem": "Category: Domain I\nThe flexor pollicis longus is responsible for which action(s)?",
+    "options": [
+      "Great toe flexion",
+      "Thumb flexion",
+      "Thumb flexion and adduction",
+      "Thumb flexion and abduction",
+      "None of the above"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected/indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-21-21.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Organization & Administration (Domain V)",
+    "stem": "Category: Domain V\nWhich of the following are performance evaluation standards intended to help foster practicality in the employee appraisal process?",
+    "options": [
+      "Accuracy Standards",
+      "Feasibility Standards",
+      "Utility Standards",
+      "Proprietary Standards",
+      "Quality Standards"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected/indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-25-34.png",
+    "category": "quiz_question",
+    "question_type": "ordering",
+    "domain": "Athletic Training / Organization & Administration (Domain V)",
+    "stem": "Category: Domain V\nYou have been given permission to hire a new staff athletic trainer. What order should these components follow when conducting staff selection?\n\nI. Retention\nII. Hiring\nIII. Promotion\nIV. Performance evaluation\nV. Demotion",
+    "options": [
+      "III, V, IV, II, I",
+      "II, III, I, IV, V",
+      "I, II, III, IV, V",
+      "IV, I, V, III, II",
+      "I, II, IV, V, III"
+    ],
+    "correct_answer": null,
+    "notes": "Ordering presented as multiple-choice sequences. No answer selected."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-25-47.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Rehabilitation (Domain IV)",
+    "stem": "Category: Domain IV\nWhen rehabilitating a cervical strain, what must the athletic trainer maintain the integrity of?",
+    "options": [
+      "Shoulder girdle",
+      "Lower back",
+      "Upper arm",
+      "Hand",
+      "Kyphosis of the thoracic spine"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected/indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-26-02.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Protective Equipment & Anatomy (Domain I)",
+    "stem": "Category: Domain I\nHeel cups come in two designs. Which one has an elevated heel that can compress downward so that the heel do not make contact with the interior aspect of the shoe?",
+    "options": [
+      "A rubberized padded cup",
+      "A rigid plastic cup",
+      "A jelly-filled cushion cup",
+      "An air-filled cushion cup",
+      "All of the above"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected/indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-26-14.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Pharmacology & Drug Testing (Domain V)",
+    "stem": "Category: Domain V\nA wrestler comes to the athletic training facility inquiring about a \u201cdrug that will make him lose weight quickly,\u201d mentioning a diuretic. Which drugs has been banned by the International Olympic Committee that are diuretics?",
+    "options": [
+      "Furosemide",
+      "Salbutamol",
+      "Caffeine (<12 mcg/mL)",
+      "None of the above"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected/indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-26-28.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Rehabilitation (Domain IV)",
+    "stem": "Category: Domain IV\nWhen is the best time to begin a rehabilitation program after an injury?",
+    "options": [
+      "Immediately",
+      "After the injured part is \"healed\"",
+      "After the inflammation is under control",
+      "Once the pain subsides",
+      "All of the above"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected/indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-26-46.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Protective Equipment & Standards (Domain V)",
+    "stem": "Category: Domain V\nWhich organization certifies facemasks that are used in ice hockey helmets?",
+    "options": [
+      "CSA",
+      "HECC",
+      "NOCSAE",
+      "ASTM",
+      "NCAA"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected/indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-27-01.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Acute Care & Emergency Management (Domain III)",
+    "stem": "Category: Domain III\nWhat is the prudent method of transporting an athlete with a suspected spinal injury?",
+    "options": [
+      "Do not move the athlete until a doctor is present",
+      "Use a stretcher",
+      "Fireman's carry",
+      "Use a spine board with medical assistance",
+      "Use a wheelchair"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected/indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-28-06.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training (Domain I) - injury/illness prevention, travel/jet lag",
+    "stem": "Category: Domain I\nWhat should the athletic trainer advise his or her athletes to do to minimize the negative effects of jet lag?",
+    "options": [
+      "Drink an adequate amount of fluids, especially water, to avoid dehydration",
+      "Keep watches set to their \u201chome\u201d time zone",
+      "Get up and go to bed 2 to 3 hours earlier for each time zone crossed",
+      "Wear warm clothing to avoid getting cold while on the plane",
+      "Get at least 8 hours of sleep at night the week before the flight"
+    ],
+    "correct_answer": null,
+    "notes": "No selection visible. Options list may be truncated at bottom of screenshot but 5 options shown."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-28-16.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic Training (Domain V) - organization/administration, human resources",
+    "stem": "Category: Domain V\nJob description, hiring practices, vacation policies, benefits, and release of medical records are all of human resources issues.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": "Statement appears grammatically awkward as shown (\u201care all of human resources issues\u201d), transcribed verbatim."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-28-26.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training (Domain II) - clinical evaluation/diagnosis, hand injuries",
+    "stem": "Category: Domain II\nUpon visual inspection, an athletic trainer observes an athlete\u2019s fifth digit in extension at the MCP and DIP joints and flexion at the PIP joint. Which injury has this athlete sustained?",
+    "options": [
+      "Boutonniere deformity",
+      "Carpal tunnel syndrome",
+      "Cubital tunnel syndrome",
+      "Dupuytren's contracture"
+    ],
+    "correct_answer": null,
+    "notes": "Four options visible; list may continue below the fold."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-28-35.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic Training (Domain IV) - treatment/rehabilitation, skin cancer",
+    "stem": "Category: Domain IV\nThe cure rate for skin cancer exceeds 95% with early detection and treatment.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-28-46.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training (Domain V) - healthcare administration, insurance (HMO)",
+    "stem": "Category: Domain V\nIf a patient, who is covered by a HMO insurance policy, needs to see a specialist, who must make the referral?",
+    "options": [
+      "Athletic trainer",
+      "Specialist",
+      "Primary care physician",
+      "Patient",
+      "None of the Above"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-28-59.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training (Domain IV) - therapeutic modalities, cryotherapy",
+    "stem": "Category: Domain IV\nWhat is not a contraindication for using cryotherapy?",
+    "options": [
+      "Raynaud\u2019s phenomenon",
+      "Inflammation",
+      "Vasculitis",
+      "Cold Urticaria"
+    ],
+    "correct_answer": null,
+    "notes": "Negatively-worded (\u201cnot a contraindication\u201d). Four options visible; list may continue below the fold."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-29-18.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training (Domain V) - healthcare administration, managed care terminology",
+    "stem": "Category: Domain V\nWhat is the term used for a primary care physician appointed by an insurance company to oversee the medical care given to a patient and assigns any specialty or ancillary services?",
+    "options": [
+      "The gatekeeper",
+      "The participating provider",
+      "The third-party administrator",
+      "The policyholder",
+      "None of the above"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-29-28.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training (Domain III) - immediate/emergency care, manual conveyance/transport",
+    "stem": "Category: Domain III\nHow many athletic trainers should be utilized to transport an athlete off the field by manual conveyance?",
+    "options": [
+      "6",
+      "4",
+      "1",
+      "3",
+      "2"
+    ],
+    "correct_answer": null,
+    "notes": "Numeric answer choices."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-29-37.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training (Domain III) - immediate/emergency care, primary survey of unconscious athlete",
+    "stem": "Category: Domain III\nWhen evaluating an unconscious athlete, what is the athletic trainers first step?",
+    "options": [
+      "Check for sources of bleeding",
+      "Take vital signs",
+      "Check for normal extremity movement",
+      "Take the athlete\u2019s pulse rate",
+      "Check that the athlete\u2019s airway is open and he or she is breathing normally"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-29-46.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training (Domain II) - clinical evaluation/diagnosis, abdominal anatomy/trauma",
+    "stem": "Category: Domain II\nAn athlete sustains a blunt force trauma injury to the upper right quadrant of their abdomen. What structure in this area is the most likely to be injured?",
+    "options": [
+      "Liver",
+      "Gallbladder",
+      "Spleen",
+      "Pancreas",
+      "Kidney"
+    ],
+    "correct_answer": null,
+    "notes": ""
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-29-57.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training (Domain II) - clinical evaluation/diagnosis, cold-related skin reactions",
+    "stem": "Category: Domain II\nOne of your patients begins to complain of intense itching under the cold pack that you applied to his shoulder five minutes ago. When you remove the cold pack, you notice that hives have developed on the area that has been in contact with the cold pack. What is the [...]ter, used to describe what patient is experiencing?",
+    "options": [
+      "Paroxysmal cold hemoglobinuria",
+      "Hypothermia",
+      "Cold urticaria",
+      "Raynaud\u2019s disease",
+      "Frostbite"
+    ],
+    "correct_answer": null,
+    "notes": "Stem partially obscured by an overlapping image-editor (Preview/markup) tool panel; a fragment of the stem (\u2018...ter, used to describe\u2019) is cut off. Full text more legibly captured in the paired screenshot 2026-07-05_12-34-29.png."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-34-29.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training (Domain II) - clinical evaluation/diagnosis, cold-related skin reactions",
+    "stem": "Category: Domain II\nOne of your patients begins to complain of intense itching under the cold pack that you applied to his shoulder five minutes ago. When you remove the cold pack, you notice that hives have developed on the area that has been in contact with the cold pack. What is the [...]ter, used to describe what patient is experiencing?",
+    "options": [
+      "Paroxysmal cold hemoglobinuria",
+      "Hypothermia",
+      "Cold urticaria",
+      "Raynaud\u2019s disease",
+      "Frostbite"
+    ],
+    "correct_answer": null,
+    "notes": "Same question as 2026-07-05_12-29-57.png. Right side of stem partly overlapped by a floating thumbnail (photo of people) but text remains readable. Stem still contains a small missing fragment (\u2018...ter\u2019) where original wording is cut off, likely \u2018What is the medical term\u2019."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-34-48.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine (Domain V - Organization and Administration)",
+    "stem": "Category: Domain V\nWhat type of supplies include such items as adhesive tape, gauze pads, and bandages?",
+    "options": [
+      "Permanent",
+      "Capital",
+      "Nonexpendable",
+      "Nonfixed",
+      "Expendable"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected or indicated. Radio-button single-select format."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-34-59.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine (Domain I - Anatomy/Physiology)",
+    "stem": "Category: Domain I\nWhat are sensory receptors located at the musculotendinous junction, which monitor active tension generated by the muscle during a contraction, called?",
+    "options": [
+      "Pacinian Corpuscles",
+      "Ruffini Receptors",
+      "Golgi tendon organs",
+      "Muscle spindles",
+      "Contractile sensory receptors"
+    ],
+    "correct_answer": null,
+    "notes": "No answer selected or indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-35-18.png",
+    "category": "quiz_question",
+    "question_type": "scenario",
+    "domain": "Athletic Training / Sports Medicine (Domain III - Injury Management / Acute Care)",
+    "stem": "Category: Domain III\nA male patient sustains a direct blow to the genital area. How can the athletic trainer assist him to immediately decrease the pain?",
+    "options": [
+      "Use an ice pack to the area with the patient in supine, knees in extension",
+      "Use direct pressure on the testes",
+      "Have the patient lie supine with his knees bent to his chest to decrease the strain on the scrotum and apply ice to the affected area",
+      "Have the patient lie on his side with his knees extended",
+      "Place a moist heat pack over the area"
+    ],
+    "correct_answer": null,
+    "notes": "Scenario-based single-select. No answer indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-35-30.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic Training / Sports Medicine (Domain V - Professional Practice / Evidence-Based Practice)",
+    "stem": "Category: Domain V\nEvidence-based practice is best defined as the use of the consensus of scientific evidence to indicate the best clinical practices for managing specific conditions.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": "True/False. No answer indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-35-40.png",
+    "category": "quiz_question",
+    "question_type": "multiple_choice_single",
+    "domain": "Athletic Training / Sports Medicine (Domain IV - Treatment / Rehabilitation)",
+    "stem": "Category: Domain IV\nWhat is not a factor in designing an appropriate treatment program?",
+    "options": [
+      "The stage of tissue healing",
+      "Pain with joint mobility",
+      "The severity of the injury",
+      "How soon the coach feels the athlete should return to play",
+      "A and B"
+    ],
+    "correct_answer": null,
+    "notes": "Negative-phrased (\"is not\") single-select. Includes an \"A and B\" combined option. No answer indicated."
+  },
+  {
+    "file": "extracted_png/2026-07-05_12-35-54.png",
+    "category": "quiz_question",
+    "question_type": "true_false",
+    "domain": "Athletic Training / Sports Medicine (Domain II - Pathology / Systemic Disease)",
+    "stem": "Category: Domain II\nGraves' disease, systemic lupus erythematosus, and rheumatoid arthritis are all autoimmune diseases.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": null,
+    "notes": "True/False. No answer indicated."
+  }
+]

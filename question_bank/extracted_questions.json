@@ -1,0 +1,2008 @@
+[
+  {
+    "id": "AT-EX-005",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "When crossing multiple time zones, what can be done to help combat jet lag?",
+    "options": [
+      "Consume copious amounts of caffeine only when traveling east",
+      "Adjust all schedules to the local time once you arrive",
+      "Consume copious amounts of caffeine only when traveling west",
+      "Make no changes to your schedules"
+    ],
+    "correct_answer": [
+      "Adjust all schedules to the local time once you arrive"
+    ],
+    "explanation": "The most effective way to reset the circadian rhythm and combat jet lag is to immediately adopt the destination's local time for sleeping, eating, and activity. Caffeine loading is not a recommended primary strategy.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-07-36.png"
+  },
+  {
+    "id": "AT-EX-012",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "To prevent the possibility of an acute compartment syndrome, the athletic trainer should advise his or her field hockey players to wear what piece of equipment?",
+    "options": [
+      "Thigh Pads",
+      "Mouthguards",
+      "Helmets",
+      "Gloves",
+      "Shin Guards"
+    ],
+    "correct_answer": [
+      "Shin Guards"
+    ],
+    "explanation": "Acute compartment syndrome in field hockey typically results from a direct blow to the lower leg (e.g., from a ball or stick). Shin guards protect the anterior lower leg, reducing the risk of the contusion and swelling that can precipitate an anterior compartment syndrome.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-09-33.png"
+  },
+  {
+    "id": "AT-EX-022",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "Which organization certifies football helmets to make sure they are able to withstand repeated blows of high mass and low velocity?",
+    "options": [
+      "FDA",
+      "NSA",
+      "NATA",
+      "NFL",
+      "NOCSAE"
+    ],
+    "correct_answer": [
+      "NOCSAE"
+    ],
+    "explanation": "The National Operating Committee on Standards for Athletic Equipment (NOCSAE) establishes and certifies the safety standards for football helmets and other protective sports equipment.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-13-17.png"
+  },
+  {
+    "id": "AT-EX-025",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "true_false",
+    "stem": "True or False: A very low-carb diet can cause extremely high blood pH levels.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "False"
+    ],
+    "explanation": "A very low-carbohydrate (ketogenic) diet increases ketone bodies (acids), tending to LOWER blood pH toward acidosis, not raise it. High pH (alkalosis) is not a consequence of a low-carb diet.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-13-57.png"
+  },
+  {
+    "id": "AT-EX-026",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "A flak jacket is a piece of equipment designed to protect the athlete after sustaining what type of injury?",
+    "options": [
+      "Scapular injury",
+      "Hip pointer injury",
+      "Abdominal injury",
+      "Rib injury",
+      "Clavicle injury"
+    ],
+    "correct_answer": [
+      "Rib injury"
+    ],
+    "explanation": "A flak jacket is a padded protective vest worn over the thorax to shield the ribs and allow an athlete to return to play after a rib contusion or fracture.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-14-08.png"
+  },
+  {
+    "id": "AT-EX-033",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "A copious dose of the following vitamin is potentially very dangerous?",
+    "options": [
+      "Vitamin A",
+      "Vitamin B6",
+      "Vitamin C",
+      "Vitamin B12"
+    ],
+    "correct_answer": [
+      "Vitamin A"
+    ],
+    "explanation": "Vitamin A is fat-soluble and accumulates in the body, so excessive intake can cause serious toxicity (hypervitaminosis A). The water-soluble vitamins listed (B6, C, B12) are largely excreted, making acute toxicity far less likely.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-34-45.png"
+  },
+  {
+    "id": "AT-EX-052",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "You are aware of the general use of smokeless tobacco among your high school baseball players and decide to develop a seminar for the coaches and players to discourage it. What are common effects of chronic chewing tobacco use?\n\nI. Leukoplakia\nII. Mouth and throat cancer\nIII. Increased aggression\nIV. Bad breath\nV. Mood swings\nVI. Gynecomastia",
+    "options": [
+      "I, II, IV",
+      "III, V, VI",
+      "I, II, III",
+      "II, III, IV",
+      "II, III, IV, V"
+    ],
+    "correct_answer": [
+      "I, II, IV"
+    ],
+    "explanation": "Chronic smokeless (chewing) tobacco use commonly causes leukoplakia (white oral lesions), oral/throat cancer, and bad breath. Increased aggression, mood swings, and gynecomastia are not characteristic effects, so the combination I, II, IV is correct.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-09-51.png"
+  },
+  {
+    "id": "AT-EX-053",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "Which type of athlete is most susceptible to heatstroke, therefore, must be carefully educated regarding the importance of adequate fluid intake during activity in hot, humid weather?",
+    "options": [
+      "Basketball Guard",
+      "Wrestler",
+      "Female gymnast",
+      "Swimmer",
+      "Defensive lineman in football"
+    ],
+    "correct_answer": [
+      "Defensive lineman in football"
+    ],
+    "explanation": "A defensive lineman has the largest body mass and wears heavy, insulating equipment, reducing heat dissipation and greatly increasing susceptibility to exertional heatstroke in hot, humid conditions.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-10-11.png"
+  },
+  {
+    "id": "AT-EX-061",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "Where do primitive stem cells mature into red or white blood cells and platelets?",
+    "options": [
+      "Liver",
+      "Spleen",
+      "Gallbladder",
+      "Bone marrow",
+      "Epididymis"
+    ],
+    "correct_answer": [
+      "Bone marrow"
+    ],
+    "explanation": "Hematopoiesis—the maturation of primitive stem cells into red blood cells, white blood cells, and platelets—occurs in the red bone marrow in adults.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-15-20.png"
+  },
+  {
+    "id": "AT-EX-065",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "Your female athlete is showing signs of low bone mass. How much calcium should she consume per day?",
+    "options": [
+      "500 to 700 mg",
+      "750 mg",
+      "1000 mg",
+      "1200 mg",
+      "1500 mg"
+    ],
+    "correct_answer": [
+      "1500 mg"
+    ],
+    "explanation": "For a female athlete showing signs of low bone mass (as with amenorrhea/female athlete triad), the recommended calcium intake is elevated to approximately 1500 mg per day, above the standard 1000-1200 mg baseline, to help protect bone density.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-17-19.png"
+  },
+  {
+    "id": "AT-EX-071",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "true_false",
+    "stem": "Fibroids of the uterus always develop into cancer.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "False"
+    ],
+    "explanation": "Uterine fibroids (leiomyomas) are benign smooth-muscle tumors; they very rarely, if ever, transform into cancer. The absolute word \"always\" makes the statement false.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-20-33.png"
+  },
+  {
+    "id": "AT-EX-072",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "The flexor pollicis longus is responsible for which action(s)?",
+    "options": [
+      "Great toe flexion",
+      "Thumb flexion",
+      "Thumb flexion and adduction",
+      "Thumb flexion and abduction",
+      "None of the above"
+    ],
+    "correct_answer": [
+      "Thumb flexion"
+    ],
+    "explanation": "The flexor pollicis longus flexes the thumb, specifically the interphalangeal and metacarpophalangeal joints of the pollex (thumb). It is not primarily an adductor or abductor of the thumb.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-20-51.png"
+  },
+  {
+    "id": "AT-EX-076",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "Heel cups come in two designs. Which one has an elevated heel that can compress downward so that the heel do not make contact with the interior aspect of the shoe?",
+    "options": [
+      "A rubberized padded cup",
+      "A rigid plastic cup",
+      "A jelly-filled cushion cup",
+      "An air-filled cushion cup",
+      "All of the above"
+    ],
+    "correct_answer": [
+      "A rigid plastic cup"
+    ],
+    "explanation": "The rigid (hard plastic) heel cup design elevates and cups the heel so that it compresses downward and does not contact the interior of the shoe, off-loading the painful area; the other design is a soft cushioned cup that simply pads. The rigid plastic cup matches the description.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-26-02.png"
+  },
+  {
+    "id": "AT-EX-080",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "What should the athletic trainer advise his or her athletes to do to minimize the negative effects of jet lag?",
+    "options": [
+      "Drink an adequate amount of fluids, especially water, to avoid dehydration",
+      "Keep watches set to their “home” time zone",
+      "Get up and go to bed 2 to 3 hours earlier for each time zone crossed",
+      "Wear warm clothing to avoid getting cold while on the plane",
+      "Get at least 8 hours of sleep at night the week before the flight"
+    ],
+    "correct_answer": [
+      "Drink an adequate amount of fluids, especially water, to avoid dehydration"
+    ],
+    "explanation": "Staying well hydrated by drinking adequate fluids (especially water) counteracts the dehydrating effects of dry cabin air and is a proven measure to reduce jet lag symptoms. Watches should be reset to local (destination) time, and shifting sleep by 2-3 hours per time zone is excessive.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-28-06.png"
+  },
+  {
+    "id": "AT-EX-083",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "true_false",
+    "stem": "The cure rate for skin cancer exceeds 95% with early detection and treatment.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "True"
+    ],
+    "explanation": "With early detection and treatment, skin cancers (particularly basal and squamous cell carcinomas) have very high cure rates exceeding 95%. The stray 'V' in the stem is an OCR artifact.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-28-35.png"
+  },
+  {
+    "id": "AT-EX-092",
+    "domain": "I",
+    "domain_name": "Injury/Illness Prevention & Wellness Protection",
+    "type": "multiple_choice_single",
+    "stem": "What are sensory receptors located at the musculotendinous junction, which monitor active tension generated by the muscle during a contraction, called?",
+    "options": [
+      "Pacinian Corpuscles",
+      "Ruffini Receptors",
+      "Golgi tendon organs",
+      "Muscle spindles",
+      "Contractile sensory receptors"
+    ],
+    "correct_answer": [
+      "Golgi tendon organs"
+    ],
+    "explanation": "Golgi tendon organs are located at the musculotendinous junction and detect changes in muscle tension during contraction, triggering autogenic inhibition to protect against excessive force. Muscle spindles, by contrast, monitor changes in muscle length.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-34-59.png"
+  },
+  {
+    "id": "AT-EX-001",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "fill_in",
+    "stem": "Terminology – Leg Alignment – Fill in the Blanks\n\nFill in the blanks with the correct terminology.\n\n____: Patella is more superior than normal while standing.\n____: Patella is more inferior than normal while standing.\n____: Patella is situated more medial than normal, also known as knock-knees.\n____ Patella is situated more lateral than normal, also known as bow-legs.\n____: Knees are hyperextended when standing",
+    "options": [
+      "Patella alta (Patella is more superior than normal while standing)",
+      "Patella baja (Patella is more inferior than normal while standing)",
+      "Genu valgum (Patella is situated more medial than normal, also known as knock-knees)",
+      "Genu varum (Patella is situated more lateral than normal, also known as bow-legs)",
+      "Genu recurvatum (Knees are hyperextended when standing)"
+    ],
+    "correct_answer": [
+      "Patella alta",
+      "Patella baja",
+      "Genu valgum",
+      "Genu varum",
+      "Genu recurvatum"
+    ],
+    "explanation": "The correct answers, confirmed by the green-highlighted answer key in the image: a superiorly positioned patella is patella alta; an inferiorly positioned patella is patella baja; medial deviation (knock-knees) is genu valgum; lateral deviation (bow-legs) is genu varum; and hyperextended knees are genu recurvatum. These are standard lower-extremity postural/alignment terms.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-03-44.png"
+  },
+  {
+    "id": "AT-EX-002",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "One of your female patients presents with dysuria, a sense of urgency to urinate, decreased urine volume, nocturia, low back pain, and pyuria. What do you suspect this patient has?",
+    "options": [
+      "Pyoperitonitis",
+      "Dermatitis",
+      "Prostatitis",
+      "Vaginitis",
+      "Cystitis"
+    ],
+    "correct_answer": [
+      "Cystitis"
+    ],
+    "explanation": "Dysuria, urinary urgency and frequency, nocturia, suprapubic/low back pain, and pyuria are the classic presentation of cystitis (bladder infection), a common lower urinary tract infection in women. Prostatitis is impossible in a female, and the other options do not fit these urinary symptoms.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-07-00.png"
+  },
+  {
+    "id": "AT-EX-006",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "What is Myopia?",
+    "options": [
+      "Blindness in one eye",
+      "Complete blindness",
+      "Farsightedness",
+      "Nearsightedness"
+    ],
+    "correct_answer": [
+      "Nearsightedness"
+    ],
+    "explanation": "Myopia is nearsightedness, in which the eye focuses light in front of the retina so distant objects appear blurred while near objects are seen clearly. (Farsightedness is hyperopia.)",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-07-47.png"
+  },
+  {
+    "id": "AT-EX-008",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "true_false",
+    "stem": "Cerebral Palsy is diagnosed by skeletal muscle biopsy.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "False"
+    ],
+    "explanation": "Cerebral palsy is a clinical diagnosis based on history, developmental delay, and neurologic examination (often supported by neuroimaging such as MRI), not by skeletal muscle biopsy. Muscle biopsy is used for primary muscle diseases like muscular dystrophy.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-08-22.png"
+  },
+  {
+    "id": "AT-EX-015",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "If a patient has purulent discharge in the eye, what do you believe their diagnosis is?",
+    "options": [
+      "Bacterial conjunctivitis",
+      "Corneal abrasion",
+      "Macular degeneration"
+    ],
+    "correct_answer": [
+      "Bacterial conjunctivitis"
+    ],
+    "explanation": "Thick, purulent (pus-like) discharge is the hallmark of bacterial conjunctivitis, whereas viral/allergic conjunctivitis produces watery discharge. Corneal abrasion and macular degeneration do not cause purulent discharge.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-18-15.png"
+  },
+  {
+    "id": "AT-EX-028",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "Upon visual inspection, an athletic trainer observes an athlete's fifth digit in extension at the MCP and DIP joints and flexion at the PIP joint. Which injury has this athlete sustained?",
+    "options": [
+      "Boutonniere deformity",
+      "Carpal tunnel syndrome",
+      "Cubital tunnel syndrome",
+      "Dupuytren's contracture"
+    ],
+    "correct_answer": [
+      "Boutonniere deformity"
+    ],
+    "explanation": "A boutonniere deformity presents as PIP joint flexion with DIP (and MCP) hyperextension, resulting from disruption of the central slip of the extensor tendon.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-16-54.png"
+  },
+  {
+    "id": "AT-EX-032",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_multi",
+    "stem": "An 18-year-old baseball player has been diagnosed with acute appendicitis. Upon evaluation, what signs and symptoms might he be complaining of?",
+    "options": [
+      "Cyanosis",
+      "Dyspnea",
+      "Deviated trachea",
+      "Absent bowel sounds",
+      "Referred pain—right scapula/shoulder, substernal area",
+      "Jaundice",
+      "Diarrhea",
+      "Low-grade fever (99°F to 100°F)",
+      "Abdominal rigidity/cramping",
+      "Rebound pain",
+      "Kehr's sign",
+      "Nausea/vomiting",
+      "Constipation",
+      "Hematuria",
+      "Gastrointestinal bleeding",
+      "Tachypnea",
+      "Coffee-ground emesis",
+      "Increased white blood cell count",
+      "Metabolic acidosis",
+      "Respiratory alkalosis",
+      "Anorexia"
+    ],
+    "correct_answer": [
+      "Low-grade fever (99°F to 100°F)",
+      "Abdominal rigidity/cramping",
+      "Rebound pain",
+      "Nausea/vomiting",
+      "Constipation",
+      "Increased white blood cell count",
+      "Anorexia"
+    ],
+    "explanation": "Acute appendicitis classically presents with periumbilical pain migrating to the right lower quadrant with rebound tenderness and abdominal rigidity, low-grade fever, nausea/vomiting, anorexia, constipation, and leukocytosis. Options such as cyanosis, deviated trachea, jaundice, Kehr's sign, and coffee-ground emesis point to other conditions. Marked medium confidence because the option list continues below the fold and exact intended selections cannot be fully confirmed.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-34-26.png"
+  },
+  {
+    "id": "AT-EX-035",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "scenario",
+    "stem": "You are covering a women's basketball game at your school, when you see one of your athletes go up for a rebound and land awkwardly on her right leg. She falls to the court in obvious pain so you run onto the court to tend to the athlete.\n\nYou do your preliminary evaluation and escort her to the athletic training facility, which is next to the basketball court. You suspect she has torn her ACL. Which of the following special tests is used to test the integrity of the ACL?",
+    "options": [
+      "McMurray's test",
+      "Apley's test",
+      "Lachman's test",
+      "Varus stress test",
+      "Posterior drawer test"
+    ],
+    "correct_answer": [
+      "Lachman's test"
+    ],
+    "explanation": "The Lachman's test is the most sensitive and reliable special test for anterior cruciate ligament integrity. McMurray's and Apley's test the meniscus, the varus stress test assesses the LCL, and the posterior drawer tests the PCL.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-47-32.png"
+  },
+  {
+    "id": "AT-EX-038",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "What type of muscular contraction by the quadriceps help decelerate the body during running descending hills?",
+    "options": [
+      "Positive",
+      "Concentric",
+      "Isokinetic",
+      "Isometric",
+      "Eccentric"
+    ],
+    "correct_answer": [
+      "Eccentric"
+    ],
+    "explanation": "During downhill running the quadriceps lengthen under tension to control and decelerate the body, which is an eccentric contraction.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-49-37.png"
+  },
+  {
+    "id": "AT-EX-042",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_multi",
+    "stem": "Which four tests will you recommend along with your evaluation?",
+    "options": [
+      "Echocardiography",
+      "Electrocardiogram",
+      "Ultrasonography",
+      "Nuclear scanning",
+      "Cardiac catheterization",
+      "CT scans",
+      "MRI",
+      "Cardiac stress testing",
+      "Venography",
+      "Arterial Doppler"
+    ],
+    "correct_answer": [
+      "Echocardiography",
+      "Electrocardiogram",
+      "Cardiac catheterization",
+      "Cardiac stress testing"
+    ],
+    "explanation": "For a cardiovascular evaluation, the standard first-line diagnostic tests are electrocardiography, echocardiography, cardiac stress testing, and cardiac catheterization. Marked medium confidence because the scenario stem is incomplete and an option may be cut off at the bottom of the screenshot, so the intended four cannot be fully verified.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-57-45.png"
+  },
+  {
+    "id": "AT-EX-043",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "Balance and coordination are critical for athletic performance.\n\nWhat is the feedback from the muscles, as to what they are doing during a particular activity, known as?\n\nWhat is the area of the brain that assists in controlling movement?",
+    "options": [
+      "Proprioception, brain stem",
+      "Muscle perception, medulla",
+      "Kinesthesia, cortex",
+      "Proprioception, cerebellum",
+      "Kinesthesia, cerebrum"
+    ],
+    "correct_answer": [
+      "Proprioception, cerebellum"
+    ],
+    "explanation": "Proprioception is the sensory feedback from muscles, tendons, and joints about body position and movement, and the cerebellum is the primary brain region coordinating and refining movement, balance, and coordination.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-58-45.png"
+  },
+  {
+    "id": "AT-EX-048",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "true_false",
+    "stem": "The basal metabolic rate is increased in individuals with hyperthyroidism.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "True"
+    ],
+    "explanation": "Thyroid hormone drives metabolism; in hyperthyroidism excess hormone raises the basal metabolic rate, producing symptoms such as weight loss, heat intolerance, and tachycardia.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-11-12.png"
+  },
+  {
+    "id": "AT-EX-056",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "What parameter is less essential to check while evaluating the neurovascular status of an injured limb?",
+    "options": [
+      "Sensation",
+      "The pulse distal to the injury",
+      "Motor functions",
+      "Joint range of motion",
+      "Atrophic changes"
+    ],
+    "correct_answer": [
+      "Joint range of motion"
+    ],
+    "explanation": "This stem asks for the least essential parameter. Neurovascular assessment centers on the neural (sensation, motor function) and vascular (distal pulses) status of the limb. Joint range of motion is a musculoskeletal parameter and is the least essential to the specific neurovascular check.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-11-39.png"
+  },
+  {
+    "id": "AT-EX-058",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "An athlete collides with a teammate during an ice hockey game and sustains a blow to the jaw with a hockey stick. He is holding his lower face with his hands and is in intense pain. What are not appropriate measures when the athletic trainer is evaluating the athlete to determine he has a fractured jaw?",
+    "options": [
+      "Have the athlete bite and observe for a malocclusion",
+      "Palpate the jaw for a hematoma",
+      "Ask the athlete to open and close his mouth noting asymmetry with movement",
+      "Palpate for jaw deformity when it is at rest, open, and closed",
+      "See if the athlete can retract his jaw and observe for difficulty with movement"
+    ],
+    "correct_answer": [
+      "See if the athlete can retract his jaw and observe for difficulty with movement"
+    ],
+    "explanation": "This is a negatively worded stem. Standard mandible fracture assessment includes checking for malocclusion, palpating for hematoma/deformity, and observing open/close movement. Testing jaw retraction is not a standard or appropriate evaluation measure for a suspected mandibular fracture.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-14-18.png"
+  },
+  {
+    "id": "AT-EX-060",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "What is not an antihistamine drug?",
+    "options": [
+      "Dimetapp",
+      "Ultram",
+      "Benadryl",
+      "Claritin",
+      "Allegra"
+    ],
+    "correct_answer": [
+      "Ultram"
+    ],
+    "explanation": "Ultram (tramadol) is a centrally acting opioid analgesic, not an antihistamine. Benadryl (diphenhydramine), Claritin (loratadine), Allegra (fexofenadine), and Dimetapp (which contains an antihistamine) are all antihistamine products.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-15-06.png"
+  },
+  {
+    "id": "AT-EX-062",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_multi",
+    "stem": "A 40-year-old male presents with a history of a chronic, productive cough lasting for more than three months over the past two to three years. He appears short of breath and does not tolerate moderately long periods of exercise. He is a smoker.\n\nWhich two diagnoses do you believe he might be suffering from?",
+    "options": [
+      "Emphysema",
+      "Chronic bronchitis",
+      "Asthma",
+      "Rhinosinusitis",
+      "Viral pneumonia",
+      "Cystic fibrosis",
+      "Pneumothorax",
+      "Pleurisy",
+      "Viral upper respiratory tract infection"
+    ],
+    "correct_answer": [
+      "Emphysema",
+      "Chronic bronchitis"
+    ],
+    "explanation": "A chronic productive cough for at least three months over two or more consecutive years in a smoker is the diagnostic definition of chronic bronchitis, which together with emphysema comprises COPD. The dyspnea and exercise intolerance in this smoker support both diagnoses.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-15-53.png"
+  },
+  {
+    "id": "AT-EX-066",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "What organ is effected if the athlete presents with jaundice?",
+    "options": [
+      "Spleen",
+      "Pancreas",
+      "Gallbladder",
+      "Kidney",
+      "Liver"
+    ],
+    "correct_answer": [
+      "Liver"
+    ],
+    "explanation": "Jaundice (yellowing of the skin and sclera) results from elevated bilirubin, most commonly reflecting liver dysfunction in processing and excreting bilirubin. The liver is the primary organ implicated.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-17-50.png"
+  },
+  {
+    "id": "AT-EX-082",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "Upon visual inspection, an athletic trainer observes an athlete’s fifth digit in extension at the MCP and DIP joints and flexion at the PIP joint. Which injury has this athlete sustained?",
+    "options": [
+      "Boutonniere deformity",
+      "Carpal tunnel syndrome",
+      "Cubital tunnel syndrome",
+      "Dupuytren's contracture"
+    ],
+    "correct_answer": [
+      "Boutonniere deformity"
+    ],
+    "explanation": "Boutonniere deformity is characterized by flexion of the PIP joint with hyperextension of the DIP (and MCP) joint, resulting from disruption of the central extensor tendon slip. This matches the described posture of the fifth digit.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-28-26.png"
+  },
+  {
+    "id": "AT-EX-089",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "An athlete sustains a blunt force trauma injury to the upper right quadrant of their abdomen. What structure in this area is the most likely to be injured?",
+    "options": [
+      "Liver",
+      "Gallbladder",
+      "Spleen",
+      "Pancreas",
+      "Kidney"
+    ],
+    "correct_answer": [
+      "Liver"
+    ],
+    "explanation": "The liver occupies most of the right upper quadrant and is the structure most likely to be injured by blunt trauma there. The spleen is in the left upper quadrant.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-29-46.png"
+  },
+  {
+    "id": "AT-EX-090",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "multiple_choice_single",
+    "stem": "One of your patients begins to complain of intense itching under the cold pack that you applied to his shoulder five minutes ago. When you remove the cold pack, you notice that hives have developed on the area that has been in contact with the cold pack. What is the [...]ter, used to describe what patient is experiencing?",
+    "options": [
+      "Paroxysmal cold hemoglobinuria",
+      "Hypothermia",
+      "Cold urticaria",
+      "Raynaud’s disease",
+      "Frostbite"
+    ],
+    "correct_answer": [
+      "Cold urticaria"
+    ],
+    "explanation": "Cold urticaria is a hypersensitivity reaction in which cold exposure produces itching, redness, and hives (wheals) on the contacted skin, exactly as described. It is a known contraindication to cryotherapy.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-29-57.png"
+  },
+  {
+    "id": "AT-EX-096",
+    "domain": "II",
+    "domain_name": "Clinical Evaluation & Diagnosis",
+    "type": "true_false",
+    "stem": "Graves' disease, systemic lupus erythematosus, and rheumatoid arthritis are all autoimmune diseases.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "True"
+    ],
+    "explanation": "Graves' disease (autoimmune hyperthyroidism), systemic lupus erythematosus, and rheumatoid arthritis are all autoimmune disorders in which the immune system attacks the body's own tissues, so the statement is true.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-35-54.png"
+  },
+  {
+    "id": "AT-EX-003",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "What diagnosis does EIA stands for?",
+    "options": [
+      "Exercise-induced arrhythmia",
+      "Exercise-induced asthma",
+      "Exercise-induced allergy",
+      "Exercise-induced aneurysm",
+      "Exercise-induced angina"
+    ],
+    "correct_answer": [
+      "Exercise-induced asthma"
+    ],
+    "explanation": "EIA is the standard abbreviation for exercise-induced asthma (also called exercise-induced bronchoconstriction), a transient airway narrowing triggered by physical exertion.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-18-47.png"
+  },
+  {
+    "id": "AT-EX-010",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "During CPR, it is most convenient and efficient to monitor the athlete's circulation by palpating the carotid artery. Where is the carotid pulse located?",
+    "options": [
+      "In the groove between the larynx and the sternocleidomastoid muscle",
+      "Between the mastoid process and pharynx",
+      "At the base of the neck superior to the manubrium",
+      "2 inches below the base of the earlobe on the side of the neck",
+      "Antecubital fossa of the elbow"
+    ],
+    "correct_answer": [
+      "In the groove between the larynx and the sternocleidomastoid muscle"
+    ],
+    "explanation": "The carotid pulse is palpated in the groove between the trachea/larynx and the sternocleidomastoid muscle by sliding the fingers laterally from the larynx. The antecubital fossa is the brachial pulse site.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-09-06.png"
+  },
+  {
+    "id": "AT-EX-016",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_multi",
+    "stem": "An athlete comes to the athletic training facility with a tick embedded in his lower leg. What should the athletic trainer instruct the athlete to do? Select all that apply.",
+    "options": [
+      "Keep the area clean and free of other debris",
+      "Pull the tick off with tweezers",
+      "Cover the tick with mineral oil",
+      "Put fingernail polish remover onto its body",
+      "All of the above"
+    ],
+    "correct_answer": [
+      "Keep the area clean and free of other debris",
+      "Pull the tick off with tweezers"
+    ],
+    "explanation": "Proper tick removal is to grasp the tick as close to the skin as possible with fine tweezers and pull straight out with steady pressure, then clean the area. Folk methods such as smothering with mineral oil or applying nail polish remover are not recommended, as they can cause the tick to regurgitate and increase infection risk.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-10-26.png"
+  },
+  {
+    "id": "AT-EX-018",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "A patient comes to the athletic training facility with a tick embedded in his lower leg. What should the athletic trainer instruct the patient not to do?",
+    "options": [
+      "Keep the area clean and free of other debris",
+      "Pull the tick off with tweezers",
+      "Cover the tick with mineral oil",
+      "Put fingernail polish remover onto its body",
+      "All of the above"
+    ],
+    "correct_answer": [
+      "Cover the tick with mineral oil"
+    ],
+    "explanation": "Ticks should be removed with fine-tipped tweezers by grasping close to the skin and pulling straight out; smothering methods such as mineral oil, petroleum jelly, nail polish, or heat are discouraged because they can cause the tick to regurgitate and increase infection risk. Because the stem is negatively worded and 'fingernail polish remover' is also inappropriate, confidence is medium given the single-answer format; mineral oil (a classic smothering method) is the intended answer.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-11-18.png"
+  },
+  {
+    "id": "AT-EX-020",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "What is an AED used for?",
+    "options": [
+      "To provide immobilization of the lumbar spine and pelvis after a spinal injury",
+      "To treat arrhythmias of the heart",
+      "To treat hypovolemic shock",
+      "To assess the athlete's level of consciousness after a head injury",
+      "To defibrillate the heart when an unconscious victim has no pulse"
+    ],
+    "correct_answer": [
+      "To defibrillate the heart when an unconscious victim has no pulse"
+    ],
+    "explanation": "An automated external defibrillator delivers a shock to restore a normal rhythm in a pulseless, unconscious victim experiencing a shockable arrhythmia (ventricular fibrillation or pulseless ventricular tachycardia). It is used during cardiac arrest, not for general arrhythmia treatment in a conscious patient.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-11-58.png"
+  },
+  {
+    "id": "AT-EX-027",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "true_false",
+    "stem": "A patient should be referred to a physician after a concussion when there is a loss of consciousness on the field, amnesia lasting longer than 15 minutes, deterioration of neurologic function, unequal, dilated, or unreactive pupils, irregularity in respirations, and/or vomiting.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "True"
+    ],
+    "explanation": "These are all classic red-flag indicators warranting immediate physician referral (and often emergency transport) following a concussion, as they suggest significant or worsening intracranial pathology.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-16-35.png"
+  },
+  {
+    "id": "AT-EX-030",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "Deep frostbite is considered a medical emergency. What is the proper course of treatment for a patient that has frostbite?",
+    "options": [
+      "Gradual rewarming of the body part with warm water.",
+      "Firm, sustained pressure of the hand on the affected body part.",
+      "Rapid rewarming of the affected body part with warm water.",
+      "Quick friction in order to increase local circulation",
+      "None of the above"
+    ],
+    "correct_answer": [
+      "Rapid rewarming of the affected body part with warm water."
+    ],
+    "explanation": "Deep frostbite is treated with rapid rewarming in circulating warm water (approximately 100-104 degrees F / 37-40 degrees C). Friction/rubbing is contraindicated because ice crystals cause further tissue damage, and gradual rewarming is less effective and risks refreezing.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-18-44.png"
+  },
+  {
+    "id": "AT-EX-031",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "One of your patients has been stung by a bee and is showing signs of anaphylaxis. Which medication would be appropriate to administer to stop the reaction?",
+    "options": [
+      "Epinephrine",
+      "Heparin",
+      "An antitussive",
+      "A histamine-2 blocker",
+      "None of the above"
+    ],
+    "correct_answer": [
+      "Epinephrine"
+    ],
+    "explanation": "Epinephrine is the first-line, life-saving medication for anaphylaxis; it reverses bronchoconstriction and vasodilation. Heparin (anticoagulant), antitussives (cough suppressants), and H2 blockers (acid reducers) do not treat acute anaphylaxis.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-34-01.png"
+  },
+  {
+    "id": "AT-EX-034",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "scenario",
+    "stem": "A 15-year-old lacrosse player gets checked during a game and receives a hard blow to his forearm. You run onto the field, and when you begin your secondary survey, you notice he is in severe pain and is grabbing at his arm. You see that there is a gross deformity of the proximal/dorsal aspect of the forearm. He complains he cannot rotate his forearm.\n\nThe athlete is in obvious discomfort. After your initial assessment, what do you do next?",
+    "options": [
+      "Splint the upper arm and forearm to support and protect the extremity",
+      "Give the athlete a sling to wear",
+      "Strap the athlete's arm to his side",
+      "Give the athlete Naprosyn for pain",
+      "Give the athlete Percocet for pain"
+    ],
+    "correct_answer": [
+      "Splint the upper arm and forearm to support and protect the extremity"
+    ],
+    "explanation": "A suspected forearm fracture with gross deformity should be immobilized by splinting the joints above and below the injury to support and protect the extremity before transport. Athletic trainers do not administer prescription analgesics like Naprosyn or Percocet on the field.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-45-47.png"
+  },
+  {
+    "id": "AT-EX-039",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "Under which conditions should an athletic helmet be removed after an injury?",
+    "options": [
+      "If the athlete requests it be removed",
+      "If, after a reasonable period of time, the facemask cannot be removed to gain access to the airway",
+      "The chief EMT requests that it be removed",
+      "If the helmet causes immobilization of the head or jaw",
+      "The helmet should never be removed"
+    ],
+    "correct_answer": [
+      "If, after a reasonable period of time, the facemask cannot be removed to gain access to the airway"
+    ],
+    "explanation": "A properly fitted helmet should generally be left in place to maintain spinal alignment; removal is indicated if the airway cannot be accessed after the facemask cannot be removed in a reasonable time, if the helmet does not hold the head securely, or if it prevents proper immobilization.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-49-55.png"
+  },
+  {
+    "id": "AT-EX-050",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "true_false",
+    "stem": "Anterior compartment syndrome may be addressed without consequence up to 72 hours after the initial injury.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "False"
+    ],
+    "explanation": "Acute anterior compartment syndrome is a surgical emergency; irreversible muscle and nerve damage begins within 6-8 hours, so fasciotomy must be performed promptly. Waiting 72 hours would cause permanent tissue necrosis.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-05-30.png"
+  },
+  {
+    "id": "AT-EX-051",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "What is considered a medical emergency?",
+    "options": [
+      "Acute compartment syndrome",
+      "Navicular fracture",
+      "Bulimia",
+      "Mitral valve prolapse",
+      "Cellulitis"
+    ],
+    "correct_answer": [
+      "Acute compartment syndrome"
+    ],
+    "explanation": "Acute compartment syndrome is a true surgical emergency; rising intracompartmental pressure compromises circulation and can cause irreversible tissue and nerve damage within hours, requiring immediate fasciotomy. The other conditions are serious but not acute, life-or-limb-threatening emergencies.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-09-29.png"
+  },
+  {
+    "id": "AT-EX-055",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "An athlete is brought into the athletic training facility with a 2.5-inch nail embedded in his foot. What is not an appropriate treatment for this injury?",
+    "options": [
+      "Immediately remove the nail",
+      "Keep the athlete calm",
+      "Pack the nail and foot as they are in a large dressing to help control the bleeding and stabilize the object",
+      "Transport the athlete to the hospital with the nail still embedded in the foot",
+      "Verify that the athlete's tetanus shot is current"
+    ],
+    "correct_answer": [
+      "Immediately remove the nail"
+    ],
+    "explanation": "An impaled object should never be removed in the field because it may be tamponading a vessel; removal can cause severe hemorrhage and further tissue damage. The object should be stabilized in place and the athlete transported with it embedded.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-10-51.png"
+  },
+  {
+    "id": "AT-EX-067",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "An athlete comes to the athletic trainer holding a tooth that has just been knocked out of his mouth. What are the proper steps for the athletic trainer to take to allow for a successful reimplantation?",
+    "options": [
+      "Try to put it back in place and use a topical ointment for pain",
+      "Put the tooth in a jar of water and tell the athlete to store it in a refrigerator until he can see a dentist",
+      "There is nothing the athletic trainer can do because the tooth is dead",
+      "Place the tooth in a cloth soaked with saline or water and get the athlete to a dentist within 30 minutes.",
+      "None of the above"
+    ],
+    "correct_answer": [
+      "Place the tooth in a cloth soaked with saline or water and get the athlete to a dentist within 30 minutes."
+    ],
+    "explanation": "An avulsed tooth must be kept moist (ideally in Hank's solution, milk, or saline) and reimplanted as quickly as possible, as prognosis drops sharply after about 30 minutes. Of the choices given, transporting the tooth moist to a dentist within 30 minutes is the appropriate action.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-19-08.png"
+  },
+  {
+    "id": "AT-EX-070",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_multi",
+    "stem": "A 19-year-old basketball player was hit in the right eye during a rebound. He complains of pain, diplopia, and photophobia\n\nUpon inspection, the athletic trainer notes the following:\n– Subconjunctival redness\n– Orbital erythema\n– Unequal pupils\n– Swelling over the zygomatic arch and inferior orbit\n– Partial contact lens is seen in the eye\n– Excessive tearing\n\nBased on observation of the athlete's eye, what treatments should the athletic trainer complete at this time?",
+    "options": [
+      "Apply an ice compress to the athlete's eye",
+      "Evaluate visual acuity with Snellen eye chart",
+      "Perform a fluorescein dye stain",
+      "Place the athlete in a recumbent position",
+      "Place the athlete in a supine position with elevated legs",
+      "Refer the athlete to physician/emergency room"
+    ],
+    "correct_answer": [
+      "Apply an ice compress to the athlete's eye",
+      "Evaluate visual acuity with Snellen eye chart",
+      "Refer the athlete to physician/emergency room"
+    ],
+    "explanation": "Signs of an orbital/blowout fracture with globe involvement (unequal pupils, diplopia, zygomatic/orbital swelling) warrant applying ice to control swelling, assessing baseline visual acuity, and urgent physician/ER referral. A fluorescein stain is contraindicated when a contact lens is present and globe rupture is possible, and leg elevation is for shock, not an isolated eye injury.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-20-08.png"
+  },
+  {
+    "id": "AT-EX-079",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "What is the prudent method of transporting an athlete with a suspected spinal injury?",
+    "options": [
+      "Do not move the athlete until a doctor is present",
+      "Use a stretcher",
+      "Fireman's carry",
+      "Use a spine board with medical assistance",
+      "Use a wheelchair"
+    ],
+    "correct_answer": [
+      "Use a spine board with medical assistance"
+    ],
+    "explanation": "An athlete with a suspected spinal injury must be immobilized and transported on a spine board using a trained team to maintain in-line spinal stabilization and prevent secondary neurological injury.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-27-01.png"
+  },
+  {
+    "id": "AT-EX-087",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "How many athletic trainers should be utilized to transport an athlete off the field by manual conveyance?",
+    "options": [
+      "6",
+      "4",
+      "1",
+      "3",
+      "2"
+    ],
+    "correct_answer": [
+      "2"
+    ],
+    "explanation": "Manual conveyance (assisting a mobile, conscious athlete off the field) is performed by two athletic trainers, one on each side supporting the athlete under the arms. This is used only when spinal or lower-extremity injury has been ruled out.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-29-28.png"
+  },
+  {
+    "id": "AT-EX-088",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "multiple_choice_single",
+    "stem": "When evaluating an unconscious athlete, what is the athletic trainers first step?",
+    "options": [
+      "Check for sources of bleeding",
+      "Take vital signs",
+      "Check for normal extremity movement",
+      "Take the athlete’s pulse rate",
+      "Check that the athlete’s airway is open and he or she is breathing normally"
+    ],
+    "correct_answer": [
+      "Check that the athlete’s airway is open and he or she is breathing normally"
+    ],
+    "explanation": "In the primary survey of an unconscious athlete, establishing an open airway and adequate breathing is the first priority (airway/breathing precede other assessments).",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-29-37.png"
+  },
+  {
+    "id": "AT-EX-093",
+    "domain": "III",
+    "domain_name": "Immediate & Emergency Care",
+    "type": "scenario",
+    "stem": "A male patient sustains a direct blow to the genital area. How can the athletic trainer assist him to immediately decrease the pain?",
+    "options": [
+      "Use an ice pack to the area with the patient in supine, knees in extension",
+      "Use direct pressure on the testes",
+      "Have the patient lie supine with his knees bent to his chest to decrease the strain on the scrotum and apply ice to the affected area",
+      "Have the patient lie on his side with his knees extended",
+      "Place a moist heat pack over the area"
+    ],
+    "correct_answer": [
+      "Have the patient lie supine with his knees bent to his chest to decrease the strain on the scrotum and apply ice to the affected area"
+    ],
+    "explanation": "For a blow to the testes, having the athlete flex the knees toward the chest relaxes the abdominal/cremasteric muscles and reduces scrotal strain, and applying ice helps control pain and swelling.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-35-18.png"
+  },
+  {
+    "id": "AT-EX-009",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_multi",
+    "stem": "What are contraindications for iontophoresis?",
+    "options": [
+      "Analgesia",
+      "Inflammation",
+      "Ischemia",
+      "Medication Sensitivity",
+      "Open Lesions",
+      "Arterial Disease"
+    ],
+    "correct_answer": [
+      "Ischemia",
+      "Medication Sensitivity",
+      "Open Lesions",
+      "Arterial Disease"
+    ],
+    "explanation": "Contraindications for iontophoresis include impaired circulation/ischemia, arterial (peripheral vascular) disease, known sensitivity or allergy to the medication being delivered, and damaged or broken skin/open lesions over the treatment site. Analgesia and inflammation are not contraindications (inflammation is often an indication).",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-08-52.png"
+  },
+  {
+    "id": "AT-EX-011",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "Which are contraindications to massage?\n\nI. Inflammation\nII. Pregnancy\nIII. Hemorrhage\nIV. Infection\nV. Phlebitis",
+    "options": [
+      "I, II, III, IV",
+      "I, III, IV, V",
+      "II, III, IV",
+      "II, III, IV, V",
+      "All of the above"
+    ],
+    "correct_answer": [
+      "I, III, IV, V"
+    ],
+    "explanation": "Acute inflammation, active hemorrhage, infection, and phlebitis (with risk of dislodging a thrombus) are all contraindications to massage. Pregnancy per se is not an absolute contraindication (only certain techniques/areas are cautioned), so the option excluding II (I, III, IV, V) is best.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-09-22.png"
+  },
+  {
+    "id": "AT-EX-013",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "When fitting an athlete for crutches, what angle should the elbow be bent to?",
+    "options": [
+      "90 degrees",
+      "10 degrees",
+      "45 degrees",
+      "0 degrees",
+      "30 degrees"
+    ],
+    "correct_answer": [
+      "30 degrees"
+    ],
+    "explanation": "Proper axillary crutch fit places the elbow in approximately 25-30 degrees of flexion when the hands are on the handgrips, allowing effective push-off while keeping weight off the axilla.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-09-44.png"
+  },
+  {
+    "id": "AT-EX-036",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "scenario",
+    "stem": "One of your softball players is a Type 1 diabetic. You are preparing for an all-day softball tournament, and your athlete reports to you that her blood glucose level is 90 mg/dL.\n\nThe athlete notices a blister is forming on the back of her right heel. What do you do next?",
+    "options": [
+      "Inspect the area and make sure it is properly cared for to avoid any complications",
+      "Wash it with an alcohol-based solution to dry it out",
+      "Have the athlete change shoes and wear white socks",
+      "Pad the area with a “doughnut”",
+      "Tell the athlete to suck it up and put an adhesive bandage on it"
+    ],
+    "correct_answer": [
+      "Inspect the area and make sure it is properly cared for to avoid any complications"
+    ],
+    "explanation": "In a diabetic athlete, even a minor blister carries elevated risk of poor healing and infection, so the appropriate first action is to inspect the area and ensure it is properly cared for to prevent complications. Alcohol drying, simply changing socks, or dismissing the injury are inadequate or harmful in this population.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-48-20.png"
+  },
+  {
+    "id": "AT-EX-044",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "What is an appropriate treatment for an acute quadriceps contusion?",
+    "options": [
+      "Light massage",
+      "Pulsed ultrasound",
+      "Ice massage followed by gentle stretch",
+      "Ice pack with compression wrap with the knee in flexion",
+      "Heat pack and massage"
+    ],
+    "correct_answer": [
+      "Ice pack with compression wrap with the knee in flexion"
+    ],
+    "explanation": "For an acute quadriceps contusion, ice and compression with the knee held in flexion limits hematoma formation and helps maintain range of motion, reducing the risk of myositis ossificans. Massage and heat are contraindicated acutely.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-59-08.png"
+  },
+  {
+    "id": "AT-EX-045",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_multi",
+    "stem": "Which instructions or techniques are correct for the use of a cane?",
+    "options": [
+      "Cane Height is adjusted so elbow is flexed 20-30 degrees",
+      "Cane height is adjusted to the ASIS",
+      "Cane is held in the contralateral hand",
+      "Cane is held in ipsilateral hand",
+      "Cane moves forward with the involved extremity",
+      "Cane moves forward with the uninvolved extremity"
+    ],
+    "correct_answer": [
+      "Cane Height is adjusted so elbow is flexed 20-30 degrees",
+      "Cane is held in the contralateral hand",
+      "Cane moves forward with the involved extremity"
+    ],
+    "explanation": "A cane is fitted with the elbow flexed about 20-30 degrees (top at the greater trochanter/wrist crease), held in the hand OPPOSITE (contralateral to) the involved leg, and advanced together with the involved/affected extremity to widen the base of support and offload that limb.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-00-27.png"
+  },
+  {
+    "id": "AT-EX-046",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "scenario",
+    "stem": "An athlete is 5 days post-op from a partial meniscectomy. What exercise is not appropriate to perform at this time?",
+    "options": [
+      "Achilles stretching",
+      "Four quadrant straight leg raises",
+      "Stationary bicycling with minimal/no resistance",
+      "Eccentric quadriceps strengthening",
+      "Hip flexor strengthening"
+    ],
+    "correct_answer": [
+      "Eccentric quadriceps strengthening"
+    ],
+    "explanation": "This stem is negatively phrased (\"not appropriate\"). At only 5 days post partial meniscectomy the early rehab focus is on range of motion, edema control, and gentle isometric/low-load activity; aggressive eccentric quadriceps strengthening imposes high loads too soon and is inappropriate. The other options (Achilles stretch, straight leg raises, low-resistance cycling, hip flexor work) are appropriate early-phase activities.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-00-52.png"
+  },
+  {
+    "id": "AT-EX-047",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "What is the normal dosage for one tablet of Aspirin?",
+    "options": [
+      "200 mg",
+      "400 mg",
+      "500 mg",
+      "375 mg",
+      "325 mg"
+    ],
+    "correct_answer": [
+      "325 mg"
+    ],
+    "explanation": "The standard adult dose of one regular-strength aspirin tablet is 325 mg.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-02-03.png"
+  },
+  {
+    "id": "AT-EX-049",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "Which modality should be utilized if the desired therapeutic effect is decreased pain, edema and inflammation?",
+    "options": [
+      "Moist heat packs",
+      "Ultrasound",
+      "Diathermy",
+      "Fluidotherapy",
+      "Ice packs"
+    ],
+    "correct_answer": [
+      "Ice packs"
+    ],
+    "explanation": "Cryotherapy (ice packs) produces vasoconstriction and decreased metabolic activity, which reduces pain, edema, and inflammation. The other listed modalities are thermal/heating agents that increase circulation.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-05-13.png"
+  },
+  {
+    "id": "AT-EX-054",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "Which is not an example of an isotonic device?",
+    "options": [
+      "Free Weights",
+      "A total gym",
+      "A squat rack",
+      "Wall pulleys",
+      "A wall"
+    ],
+    "correct_answer": [
+      "A wall"
+    ],
+    "explanation": "Isotonic exercise involves movement against a constant resistance through a range of motion (free weights, total gym, squat rack, wall pulleys). Pushing against an immovable wall produces no movement and is an isometric exercise, not an isotonic device.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-10-33.png"
+  },
+  {
+    "id": "AT-EX-057",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "Conventional TENS use what frequency in the pulses per second range with what phase duration in µseconds?",
+    "options": [
+      "50 to 100; 250",
+      "50 to 100; 2 to 50",
+      "2 to 3; >150",
+      ">100; 20 to 30",
+      "< 10; 50"
+    ],
+    "correct_answer": [
+      "50 to 100; 2 to 50"
+    ],
+    "explanation": "Conventional (high-rate) TENS uses a high frequency of roughly 50 to 100 pulses per second with a short phase duration of about 2 to 50 microseconds. The image shows this option selected.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-14-04.png"
+  },
+  {
+    "id": "AT-EX-063",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "true_false",
+    "stem": "When performing an interval throwing program, the progression of throwing distances of 45 feet, 60 feet, 90 feet, 120 feet, 150 feet, and 180 feet are appropriate provided there is no increased pain or soreness the next day.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "True"
+    ],
+    "explanation": "The standard interval throwing program progresses through graduated distances (45, 60, 90, 120, 150, 180 feet), advancing only when the athlete completes a level without increased pain or next-day soreness.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-16-14.png"
+  },
+  {
+    "id": "AT-EX-064",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "When rehabilitating a patient who has undergone an ACL reconstruction, which muscle groups must be strengthened to support the graft?",
+    "options": [
+      "Triceps Surae",
+      "Hip Adductors",
+      "Quadriceps",
+      "Gluteals",
+      "Hamstrings"
+    ],
+    "correct_answer": [
+      "Hamstrings"
+    ],
+    "explanation": "The hamstrings are agonists to the ACL; they resist anterior tibial translation and protect the graft, so hamstring strengthening is emphasized in ACL reconstruction rehabilitation. (Quadriceps strengthening is also important but is progressed cautiously to avoid anterior shear on the graft.)",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-16-33.png"
+  },
+  {
+    "id": "AT-EX-069",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "What is one of the most serious adverse reactions during iontophoresis treatment?",
+    "options": [
+      "Galvanic Burns",
+      "Anaphylactic Shock",
+      "Dermatitis",
+      "Histamine Reaction",
+      "None of the above"
+    ],
+    "correct_answer": [
+      "Galvanic Burns"
+    ],
+    "explanation": "Galvanic (chemical/electrical) burns are one of the most serious adverse reactions of iontophoresis, resulting from the direct current altering skin pH beneath the electrodes, most often an alkaline burn under the cathode.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-19-49.png"
+  },
+  {
+    "id": "AT-EX-075",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "When rehabilitating a cervical strain, what must the athletic trainer maintain the integrity of?",
+    "options": [
+      "Shoulder girdle",
+      "Lower back",
+      "Upper arm",
+      "Hand",
+      "Kyphosis of the thoracic spine"
+    ],
+    "correct_answer": [
+      "Shoulder girdle"
+    ],
+    "explanation": "The cervical musculature is functionally linked to the shoulder girdle (trapezius, levator scapulae, etc.), so cervical strain rehabilitation must maintain the strength and integrity of the shoulder girdle to restore proper neck function and posture.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-25-47.png"
+  },
+  {
+    "id": "AT-EX-078",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "When is the best time to begin a rehabilitation program after an injury?",
+    "options": [
+      "Immediately",
+      "After the injured part is \"healed\"",
+      "After the inflammation is under control",
+      "Once the pain subsides",
+      "All of the above"
+    ],
+    "correct_answer": [
+      "Immediately"
+    ],
+    "explanation": "Rehabilitation should begin immediately after injury; early controlled intervention (within the limits of the healing tissue) minimizes deconditioning and optimizes recovery. The stray 'V' in the stem is an OCR artifact.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-26-28.png"
+  },
+  {
+    "id": "AT-EX-085",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "What is not a contraindication for using cryotherapy?",
+    "options": [
+      "Raynaud’s phenomenon",
+      "Inflammation",
+      "Vasculitis",
+      "Cold Urticaria"
+    ],
+    "correct_answer": [
+      "Inflammation"
+    ],
+    "explanation": "Inflammation is an INDICATION for cryotherapy (cold reduces inflammation, pain, and metabolic demand), not a contraindication. Raynaud's phenomenon, cold urticaria, and vasculitis are all contraindications to cold application.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-28-59.png"
+  },
+  {
+    "id": "AT-EX-095",
+    "domain": "IV",
+    "domain_name": "Treatment & Rehabilitation",
+    "type": "multiple_choice_single",
+    "stem": "What is not a factor in designing an appropriate treatment program?",
+    "options": [
+      "The stage of tissue healing",
+      "Pain with joint mobility",
+      "The severity of the injury",
+      "How soon the coach feels the athlete should return to play",
+      "A and B"
+    ],
+    "correct_answer": [
+      "How soon the coach feels the athlete should return to play"
+    ],
+    "explanation": "A treatment/rehabilitation program is designed on clinical criteria (stage of tissue healing, pain with mobility, severity of injury), not on a coach's desired return-to-play timeline, which is a non-clinical pressure that should not dictate the program.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-35-40.png"
+  },
+  {
+    "id": "AT-EX-004",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "What is a type of organizational culture characterized by consensus, teamwork, and participatory decision making?",
+    "options": [
+      "Transformational",
+      "Personalistic",
+      "Formulistic",
+      "Organizational",
+      "Collegial"
+    ],
+    "correct_answer": [
+      "Collegial"
+    ],
+    "explanation": "A collegial organizational culture emphasizes consensus, teamwork, shared governance, and participatory decision making among members, in contrast to hierarchical or formulistic structures.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-07-24.png"
+  },
+  {
+    "id": "AT-EX-007",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "What is not an error when planning the design of a sports medicine facility?",
+    "options": [
+      "Concentrating on function rather than style",
+      "The use of wood for the main flooring material",
+      "Having the adaptive access on the other side of the building",
+      "Non-ground fault interrupter receptacles places within the hydrotherapy area",
+      "Having only one entrance and exit"
+    ],
+    "correct_answer": [
+      "Concentrating on function rather than style"
+    ],
+    "explanation": "This is a negatively worded stem asking which choice is NOT a design error. Prioritizing function over style is the correct approach to facility design, whereas wood flooring, distant/inaccessible ADA access, non-GFCI receptacles near water, and a single entrance/exit are all recognized planning errors.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-08-00.png"
+  },
+  {
+    "id": "AT-EX-014",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "Which organization certifies facemasks that are used in ice hockey helmets?",
+    "options": [
+      "CSA",
+      "HECC",
+      "NOCSAE",
+      "ASTM",
+      "NCAA"
+    ],
+    "correct_answer": [
+      "HECC"
+    ],
+    "explanation": "The Hockey Equipment Certification Council (HECC) certifies ice hockey helmets and facemasks in the United States, verifying they meet the applicable ASTM performance standards.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-26-46.png"
+  },
+  {
+    "id": "AT-EX-017",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "true_false",
+    "stem": "When a patient is injured and there is an abrupt withdrawal from training, this can lead to a condition known as sudden exercise abstinence syndrome.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "True"
+    ],
+    "explanation": "Sudden exercise abstinence syndrome refers to the psychological and physiological disturbances (e.g., mood changes, anxiety, depression) that can occur when a highly active person abruptly stops training due to injury. This is a recognized concept in the psychology of injury.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-11-07.png"
+  },
+  {
+    "id": "AT-EX-019",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "scenario",
+    "stem": "During a pre-participation examination, an athlete reveals that they had surgery during the summer that may affect their sports participation status. The athletic trainer contacts the surgeon to learn the details of the surgery, but is denied access to the athlete's records. What federal legislation is responsible for protecting the athletes medical information?",
+    "options": [
+      "Americans with Disabilities Act",
+      "Family Educational Rights and Privacy Act",
+      "Health Insurance Portability and Accountability Act",
+      "Title IX, Education Amendments of 1972"
+    ],
+    "correct_answer": [
+      "Health Insurance Portability and Accountability Act"
+    ],
+    "explanation": "HIPAA governs the privacy and release of protected health information held by covered entities such as physicians; the surgeon cannot release records without proper authorization. FERPA applies to educational records, not a physician's medical records.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-11-31.png"
+  },
+  {
+    "id": "AT-EX-021",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "scenario",
+    "stem": "You are in the position to hire an assistant athletic trainer. You have a specific person in mind, but your athletic director implies he is not comfortable with this person's gender. Which level of the law mandates the hiring and firing of employees?",
+    "options": [
+      "State",
+      "Local",
+      "City",
+      "District",
+      "Federal"
+    ],
+    "correct_answer": [
+      "Federal"
+    ],
+    "explanation": "Employment discrimination based on protected classes such as sex/gender is governed at the federal level, primarily under Title VII of the Civil Rights Act of 1964 enforced by the EEOC. Federal law sets the baseline mandate for lawful hiring and firing practices.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-12-10.png"
+  },
+  {
+    "id": "AT-EX-023",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_multi",
+    "stem": "Which two pieces of documentation should be used to record this information?",
+    "options": [
+      "SOAP notes",
+      "Focus charting",
+      "Charting by exception",
+      "Computerized information systems",
+      "WOTS UP",
+      "HOPS",
+      "CPT",
+      "ICD-10",
+      "HCFA 1500",
+      "UB-92 (HCFA 1450) claim form",
+      "UCR fee",
+      "Mission statement",
+      "Needs assessment",
+      "Market analysis",
+      "Cost-benefit analysis",
+      "Computer resources needs assessment"
+    ],
+    "correct_answer": [
+      "SOAP notes",
+      "HOPS"
+    ],
+    "explanation": "SOAP (Subjective, Objective, Assessment, Plan) and HOPS (History, Observation, Palpation, Special tests) are the two standard formats used to document a clinical injury evaluation. The prior context referenced by 'this information' is not shown in the screenshot, so confidence is medium.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-13-35.png"
+  },
+  {
+    "id": "AT-EX-024",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "true_false",
+    "stem": "Using a cookbook approach for clinical practice that ignores clinician experience or the circumstances of a specific patient is acceptable as long you utilize the same treatment on all patients of similar injuries.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "False"
+    ],
+    "explanation": "Evidence-based practice integrates the best available research evidence with clinician expertise and individual patient values/circumstances; a rigid 'cookbook' approach that ignores clinician experience and patient-specific factors is not acceptable.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-13-47.png"
+  },
+  {
+    "id": "AT-EX-029",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "Which completed form is used in order for an athletic trainer to gain the quickest reimbursement from an insurance company?",
+    "options": [
+      "HCFA-1500 form",
+      "CPT 1-A form",
+      "UCR form",
+      "An incident report form",
+      "None of the above"
+    ],
+    "correct_answer": [
+      "HCFA-1500 form"
+    ],
+    "explanation": "The HCFA-1500 (now CMS-1500) is the standard universal claim form used to bill and obtain reimbursement from insurance companies for professional healthcare services.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-17-14.png"
+  },
+  {
+    "id": "AT-EX-037",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "The codes that were established by the AMA for health care providers to receive third-party reimbursement are CPT codes. What does CPT stand for?",
+    "options": [
+      "Current Procedural Treatments",
+      "Current Provider Terminology",
+      "Consensus Procedural Treatments",
+      "Current Provider Treatments",
+      "Current Procedural Terminology"
+    ],
+    "correct_answer": [
+      "Current Procedural Terminology"
+    ],
+    "explanation": "CPT stands for Current Procedural Terminology, the standardized code set maintained by the American Medical Association for reporting medical procedures and services for third-party reimbursement.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-48-54.png"
+  },
+  {
+    "id": "AT-EX-040",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "true_false",
+    "stem": "Emotional instability, depression, a reduced sense of accomplishment, and a lack of interest in activity or sport are all potential signs of a patient suffering from burnout.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "True"
+    ],
+    "explanation": "Burnout in athletes is characterized by emotional exhaustion/instability, depression, a reduced sense of accomplishment, and a decreased interest or devaluation of the sport. All listed signs are recognized indicators of burnout.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-55-54.png"
+  },
+  {
+    "id": "AT-EX-041",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "Which methods for funding public sector sports medicine facilities utilizes an institution’s assets in cash and investments that are not normally used for operational purposes?",
+    "options": [
+      "Capital campaign",
+      "Tax-exempt bonds",
+      "An endowment",
+      "Commercial loans",
+      "Unrestricted loans"
+    ],
+    "correct_answer": [
+      "An endowment"
+    ],
+    "explanation": "An endowment is a fund of cash and invested assets held by an institution whose principal is not used for day-to-day operational purposes; earnings support designated needs. This matches the description in the stem.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_11-56-11.png"
+  },
+  {
+    "id": "AT-EX-059",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_multi",
+    "stem": "What documents are essential for the treatment of participants who are minors?",
+    "options": [
+      "Current medical progress notes from a licensed physician",
+      "Current physical examination results from a licensed physician",
+      "Permission/consent for medical treatment from a parent of guardian",
+      "Written assumption of risk signed by parent or guardian"
+    ],
+    "correct_answer": [
+      "Current physical examination results from a licensed physician",
+      "Permission/consent for medical treatment from a parent of guardian",
+      "Written assumption of risk signed by parent or guardian"
+    ],
+    "explanation": "For minors, essential documents include a current pre-participation physical examination, parental/guardian consent for medical treatment (since minors cannot legally consent), and a signed assumption of risk. Routine medical progress notes are not a prerequisite document for treatment.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-14-48.png"
+  },
+  {
+    "id": "AT-EX-073",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "Which of the following are performance evaluation standards intended to help foster practicality in the employee appraisal process?",
+    "options": [
+      "Accuracy Standards",
+      "Feasibility Standards",
+      "Utility Standards",
+      "Proprietary Standards",
+      "Quality Standards"
+    ],
+    "correct_answer": [
+      "Feasibility Standards"
+    ],
+    "explanation": "Among the four personnel evaluation standard categories (Propriety, Utility, Feasibility, Accuracy), the Feasibility standards specifically address practicality, ensuring appraisals are realistic, efficient, and viable to implement.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-21-21.png"
+  },
+  {
+    "id": "AT-EX-074",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "ordering",
+    "stem": "You have been given permission to hire a new staff athletic trainer. What order should these components follow when conducting staff selection?\n\nI. Retention\nII. Hiring\nIII. Promotion\nIV. Performance evaluation\nV. Demotion",
+    "options": [
+      "III, V, IV, II, I",
+      "II, III, I, IV, V",
+      "I, II, III, IV, V",
+      "IV, I, V, III, II",
+      "I, II, IV, V, III"
+    ],
+    "correct_answer": [
+      "II, III, I, IV, V"
+    ],
+    "explanation": "The sequence must begin with Hiring (II). Of the listed options, only 'II, III, I, IV, V' starts with Hiring, so it is the best available answer among the verbatim choices. Confidence is lowered because the ideal HR order (Hiring, Retention, Performance evaluation, Promotion/Demotion) is not perfectly represented.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-25-34.png"
+  },
+  {
+    "id": "AT-EX-077",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "A wrestler comes to the athletic training facility inquiring about a “drug that will make him lose weight quickly,” mentioning a diuretic. Which drugs has been banned by the International Olympic Committee that are diuretics?",
+    "options": [
+      "Furosemide",
+      "Salbutamol",
+      "Caffeine (<12 mcg/mL)",
+      "None of the above"
+    ],
+    "correct_answer": [
+      "Furosemide"
+    ],
+    "explanation": "Furosemide is a loop diuretic banned by the IOC/WADA, both for use as a masking agent and for rapid weight loss. Salbutamol is a beta-2 agonist and caffeine is a stimulant, neither of which is a diuretic.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-26-14.png"
+  },
+  {
+    "id": "AT-EX-081",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "true_false",
+    "stem": "Job description, hiring practices, vacation policies, benefits, and release of medical records are all of human resources issues.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "True"
+    ],
+    "explanation": "Job descriptions, hiring practices, vacation policies, benefits, and confidentiality/release of records all fall under human resources management within an athletic training organization/administration context, so the statement is true.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-28-16.png"
+  },
+  {
+    "id": "AT-EX-084",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "If a patient, who is covered by a HMO insurance policy, needs to see a specialist, who must make the referral?",
+    "options": [
+      "Athletic trainer",
+      "Specialist",
+      "Primary care physician",
+      "Patient",
+      "None of the Above"
+    ],
+    "correct_answer": [
+      "Primary care physician"
+    ],
+    "explanation": "Under an HMO model, the primary care physician acts as the gatekeeper and must provide the referral before the patient can see a specialist and have the visit covered.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-28-46.png"
+  },
+  {
+    "id": "AT-EX-086",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "What is the term used for a primary care physician appointed by an insurance company to oversee the medical care given to a patient and assigns any specialty or ancillary services?",
+    "options": [
+      "The gatekeeper",
+      "The participating provider",
+      "The third-party administrator",
+      "The policyholder",
+      "None of the above"
+    ],
+    "correct_answer": [
+      "The gatekeeper"
+    ],
+    "explanation": "In managed care (e.g., HMO models), the primary care physician who coordinates a patient's care and authorizes referrals to specialists and ancillary services is termed the gatekeeper.",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-29-18.png"
+  },
+  {
+    "id": "AT-EX-091",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "multiple_choice_single",
+    "stem": "What type of supplies include such items as adhesive tape, gauze pads, and bandages?",
+    "options": [
+      "Permanent",
+      "Capital",
+      "Nonexpendable",
+      "Nonfixed",
+      "Expendable"
+    ],
+    "correct_answer": [
+      "Expendable"
+    ],
+    "explanation": "Expendable supplies are consumable, single-use items that cannot be reused and must be continually replenished, such as adhesive tape, gauze pads, and bandages. (Nonexpendable/capital items are durable and reusable.)",
+    "answer_confidence": "high",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-34-48.png"
+  },
+  {
+    "id": "AT-EX-094",
+    "domain": "V",
+    "domain_name": "Organizational & Professional Health & Well-being",
+    "type": "true_false",
+    "stem": "Evidence-based practice is best defined as the use of the consensus of scientific evidence to indicate the best clinical practices for managing specific conditions.",
+    "options": [
+      "True",
+      "False"
+    ],
+    "correct_answer": [
+      "False"
+    ],
+    "explanation": "Evidence-based practice is not defined solely by scientific consensus; it is the integration of the best available research evidence with clinical expertise and the individual patient's values and circumstances. Defining it only as the consensus of scientific evidence is incomplete/incorrect.",
+    "answer_confidence": "medium",
+    "source": "extracted_from_screenshot",
+    "source_file": "2026-07-05_12-35-30.png"
+  }
+]
