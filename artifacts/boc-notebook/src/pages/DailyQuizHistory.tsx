@@ -140,13 +140,38 @@ export default function DailyQuizHistory() {
   const [, navigate] = useLocation();
   const { data: history = [], isLoading } = useGetDailyQuizHistory();
 
-  // History arrives newest-first; the trend reads best oldest → newest.
-  const trendPoints: DailyScorePoint[] = [...history].reverse().map((h) => ({
-    date: h.date,
-    pct: toPct(h),
-    correctCount: h.correctCount,
-    totalQuestions: h.totalQuestions,
-  }));
+  // History arrives newest-first; the trend reads best oldest → newest. Each
+  // point plots the day's best score (original or best retake) and carries the
+  // original alongside it when a retake beat it, so the chart can highlight the
+  // improvement and the hover can explain original vs. best.
+  const trendPoints: DailyScorePoint[] = [...history].reverse().map((h) => {
+    const originalPct = toPct(h);
+    let best = {
+      pct: originalPct,
+      correctCount: h.correctCount,
+      totalQuestions: h.totalQuestions,
+    };
+    for (const rt of h.retakes ?? []) {
+      const rtPct = toPct(rt);
+      if (rtPct > best.pct) {
+        best = { pct: rtPct, correctCount: rt.correctCount, totalQuestions: rt.totalQuestions };
+      }
+    }
+    const improved = best.pct > originalPct;
+    return {
+      date: h.date,
+      pct: best.pct,
+      correctCount: best.correctCount,
+      totalQuestions: best.totalQuestions,
+      ...(improved
+        ? {
+            originalPct,
+            originalCorrectCount: h.correctCount,
+            originalTotalQuestions: h.totalQuestions,
+          }
+        : {}),
+    };
+  });
 
   return (
     <div className="flex flex-col h-full">
@@ -173,7 +198,8 @@ export default function DailyQuizHistory() {
                 <TrendingUp className="h-4 w-4 text-primary" /> Score over time
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Each bar is one day's daily quiz score. Hover a bar for that day's detail.
+                Each bar is one day's best score. Green marks days a retake beat the original —
+                hover a bar for the detail.
               </p>
             </CardHeader>
             <CardContent className="p-4 pt-2">

@@ -4,10 +4,17 @@ import { formatDate, formatDateShort } from "@/lib/formatDate";
 export interface DailyScorePoint {
   /** Pacific YYYY-MM-DD for the quiz. */
   date: string;
-  /** Whole-number percent score, 0–100. */
+  /** Best-of-day whole-number percent score (original or best retake), 0–100. */
   pct: number;
   correctCount: number;
   totalQuestions: number;
+  /**
+   * The original daily-quiz score for the day, present only when a retake beat
+   * it. When set, the bar highlights the improvement over the original.
+   */
+  originalPct?: number;
+  originalCorrectCount?: number;
+  originalTotalQuestions?: number;
 }
 
 interface DailyScoreTrendProps {
@@ -33,12 +40,24 @@ export function DailyScoreTrend({ points, testId }: DailyScoreTrendProps) {
       const clamped = Math.max(0, Math.min(100, p.pct));
       const barH = (clamped / 100) * (H - 4);
       const xCenter = slot * (i + 0.5);
+      // When a retake beat the original, the bar splits into a base segment
+      // (up to the original score) and an improvement segment on top.
+      const improved = p.originalPct != null && p.originalPct < clamped;
+      const origClamped = improved ? Math.max(0, Math.min(100, p.originalPct!)) : clamped;
+      const origH = (origClamped / 100) * (H - 4);
       return {
         p,
+        improved,
         x: xCenter - barW / 2,
         width: barW,
         y: H - barH,
         height: Math.max(barH, 0.5),
+        // Base (original) segment sits at the bottom.
+        baseY: H - origH,
+        baseHeight: Math.max(origH, 0.5),
+        // Improvement segment fills the gap between original and best.
+        gainY: H - barH,
+        gainHeight: Math.max(barH - origH, 0),
         xCenter,
       };
     });
@@ -81,23 +100,46 @@ export function DailyScoreTrend({ points, testId }: DailyScoreTrendProps) {
           role="img"
           aria-label={`Daily quiz score trend across ${points.length} quiz${points.length === 1 ? "" : "zes"}`}
         >
-          {model.bars.map((b, i) => (
-            <rect
-              key={b.p.date}
-              x={b.x}
-              y={b.y}
-              width={b.width}
-              height={b.height}
-              rx={1}
-              fill="hsl(var(--primary))"
-              opacity={active && activeIndex !== i ? 0.45 : 0.9}
-              onPointerEnter={() => setActiveIndex(i)}
-              onPointerLeave={() => setActiveIndex(null)}
-              data-testid={testId ? `${testId}-bar-${i}` : undefined}
-            >
-              <title>{`${formatDate(b.p.date)}: ${b.p.pct}% (${b.p.correctCount}/${b.p.totalQuestions})`}</title>
-            </rect>
-          ))}
+          {model.bars.map((b, i) => {
+            const dim = active && activeIndex !== i;
+            const title = b.improved
+              ? `${formatDate(b.p.date)}: best ${b.p.pct}% (${b.p.correctCount}/${b.p.totalQuestions}), up from ${b.p.originalPct}% (${b.p.originalCorrectCount}/${b.p.originalTotalQuestions}) originally`
+              : `${formatDate(b.p.date)}: ${b.p.pct}% (${b.p.correctCount}/${b.p.totalQuestions})`;
+            return (
+              <g
+                key={b.p.date}
+                onPointerEnter={() => setActiveIndex(i)}
+                onPointerLeave={() => setActiveIndex(null)}
+                data-testid={testId ? `${testId}-bar-${i}` : undefined}
+                data-improved={b.improved ? "true" : undefined}
+              >
+                {/* Base (original) segment. */}
+                <rect
+                  x={b.x}
+                  y={b.baseY}
+                  width={b.width}
+                  height={b.baseHeight}
+                  rx={1}
+                  fill="hsl(var(--primary))"
+                  opacity={dim ? 0.45 : 0.9}
+                />
+                {/* Improvement segment, only when a retake beat the original. */}
+                {b.improved && b.gainHeight > 0 && (
+                  <rect
+                    x={b.x}
+                    y={b.gainY}
+                    width={b.width}
+                    height={b.gainHeight}
+                    rx={1}
+                    className="fill-emerald-500 dark:fill-emerald-400"
+                    opacity={dim ? 0.5 : 1}
+                    data-testid={testId ? `${testId}-gain-${i}` : undefined}
+                  />
+                )}
+                <title>{title}</title>
+              </g>
+            );
+          })}
         </svg>
         {active && (
           <div
@@ -113,8 +155,15 @@ export function DailyScoreTrend({ points, testId }: DailyScoreTrendProps) {
               {formatDate(active.p.date)}
             </span>
             <span className="block text-[11px] font-semibold leading-tight tabular-nums">
+              {active.p.originalPct != null ? "Best " : ""}
               {active.p.pct}% ({active.p.correctCount}/{active.p.totalQuestions})
             </span>
+            {active.p.originalPct != null && (
+              <span className="block text-[10px] leading-tight tabular-nums text-background/70">
+                Original {active.p.originalPct}% ({active.p.originalCorrectCount}/
+                {active.p.originalTotalQuestions})
+              </span>
+            )}
           </div>
         )}
       </div>
