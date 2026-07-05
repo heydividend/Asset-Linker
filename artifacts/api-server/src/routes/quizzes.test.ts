@@ -39,7 +39,20 @@ const createdQuizIds: number[] = [];
 // we never clobber real data.
 let savedDailyQuestionIds: number[] | null = null;
 
-async function api(
+// Extra per-test session ids used by the plan-completion tests so each finish
+// records into its own isolated planCompletions scope (no bleed between tests).
+// Cleaned up alongside TEST_SESSION in teardown.
+const extraSessions: string[] = [];
+function newSession(label: string): string {
+  const s = `test-plan-${label}-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
+  extraSessions.push(s);
+  return s;
+}
+
+async function apiAs(
+  session: string,
   path: string,
   init?: RequestInit,
 ): Promise<{ status: number; body: any }> {
@@ -47,12 +60,27 @@ async function api(
     ...init,
     headers: {
       "content-type": "application/json",
-      cookie: `boc_sid=${TEST_SESSION}`,
+      cookie: `boc_sid=${session}`,
       ...(init?.headers ?? {}),
     },
   });
   const text = await res.text();
   return { status: res.status, body: text ? JSON.parse(text) : null };
+}
+
+async function api(
+  path: string,
+  init?: RequestInit,
+): Promise<{ status: number; body: any }> {
+  return apiAs(TEST_SESSION, path, init);
+}
+
+async function completedKeysFor(session: string): Promise<string[]> {
+  const rows = await db
+    .select({ itemKey: planCompletions.itemKey })
+    .from(planCompletions)
+    .where(eq(planCompletions.sessionId, session));
+  return rows.map((r) => r.itemKey);
 }
 
 async function seed(): Promise<void> {
@@ -117,6 +145,11 @@ async function cleanup(): Promise<void> {
   await db
     .delete(planCompletions)
     .where(eq(planCompletions.sessionId, TEST_SESSION));
+  if (extraSessions.length > 0) {
+    await db
+      .delete(planCompletions)
+      .where(inArray(planCompletions.sessionId, extraSessions));
+  }
 
   if (createdQuizIds.length > 0) {
     await db
@@ -451,6 +484,96 @@ describe("daily quiz endpoint", () => {
     assert.ok(
       keys.includes("quiz:any"),
       "finishing any quiz should also record the generic quiz:any key",
+    );
+  });
+
+  it("marks quiz:topic:<id> (plus quiz:any) when a topic-targeted quiz is finished", async () => {
+    const session = newSession("topic");
+    const topicId = topicIds[0];
+    const created = await apiAs(session, "/quizzes", {
+      method: "POST",
+      body: JSON.stringify({ topicId }),
+    });
+    assert.equal(created.status, 201, "creating a topic-targeted quiz should succeed");
+    createdQuizIds.push(created.body.id);
+    // Every question drawn must belong to the requested topic.
+    for (const q of created.body.questions) {
+      assert.equal(q.topicId, topicId, "topic-targeted quiz draws only that topic's questions");
+    }
+
+    const finished = await apiAs(session, `/quizzes/${created.body.id}/finish`, {
+      method: "POST",
+    });
+    assert.equal(finished.status, 200, "finishing the quiz should succeed");
+
+    const keys = await completedKeysFor(session);
+    assert.deepEqual(
+      [...keys].sort(),
+      [`quiz:topic:${topicId}`, "quiz:any"].sort(),
+      `topic quiz finish should record exactly quiz:topic:${topicId} and quiz:any (got ${JSON.stringify(keys)})`,
+    );
+    // A topic-scoped quiz has no domainId on its row, so the domain key is NOT set.
+    assert.ok(
+      !keys.some((k) => k.startsWith("quiz:domain:")),
+      "a topic-only quiz must not record a quiz:domain key",
+    );
+  });
+
+  it("marks quiz:domain:<id> (plus quiz:any) when a domain-targeted quiz is finished", async () => {
+    const session = newSession("domain");
+    const created = await apiAs(session, "/quizzes", {
+      method: "POST",
+      body: JSON.stringify({ domainId }),
+    });
+    assert.equal(created.status, 201, "creating a domain-targeted quiz should succeed");
+    createdQuizIds.push(created.body.id);
+    // Every question drawn must belong to the requested domain.
+    for (const q of created.body.questions) {
+      assert.equal(q.domainId, domainId, "domain-targeted quiz draws only that domain's questions");
+    }
+
+    const finished = await apiAs(session, `/quizzes/${created.body.id}/finish`, {
+      method: "POST",
+    });
+    assert.equal(finished.status, 200, "finishing the quiz should succeed");
+
+    const keys = await completedKeysFor(session);
+    assert.deepEqual(
+      [...keys].sort(),
+      [`quiz:domain:${domainId}`, "quiz:any"].sort(),
+      `domain quiz finish should record exactly quiz:domain:${domainId} and quiz:any (got ${JSON.stringify(keys)})`,
+    );
+    // No topicId was requested, so no topic key is set even though the drawn
+    // questions each carry a topicId (the auto-picked topic never lands on the row).
+    assert.ok(
+      !keys.some((k) => k.startsWith("quiz:topic:")),
+      "a domain-only quiz must not record a quiz:topic key",
+    );
+  });
+
+  it("records only quiz:any for a generic adaptive quiz (no targeted keys)", async () => {
+    const session = newSession("adaptive");
+    // Constrain question selection to our seeded daily-source pool so the quiz
+    // is created deterministically, but pass NO topicId/domainId — an adaptive
+    // quiz auto-picks a topic for question selection, yet that topic is never
+    // stored on the quiz row, so finishing it must record only the generic key.
+    const created = await apiAs(session, "/quizzes", {
+      method: "POST",
+      body: JSON.stringify({ mode: "adaptive", sourceKind: "daily" }),
+    });
+    assert.equal(created.status, 201, "creating a generic adaptive quiz should succeed");
+    createdQuizIds.push(created.body.id);
+
+    const finished = await apiAs(session, `/quizzes/${created.body.id}/finish`, {
+      method: "POST",
+    });
+    assert.equal(finished.status, 200, "finishing the quiz should succeed");
+
+    const keys = await completedKeysFor(session);
+    assert.deepEqual(
+      keys,
+      ["quiz:any"],
+      `a generic adaptive quiz finish should record exactly quiz:any (got ${JSON.stringify(keys)})`,
     );
   });
 });
