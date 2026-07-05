@@ -140,8 +140,8 @@ describe("Today list carry-forward of missed items", () => {
 
 // These exercise the pure finalize step (/plan/today's dedupe + cap) directly,
 // composing items exactly the way buildTodayItems does — today's native items
-// first, carry-overs appended after — so the guarantees hold without standing
-// up the full DB-backed handler.
+// and the targeted suggestions first, carry-overs appended LAST — so the
+// guarantees hold without standing up the full DB-backed handler.
 describe("Today list dedupe + cap", () => {
   it("collapses a carry-over that shares a key with a native today item into a single native entry", () => {
     const todayNative: PlanItem = {
@@ -208,6 +208,47 @@ describe("Today list dedupe + cap", () => {
       assert.ok(
         out.some((it) => it.key === key && it.carriedFrom === undefined),
         `today's native ${native.kind} (${key}) must survive the cap`,
+      );
+    }
+  });
+
+  it("keeps weak-topic quizzes and the recent-notebook study guide ahead of carry-overs so the cap can't bury them", () => {
+    // A few native today items.
+    const todayNative: PlanItem[] = [
+      { kind: "flashcards", title: "Spaced-repetition session", estMinutes: 20 },
+      { kind: "quiz", title: "Daily 50-question quiz", estMinutes: 50, daily: true },
+      { kind: "game", title: "Quick game", estMinutes: 8, gameId: "today-game" },
+    ];
+    // The dynamically-suggested targeted practice buildTodayItems appends
+    // before carry-overs: two weak-topic quizzes + the most-recent-notebook
+    // study guide. Each has a distinct key so it can't dedupe away.
+    const suggestions: PlanItem[] = [
+      { kind: "quiz", title: "Targeted quiz: Topic A", estMinutes: 12, topicId: 101, link: "/quiz" },
+      { kind: "quiz", title: "Targeted quiz: Topic B", estMinutes: 12, topicId: 202, link: "/quiz" },
+      { kind: "study_guide", title: "Study: recent notebook", estMinutes: 25, notebookId: 303 },
+    ];
+    // Far more carry-overs than the cap, each with a distinct key.
+    const carried: PlanItem[] = Array.from({ length: 40 }, (_, i) => ({
+      kind: "game" as const,
+      title: `Carried game ${i}`,
+      estMinutes: 8,
+      gameId: `carried-${i}`,
+      carriedFrom: "2026-01-01",
+    }));
+
+    // Mirror buildTodayItems' ordering: native + suggestions first, carry-overs last.
+    const out = finalizeTodayList([...todayNative, ...suggestions, ...carried]);
+
+    assert.equal(
+      out.length,
+      TODAY_ITEM_CAP,
+      "the list must be capped at TODAY_ITEM_CAP",
+    );
+    for (const s of suggestions) {
+      const key = planItemKey(s);
+      assert.ok(
+        out.some((it) => it.key === key && it.carriedFrom === undefined),
+        `suggested ${s.kind} (${key}) must survive the cap even when carry-overs pile up`,
       );
     }
   });

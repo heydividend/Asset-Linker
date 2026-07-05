@@ -24,8 +24,10 @@ import { getOrCreateSchedule } from "../lib/planSchedule";
 const router: IRouter = Router();
 
 // Hard cap on how many items the Today list surfaces. buildTodayItems
-// assembles today's native items first and appends carry-overs after, so this
-// cap can only ever trim trailing carry-overs — never today's own work.
+// assembles today's native items and the dynamically-suggested targeted
+// practice (weak-topic quizzes + recent-notebook study guide) first, and
+// appends carry-overs LAST, so this cap can only ever trim trailing
+// carry-overs — never today's own work or its targeted suggestions.
 export const TODAY_ITEM_CAP = 16;
 
 // Adds key + mandatory to every plan item, deduping repeats by key so a day
@@ -44,9 +46,10 @@ export function decorateItems(items: PlanItem[]) {
 
 // Finalize the assembled Today list: dedupe by key (the first/most-canonical
 // occurrence wins) and cap the length. Because buildTodayItems pushes today's
-// native items before any carry-overs, this (a) collapses a carry-over that
-// shares a key with a native item into the native entry, and (b) guarantees the
-// cap drops trailing carry-overs rather than today's mandatory work.
+// native items and the targeted suggestions before any carry-overs, this
+// (a) collapses a carry-over that shares a key with an earlier item into that
+// earlier entry, and (b) guarantees the cap drops trailing carry-overs rather
+// than today's mandatory work or its weak-topic quizzes / study guide.
 export function finalizeTodayList(items: PlanItem[]) {
   return decorateItems(items).slice(0, TODAY_ITEM_CAP);
 }
@@ -146,13 +149,10 @@ export async function buildTodayItems(sessionId: string) {
 
   const carried = await computeCarriedForwardItems(sessionId, days, today);
 
-  // Today's native items first; carried items are appended after, but
-  // decorateItems will dedupe so a carry-over for the same activity already
-  // present today is dropped (today's native one is the canonical entry).
+  // Today's native items first.
   if (todayDay) {
     items.push(...todayDay.items);
   }
-  for (const it of carried) items.push(it);
 
   const [{ due }] = await db
     .select({ due: sql<number>`cast(count(*) as int)` })
@@ -201,8 +201,16 @@ export async function buildTodayItems(sessionId: string) {
     });
   }
 
-  // Allow more items in the daily list to make room for carry-overs without
-  // squeezing out today's mandatory work.
+  // Carry-overs are appended LAST — after today's native items AND the
+  // dynamically-suggested targeted practice (weak-topic quizzes + recent
+  // study guide). Those suggestions are part of today's plan, so ranking them
+  // above carry-overs keeps a large pile of missed items from pushing them
+  // past the cap. decorateItems still dedupes, so a carry-over sharing a key
+  // with an earlier item collapses into that earlier (canonical) entry.
+  for (const it of carried) items.push(it);
+
+  // The cap trims trailing carry-overs first, so today's mandatory work and
+  // its targeted suggestions are never squeezed out by a backlog.
   const decorated = finalizeTodayList(items);
   const completedKeys = new Set(await listCompletedKeys(sessionId, today));
   const itemsOut = decorated.map((it) => ({
