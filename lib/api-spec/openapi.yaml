@@ -1957,6 +1957,9 @@ components:
         sourceKind: { type: ["string", "null"] }
         pendingReview: { type: boolean }
         multiSelect: { type: boolean }
+        itemType:
+          type: string
+          description: "'mc' (single-answer), 'multi' (multi-select), or 'ordering' (drag-and-drop sequencing)."
         selectedIndex: { type: ["integer", "null"] }
         selectedIndices:
           type: array
@@ -1964,6 +1967,14 @@ components:
         correctIndex: { type: ["integer", "null"] }
         correctIndices:
           type: array
+          items: { type: integer }
+        correctOrder:
+          type: array
+          description: "For ordering items: the correct sequence as choice indices (only present once answered)."
+          items: { type: integer }
+        selectedOrder:
+          type: array
+          description: "For ordering items: the sequence the candidate submitted, as choice indices."
           items: { type: integer }
         rationale: { type: ["string", "null"] }
         sourceUrl: { type: ["string", "null"] }
@@ -2018,12 +2029,24 @@ components:
           items: { type: integer }
         questionId: { type: integer }
         selectedIndex: { type: integer, minimum: 0 }
+        order:
+          type: array
+          description: "For ordering items: the candidate's arrangement as original choice indices."
+          items: { type: integer }
     QuizAnswerResult:
       type: object
       required: [correct, correctIndex, rationale]
       properties:
         correct: { type: boolean }
         correctIndex: { type: integer }
+        multiSelect: { type: boolean }
+        itemType: { type: string }
+        correctIndices:
+          type: array
+          items: { type: integer }
+        correctOrder:
+          type: array
+          items: { type: integer }
         rationale: { type: string }
         sourceUrl: { type: ["string", "null"] }
 

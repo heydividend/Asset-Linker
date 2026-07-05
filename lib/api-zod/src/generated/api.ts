@@ -860,10 +860,28 @@ export const GetQuizResponse = zod.object({
       sourceKind: zod.string().nullish(),
       pendingReview: zod.boolean().optional(),
       multiSelect: zod.boolean().optional(),
+      itemType: zod
+        .string()
+        .optional()
+        .describe(
+          "'mc' (single-answer), 'multi' (multi-select), or 'ordering' (drag-and-drop sequencing).",
+        ),
       selectedIndex: zod.number().nullish(),
       selectedIndices: zod.array(zod.number()).optional(),
       correctIndex: zod.number().nullish(),
       correctIndices: zod.array(zod.number()).optional(),
+      correctOrder: zod
+        .array(zod.number())
+        .optional()
+        .describe(
+          "For ordering items: the correct sequence as choice indices (only present once answered).",
+        ),
+      selectedOrder: zod
+        .array(zod.number())
+        .optional()
+        .describe(
+          "For ordering items: the sequence the candidate submitted, as choice indices.",
+        ),
       rationale: zod.string().nullish(),
       sourceUrl: zod.string().nullish(),
       imageUrl: zod.string().nullish(),
@@ -912,11 +930,21 @@ export const AnswerQuizQuestionBody = zod.object({
     .number()
     .min(answerQuizQuestionBodySelectedIndexMin)
     .optional(),
+  order: zod
+    .array(zod.number())
+    .optional()
+    .describe(
+      "For ordering items: the candidate's arrangement as original choice indices.",
+    ),
 });
 
 export const AnswerQuizQuestionResponse = zod.object({
   correct: zod.boolean(),
   correctIndex: zod.number(),
+  multiSelect: zod.boolean().optional(),
+  itemType: zod.string().optional(),
+  correctIndices: zod.array(zod.number()).optional(),
+  correctOrder: zod.array(zod.number()).optional(),
   rationale: zod.string(),
   sourceUrl: zod.string().nullish(),
 });
@@ -949,10 +977,28 @@ export const FinishQuizResponse = zod.object({
       sourceKind: zod.string().nullish(),
       pendingReview: zod.boolean().optional(),
       multiSelect: zod.boolean().optional(),
+      itemType: zod
+        .string()
+        .optional()
+        .describe(
+          "'mc' (single-answer), 'multi' (multi-select), or 'ordering' (drag-and-drop sequencing).",
+        ),
       selectedIndex: zod.number().nullish(),
       selectedIndices: zod.array(zod.number()).optional(),
       correctIndex: zod.number().nullish(),
       correctIndices: zod.array(zod.number()).optional(),
+      correctOrder: zod
+        .array(zod.number())
+        .optional()
+        .describe(
+          "For ordering items: the correct sequence as choice indices (only present once answered).",
+        ),
+      selectedOrder: zod
+        .array(zod.number())
+        .optional()
+        .describe(
+          "For ordering items: the sequence the candidate submitted, as choice indices.",
+        ),
       rationale: zod.string().nullish(),
       sourceUrl: zod.string().nullish(),
       imageUrl: zod.string().nullish(),

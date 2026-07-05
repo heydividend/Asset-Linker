@@ -11,4 +11,6 @@ export interface QuizAnswerInput {
   questionId: number;
   /** @minimum 0 */
   selectedIndex?: number;
+  /** For ordering items: the candidate's arrangement as original choice indices. */
+  order?: number[];
 }

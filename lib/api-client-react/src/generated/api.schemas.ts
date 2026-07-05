@@ -522,12 +522,18 @@ export interface QuizQuestion {
   sourceKind?: string | null;
   pendingReview?: boolean;
   multiSelect?: boolean;
+  /** 'mc' (single-answer), 'multi' (multi-select), or 'ordering' (drag-and-drop sequencing). */
+  itemType?: string;
   /** @nullable */
   selectedIndex?: number | null;
   selectedIndices?: number[];
   /** @nullable */
   correctIndex?: number | null;
   correctIndices?: number[];
+  /** For ordering items: the correct sequence as choice indices (only present once answered). */
+  correctOrder?: number[];
+  /** For ordering items: the sequence the candidate submitted, as choice indices. */
+  selectedOrder?: number[];
   /** @nullable */
   rationale?: string | null;
   /** @nullable */
@@ -636,11 +642,17 @@ export interface QuizAnswerInput {
   questionId: number;
   /** @minimum 0 */
   selectedIndex?: number;
+  /** For ordering items: the candidate's arrangement as original choice indices. */
+  order?: number[];
 }
 
 export interface QuizAnswerResult {
   correct: boolean;
   correctIndex: number;
+  multiSelect?: boolean;
+  itemType?: string;
+  correctIndices?: number[];
+  correctOrder?: number[];
   rationale: string;
   /** @nullable */
   sourceUrl?: string | null;

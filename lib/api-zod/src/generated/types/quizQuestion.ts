@@ -19,12 +19,18 @@ export interface QuizQuestion {
   sourceKind?: string | null;
   pendingReview?: boolean;
   multiSelect?: boolean;
+  /** 'mc' (single-answer), 'multi' (multi-select), or 'ordering' (drag-and-drop sequencing). */
+  itemType?: string;
   /** @nullable */
   selectedIndex?: number | null;
   selectedIndices?: number[];
   /** @nullable */
   correctIndex?: number | null;
   correctIndices?: number[];
+  /** For ordering items: the correct sequence as choice indices (only present once answered). */
+  correctOrder?: number[];
+  /** For ordering items: the sequence the candidate submitted, as choice indices. */
+  selectedOrder?: number[];
   /** @nullable */
   rationale?: string | null;
   /** @nullable */

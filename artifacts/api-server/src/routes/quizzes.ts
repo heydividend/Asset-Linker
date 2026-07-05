@@ -37,7 +37,9 @@ async function buildQuizQuestionView(
       if (!q) return null;
       const ans = answers.get(qid);
       // displayedPosition -> originalChoiceIndex. Identity when no (valid) order.
-      const rawOrder = choiceOrders?.[String(qid)];
+      // Ordering items are never choice-shuffled (their answers are sequences of
+      // original indices), so force identity even if a stale order is present.
+      const rawOrder = q.itemType === "ordering" ? null : choiceOrders?.[String(qid)];
       const order = isValidOrder(rawOrder, q.choices.length) ? rawOrder : null;
       // Map an ORIGINAL choice index to the position it is shown at.
       const toDisplayed = (o: number) => (order ? order.indexOf(o) : o);
@@ -446,11 +448,14 @@ router.post("/quizzes/:id/practice", async (req, res): Promise<void> => {
   let choiceOrders: Record<string, number[]> | null = null;
   if (shuffleChoices === true) {
     const qrows = await db
-      .select({ id: questions.id, choices: questions.choices })
+      .select({ id: questions.id, choices: questions.choices, itemType: questions.itemType })
       .from(questions)
       .where(inArray(questions.id, questionIds));
     const built: Record<string, number[]> = {};
     for (const q of qrows) {
+      // Ordering items encode their answer as a sequence of ORIGINAL choice
+      // indices, so their choices must never be reshuffled or grading breaks.
+      if (q.itemType === "ordering") continue;
       const n = q.choices.length;
       if (n < 2) continue;
       built[String(q.id)] = shuffled(Array.from({ length: n }, (_, i) => i));

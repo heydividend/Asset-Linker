@@ -26,7 +26,8 @@ import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { StudyCoachTip } from "@/components/StudyCoachTip";
 import { MasterySparkline, type SparklineAttempt } from "@/components/MasterySparkline";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, ExternalLink, LogOut, Minus, RotateCcw, Shuffle, Trophy, Users, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, ExternalLink, GripVertical, LogOut, Minus, RotateCcw, Shuffle, Trophy, Users, X } from "lucide-react";
+import { Reorder } from "framer-motion";
 
 function arraysEqualAsSets(a: number[] | null | undefined, b: number[] | null | undefined): boolean {
   if (!a || !b) return false;
@@ -36,7 +37,25 @@ function arraysEqualAsSets(a: number[] | null | undefined, b: number[] | null | 
   return sa.every((v, i) => v === sb[i]);
 }
 
-function isQuestionCorrect(qq: { multiSelect?: boolean; selectedIndex?: number | null; correctIndex?: number | null; selectedIndices?: number[] | null; correctIndices?: number[] | null }): boolean {
+// Exact-order comparison for drag-and-drop ordering items (sequence matters).
+function arraysEqualOrdered(a: number[] | null | undefined, b: number[] | null | undefined): boolean {
+  if (!a || !b || a.length !== b.length) return false;
+  return a.every((v, i) => v === b[i]);
+}
+
+type ScorableQuestion = {
+  multiSelect?: boolean;
+  itemType?: string;
+  selectedIndex?: number | null;
+  correctIndex?: number | null;
+  selectedIndices?: number[] | null;
+  correctIndices?: number[] | null;
+  selectedOrder?: number[] | null;
+  correctOrder?: number[] | null;
+};
+
+function isQuestionCorrect(qq: ScorableQuestion): boolean {
+  if (qq.itemType === "ordering") return arraysEqualOrdered(qq.selectedOrder ?? null, qq.correctOrder ?? null);
   if (qq.multiSelect) return arraysEqualAsSets(qq.selectedIndices ?? null, qq.correctIndices ?? null);
   return qq.selectedIndex != null && qq.selectedIndex === qq.correctIndex;
 }
@@ -44,7 +63,18 @@ function isQuestionCorrect(qq: { multiSelect?: boolean; selectedIndex?: number |
 // BOC-style partial credit in [0, 1], mirroring the server's scoring. Multi-select
 // earns (correct picks - incorrect picks) / total correct, floored at 0; single-select
 // is all-or-nothing.
-function questionCredit(qq: { multiSelect?: boolean; selectedIndex?: number | null; correctIndex?: number | null; selectedIndices?: number[] | null; correctIndices?: number[] | null }): number {
+function questionCredit(qq: ScorableQuestion): number {
+  if (qq.itemType === "ordering") {
+    // Mirror the server's orderingCredit: per-position fraction in [0, 1].
+    const correctOrder = qq.correctOrder ?? [];
+    if (correctOrder.length === 0) return 0;
+    const response = qq.selectedOrder ?? [];
+    let inPlace = 0;
+    for (let i = 0; i < correctOrder.length; i += 1) {
+      if (response[i] === correctOrder[i]) inPlace += 1;
+    }
+    return Math.max(0, Math.min(1, inPlace / correctOrder.length));
+  }
   if (qq.multiSelect) {
     const correctIndices = qq.correctIndices ?? [];
     if (correctIndices.length === 0) return 0;
@@ -97,6 +127,9 @@ export default function QuizRunner() {
   const [localIdx, setLocalIdx] = useState<number | null>(null);
   const [multiPicks, setMultiPicks] = useState<Record<number, number[]>>({});
   const [submittingMulti, setSubmittingMulti] = useState(false);
+  // Per-question drag order: choice indices in the arrangement the user has set.
+  const [orderingArrangement, setOrderingArrangement] = useState<Record<number, number[]>>({});
+  const [submittingOrder, setSubmittingOrder] = useState(false);
 
   const runSearch = useSearch();
   const timedParam = new URLSearchParams(runSearch).get("timed") === "1";
@@ -183,6 +216,22 @@ export default function QuizRunner() {
     }
   };
 
+  const onSubmitOrder = async () => {
+    if (!q || q.itemType !== "ordering" || isAnsweredQ(q)) return;
+    const arrangement = orderingArrangement[q.questionId] ?? q.choices.map((_, i) => i);
+    setSubmittingOrder(true);
+    try {
+      await fetch(`/api/quizzes/${quiz.id}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId: q.questionId, order: arrangement }),
+      });
+      await qc.invalidateQueries({ queryKey: getGetQuizQueryKey(id) });
+    } finally {
+      setSubmittingOrder(false);
+    }
+  };
+
   const onFinish = () => {
     const wasFixItToday = isTodayFixItQuiz(quiz.id);
     finish.mutate(
@@ -214,6 +263,10 @@ export default function QuizRunner() {
 
   const answered = isAnsweredQuestion(q);
   const currentMultiPicks = q.multiSelect ? (multiPicks[q.questionId] ?? []) : [];
+  // Ordering items: the current drag arrangement (defaults to the shown order).
+  const currentOrder = q.itemType === "ordering"
+    ? (orderingArrangement[q.questionId] ?? q.choices.map((_, i) => i))
+    : [];
   const isCorrect = answered && isQuestionCorrect(q);
   const credit = answered ? questionCredit(q) : 0;
   const isPartial = answered && !isCorrect && credit > 0;
@@ -297,6 +350,70 @@ export default function QuizRunner() {
             )}
           </CardHeader>
           <CardContent className="space-y-2">
+            {q.itemType === "ordering" ? (
+              !answered ? (
+                <>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Drag the steps into the correct order.</p>
+                  <Reorder.Group
+                    axis="y"
+                    values={currentOrder}
+                    onReorder={(next) => setOrderingArrangement((p) => ({ ...p, [q.questionId]: next }))}
+                    className="space-y-2"
+                  >
+                    {currentOrder.map((ci, pos) => (
+                      <Reorder.Item
+                        key={ci}
+                        value={ci}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border bg-card cursor-grab active:cursor-grabbing hover-elevate"
+                        data-testid={`order-item-${ci}`}
+                      >
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/15 text-primary text-sm font-semibold shrink-0">{pos + 1}</span>
+                        <span className="flex-1">{q.choices[ci]}</span>
+                        <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </Reorder.Item>
+                    ))}
+                  </Reorder.Group>
+                  <Button
+                    onClick={onSubmitOrder}
+                    disabled={submittingOrder}
+                    className="mt-2"
+                    data-testid="button-submit-order"
+                  >
+                    Submit order
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Your order</p>
+                  {(q.selectedOrder ?? []).map((ci, pos) => {
+                    const rightHere = (q.correctOrder ?? [])[pos] === ci;
+                    return (
+                      <div
+                        key={pos}
+                        className={`flex items-center gap-3 p-3 rounded-lg border ${rightHere ? "border-primary bg-primary/10" : "border-destructive bg-destructive/10"}`}
+                        data-testid={`order-review-${pos}`}
+                      >
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-sm font-semibold shrink-0">{pos + 1}</span>
+                        <span className="flex-1">{q.choices[ci]}</span>
+                        {rightHere ? <Check className="h-4 w-4 text-primary shrink-0" /> : <X className="h-4 w-4 text-destructive shrink-0" />}
+                      </div>
+                    );
+                  })}
+                  {!isCorrect && (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Correct order</p>
+                      {(q.correctOrder ?? []).map((ci, pos) => (
+                        <div key={pos} className="flex items-center gap-3 p-3 rounded-lg border border-primary/40 bg-primary/5" data-testid={`order-correct-${pos}`}>
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/15 text-primary text-sm font-semibold shrink-0">{pos + 1}</span>
+                          <span className="flex-1">{q.choices[ci]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )
+            ) : (
+              <>
             {q.multiSelect && (
               <p className="text-sm font-medium text-muted-foreground mb-2">Select all that apply.</p>
             )}
@@ -345,6 +462,8 @@ export default function QuizRunner() {
               >
                 Submit answer
               </Button>
+            )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -581,6 +700,33 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
                   )}
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
+                  {qq.itemType === "ordering" ? (
+                    <>
+                      <p className="text-xs text-muted-foreground">Your order (drag-and-drop):</p>
+                      {(qq.selectedOrder ?? []).map((ci, pos) => {
+                        const rightHere = (qq.correctOrder ?? [])[pos] === ci;
+                        return (
+                          <div key={pos} className={`p-2 rounded border flex items-center gap-2 ${rightHere ? "border-primary bg-primary/10" : "border-destructive bg-destructive/10"}`}>
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted text-xs font-semibold shrink-0">{pos + 1}</span>
+                            <span className="flex-1">{qq.choices[ci]}</span>
+                            {rightHere ? <Check className="h-3 w-3 text-primary" /> : <X className="h-3 w-3 text-destructive" />}
+                          </div>
+                        );
+                      })}
+                      {!isCorrect && (
+                        <>
+                          <p className="text-xs text-muted-foreground mt-2">Correct order:</p>
+                          {(qq.correctOrder ?? []).map((ci, pos) => (
+                            <div key={pos} className="p-2 rounded border border-primary/40 bg-primary/5 flex items-center gap-2">
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/15 text-primary text-xs font-semibold shrink-0">{pos + 1}</span>
+                              <span className="flex-1">{qq.choices[ci]}</span>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
                   {qq.multiSelect && (
                     <p className="text-xs text-muted-foreground">Select all that apply.</p>
                   )}
@@ -601,6 +747,8 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
                       </div>
                     );
                   })}
+                    </>
+                  )}
                   {qq.rationale && (
                     <div className="text-muted-foreground">
                       <p className="mb-1"><strong>Rationale:</strong></p>

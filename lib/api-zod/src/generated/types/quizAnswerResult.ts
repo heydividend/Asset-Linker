@@ -9,6 +9,10 @@
 export interface QuizAnswerResult {
   correct: boolean;
   correctIndex: number;
+  multiSelect?: boolean;
+  itemType?: string;
+  correctIndices?: number[];
+  correctOrder?: number[];
   rationale: string;
   /** @nullable */
   sourceUrl?: string | null;
