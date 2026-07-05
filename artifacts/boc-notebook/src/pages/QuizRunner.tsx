@@ -286,7 +286,7 @@ export default function QuizRunner() {
                 )}
               </div>
             )}
-            <CardTitle className="text-lg leading-relaxed" data-testid="text-question-stem">{q.stem}</CardTitle>
+            <CardTitle className="text-lg leading-relaxed whitespace-pre-line" data-testid="text-question-stem">{q.stem}</CardTitle>
             {q.imageUrl && (
               <img
                 src={q.imageUrl}
@@ -543,7 +543,7 @@ function FinishedQuizView({ quiz, correct, pct, total }: FinishedQuizViewProps) 
                 <CardHeader>
                   <CardTitle className="text-base flex items-start gap-2">
                     {isCorrect ? <Check className="h-5 w-5 text-primary mt-0.5" /> : isPartial ? <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" /> : <X className="h-5 w-5 text-destructive mt-0.5" />}
-                    <span className="flex-1">Q{i + 1}. {qq.stem}</span>
+                    <span className="flex-1 whitespace-pre-line">Q{i + 1}. {qq.stem}</span>
                     {isPartial && (
                       <Badge
                         variant="outline"

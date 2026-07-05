@@ -271,7 +271,7 @@ export default function MockExamRunner() {
                           ) : (
                             <X className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
                           )}
-                          <span className="flex-1 text-sm font-medium">Q{i + 1}. {qq.stem}</span>
+                          <span className="flex-1 text-sm font-medium whitespace-pre-line">Q{i + 1}. {qq.stem}</span>
                           {isPartial && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-300 text-amber-700 dark:text-amber-300 shrink-0">
                               Partial · {Math.round(credit * 100)}%
@@ -475,7 +475,7 @@ export default function MockExamRunner() {
         {idx > 0 && idx % 25 === 0 && <StudyCoachTip context="mock-stuck" />}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg leading-relaxed" data-testid="text-mock-stem">{q.stem}</CardTitle>
+            <CardTitle className="text-lg leading-relaxed whitespace-pre-line" data-testid="text-mock-stem">{q.stem}</CardTitle>
             {q.imageUrl && (
               <img
                 src={q.imageUrl}

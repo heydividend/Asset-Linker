@@ -247,18 +247,21 @@ export default function QuestionTypesPage() {
         {/* Worked example */}
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Example: a multi-select item
+            Example: a combination multiple-choice item
           </h2>
           <Card data-testid="worked-example">
             <CardContent className="p-4 space-y-3">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                This is a multi-select question presented as lettered options,
-                where each letter bundles several numbered steps. You have to
-                pick the option whose combination of steps is entirely correct.
+                This is a standard single-answer multiple-choice question in the
+                &ldquo;combination&rdquo; format: the stem lists numbered steps
+                (I&ndash;VI) and each lettered option bundles several of them. You
+                still pick just one option &mdash; the one whose combination of
+                steps is entirely correct &mdash; so it is scored all-or-nothing
+                like any multiple-choice item.
               </p>
               <img
                 src={seizureExample}
-                alt="Sample BOC multi-select question about managing an athlete having a seizure, with answer B (I, II, III, IV) marked correct."
+                alt="Sample BOC combination multiple-choice question about managing an athlete having a seizure, with answer B (I, II, III, IV) marked correct."
                 className="w-full rounded-md border"
               />
               <p className="text-xs text-muted-foreground leading-relaxed border-l-2 border-emerald-500/40 pl-3">
