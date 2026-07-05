@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, questions, quizzes, quizAnswers, topicMastery, taskMastery } from "@workspace/db";
 import { parseId } from "../lib/parseId";
-import { questionCredit } from "../lib/scoring";
+import { questionCredit, questionRowCredit, arraysEqual } from "../lib/scoring";
 import { getOrCreateSessionId } from "../lib/sessionId";
 import { markPlanItemComplete, todayStr } from "../lib/planCompletions";
 import { dateStrPT, todayStrPT } from "../lib/today";
@@ -53,6 +53,7 @@ async function buildQuizQuestionView(
         sourceKind: q.sourceKind,
         pendingReview: q.pendingReview,
         multiSelect: q.multiSelect,
+        itemType: q.itemType,
         ...(ans
           ? {
               selectedIndex: toDisplayed(ans.selectedIndex),
@@ -61,6 +62,14 @@ async function buildQuizQuestionView(
               correctIndices: q.correctIndices ? q.correctIndices.map(toDisplayed) : undefined,
               rationale: q.rationale,
               sourceUrl: q.sourceUrl,
+              // Ordering items are never choice-shuffled, so their sequences are
+              // reported as raw choice indices (no toDisplayed translation).
+              ...(q.itemType === "ordering"
+                ? {
+                    correctOrder: q.correctOrder ?? undefined,
+                    selectedOrder: ans.selectedIndices ?? undefined,
+                  }
+                : {}),
             }
           : {}),
       };
@@ -555,7 +564,19 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
   let correct: boolean;
   let storedIndex: number;
   let storedIndices: number[] | null = null;
-  if (q.multiSelect && Array.isArray(q.correctIndices)) {
+  if (q.itemType === "ordering" && Array.isArray(q.correctOrder)) {
+    // Drag-and-drop: the client sends `order`, the user's arrangement as ORIGINAL
+    // choice indices (ordering items are never choice-shuffled). Store the whole
+    // sequence in selectedIndices; full marks require an exact match to the key.
+    const submittedOrder = (req.body ?? {}).order;
+    if (!isValidOrder(submittedOrder, q.choices.length)) {
+      res.status(400).json({ error: "order must be a full arrangement of the choices" });
+      return;
+    }
+    storedIndices = submittedOrder;
+    storedIndex = submittedOrder[0] ?? -1;
+    correct = arraysEqual(submittedOrder, q.correctOrder);
+  } else if (q.multiSelect && Array.isArray(q.correctIndices)) {
     if (!Array.isArray(selectedIndices)) {
       res.status(400).json({ error: "selectedIndices array required for multi-select question" });
       return;
@@ -626,6 +647,8 @@ router.post("/quizzes/:id/answer", async (req, res): Promise<void> => {
     correctIndex: q.correctIndex != null ? toDisplayed(q.correctIndex) : q.correctIndex,
     correctIndices: q.correctIndices ? q.correctIndices.map(toDisplayed) : undefined,
     multiSelect: q.multiSelect,
+    itemType: q.itemType,
+    correctOrder: q.itemType === "ordering" ? (q.correctOrder ?? undefined) : undefined,
     rationale: q.rationale,
     sourceUrl: q.sourceUrl,
   });
@@ -677,7 +700,7 @@ router.post("/quizzes/:id/finish", async (req, res): Promise<void> => {
   const creditEarned = ans.reduce((sum, a) => {
     const q = qById.get(a.questionId);
     if (!q) return sum;
-    return sum + questionCredit(q, q.multiSelect ? (a.selectedIndices ?? []) : a.selectedIndex);
+    return sum + questionRowCredit(q, a);
   }, 0);
   const score = ans.length === 0 ? 0 : (creditEarned / ans.length) * 100;
   const [updated] = await db

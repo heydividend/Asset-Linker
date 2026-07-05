@@ -92,7 +92,7 @@ export function scoreItem(key: ItemKey, response: unknown): number {
 
 // Credit in [0, 1] for a stored question. Single-select is all-or-nothing (1 or
 // 0); multi-select earns partial credit via multiSelectCredit. Retained for the
-// existing mock-exam / quiz callers; new item types should use scoreItem.
+// existing mock-exam / quiz callers; new item types should use questionRowCredit.
 export function questionCredit(
   q: { multiSelect: boolean; correctIndex: number; correctIndices: number[] | null },
   selected: number | number[] | null | undefined,
@@ -102,4 +102,33 @@ export function questionCredit(
     return multiSelectCredit(selected, q.correctIndices);
   }
   return selected === q.correctIndex ? 1 : 0;
+}
+
+// Exact element-wise equality of two index arrays (order matters). Used to flag
+// a fully-correct ordering response.
+export function arraysEqual(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+// Credit in [0, 1] for any stored question row given the candidate's stored
+// answer. Dispatches on itemType: "ordering" grades the arranged sequence with
+// proportional partial credit; everything else falls back to questionCredit
+// (single-select all-or-nothing, multi-select partial). This is the single entry
+// point quiz/mock scoring should use so new item types score correctly.
+export function questionRowCredit(
+  q: {
+    itemType?: string | null;
+    multiSelect: boolean;
+    correctIndex: number;
+    correctIndices: number[] | null;
+    correctOrder?: number[] | null;
+  },
+  answer: { selectedIndex: number | null; selectedIndices: number[] | null },
+): number {
+  if (q.itemType === "ordering" && Array.isArray(q.correctOrder)) {
+    return orderingCredit(answer.selectedIndices ?? [], q.correctOrder);
+  }
+  return questionCredit(q, q.multiSelect ? (answer.selectedIndices ?? []) : answer.selectedIndex);
 }

@@ -2,6 +2,7 @@ import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizz
 import { domains } from "./domains";
 import { topics } from "./topics";
 import { tasks } from "./tasks";
+import { testlets } from "./testlets";
 
 export const questions = pgTable("questions", {
   id: serial("id").primaryKey(),
@@ -10,6 +11,16 @@ export const questions = pgTable("questions", {
   correctIndex: integer("correct_index").notNull(),
   multiSelect: boolean("multi_select").notNull().default(false),
   correctIndices: jsonb("correct_indices").$type<number[] | null>(),
+  // Item type: "mc" (single-answer), "multi" (multi-select), or "ordering"
+  // (drag-and-drop sequencing). Testlet sub-items are ordinary "mc" rows that
+  // also carry a testletId. Defaults to "mc" so every existing row is unchanged.
+  itemType: text("item_type").notNull().default("mc"),
+  // For "ordering" items only: the correct sequence expressed as choice indices,
+  // e.g. [2,0,1,3] means choices[2] comes first. `choices` are stored SCRAMBLED;
+  // this array is the answer key. Null for all other item types.
+  correctOrder: jsonb("correct_order").$type<number[] | null>(),
+  // Links sub-items that share a testlet scenario (see the testlets table).
+  testletId: integer("testlet_id").references(() => testlets.id, { onDelete: "set null" }),
   rationale: text("rationale").notNull(),
   domainId: integer("domain_id").references(() => domains.id, { onDelete: "set null" }),
   topicId: integer("topic_id").references(() => topics.id, { onDelete: "set null" }),

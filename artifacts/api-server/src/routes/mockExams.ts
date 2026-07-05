@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { db, questions, mockExams, domains, topics, topicMastery } from "@workspace/db";
 import { parseId } from "../lib/parseId";
 import { questionCredit } from "../lib/scoring";
@@ -62,7 +62,9 @@ router.post("/mock-exams", async (req, res): Promise<void> => {
     const got = await db
       .select({ id: questions.id })
       .from(questions)
-      .where(and(eq(questions.domainId, d.id), eq(questions.enabled, true)))
+      // Drag-and-drop ordering items need a bespoke UI the mock runner doesn't
+      // have, so they're kept out of mock exams (they still appear in quizzes).
+      .where(and(eq(questions.domainId, d.id), eq(questions.enabled, true), ne(questions.itemType, "ordering")))
       .orderBy(sql`random()`)
       .limit(want);
     picks.push(...got.map((g) => g.id));
@@ -73,7 +75,7 @@ router.post("/mock-exams", async (req, res): Promise<void> => {
     const more = await db
       .select({ id: questions.id })
       .from(questions)
-      .where(eq(questions.enabled, true))
+      .where(and(eq(questions.enabled, true), ne(questions.itemType, "ordering")))
       .orderBy(sql`random()`)
       .limit(need * 2);
     for (const m of more) {

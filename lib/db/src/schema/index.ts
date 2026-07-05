@@ -7,6 +7,7 @@ export * from "./notes";
 export * from "./flashcards";
 export * from "./studyGuides";
 export * from "./audioOverviews";
+export * from "./testlets";
 export * from "./questions";
 export * from "./quizzes";
 export * from "./dailyQuizSets";
