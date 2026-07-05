@@ -8,6 +8,8 @@ Analysis, 8th Edition* (PA8) blueprint.
 
 Live app: https://bocforme.replit.app
 
+![BOC Study Notebook dashboard — readiness score, today's study plan, weak topics, and domain mastery](docs/screenshots/dashboard.png)
+
 ## Features
 
 - **Notebooks** — NotebookLM-style 3-panel workspace: sources (notes / PDF / URL),
@@ -33,6 +35,19 @@ Live app: https://bocforme.replit.app
   and a "what to study first" prioritization.
 - **Study games** — matching game, body-map practice, and other review modes.
 - **Daily reminders** — Web Push notifications with timezone and quiet-day settings.
+
+## Screenshots
+
+**Notebook workspace** — the NotebookLM-style 3-panel layout: sources on the left,
+generated content (notes / flashcards / study guides / audio overviews) in the
+center, and a source-aware AI tutor on the right.
+
+![Notebook workspace with sources, generated content tabs, and the notebook tutor side-panel](docs/screenshots/notebook-workspace.png)
+
+**Study Group** — collaborative Q&A where BOC-certified peers answer questions with
+clinical anchors, and the group's best reasoning is captured as candidate flashcards.
+
+![Study Group thread showing a peer's answer with ICD-10/CPT clinical anchors and candidate flashcards](docs/screenshots/study-group.png)
 
 ## Stack
 
